@@ -1,0 +1,272 @@
+body {
+    font-family: 'Inter', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.sidebar-item {
+    transition: all 0.2s;
+}
+
+.sidebar-item:hover,
+.sidebar-item.active {
+    background: rgba(255, 107, 53, 0.2);
+    color: #FF6B35;
+}
+
+.card-hover {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1F2937;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #4B5563;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #FF6B35;
+}
+
+/* Light theme overrides (same as before) */
+body.light-theme {
+    background-color: #f3f4f6;
+}
+
+body.light-theme .bg-gray-900 {
+    background-color: #f9fafb;
+}
+
+body.light-theme .bg-gray-900\/50 {
+    background-color: rgba(229, 231, 235, 0.9);
+}
+
+body.light-theme .bg-gray-900\/40 {
+    background-color: rgba(229, 231, 235, 0.8);
+}
+
+body.light-theme .bg-gray-800 {
+    background-color: #ffffff;
+}
+
+body.light-theme .bg-gray-700 {
+    background-color: #f3f4f6;
+}
+
+body.light-theme .bg-gray-700\/50 {
+    background-color: rgba(243, 244, 246, 0.5);
+}
+
+body.light-theme .border-gray-700 {
+    border-color: #e5e7eb;
+}
+
+body.light-theme .border-gray-800 {
+    border-color: #e5e7eb;
+}
+
+body.light-theme .border-gray-600 {
+    border-color: #d1d5db;
+}
+
+body.light-theme .text-white {
+    color: #111827;
+}
+
+body.light-theme .text-gray-200 {
+    color: #1f2937;
+}
+
+body.light-theme .text-gray-400 {
+    color: #6b7280;
+}
+
+body.light-theme .text-gray-300 {
+    color: #4b5563;
+}
+
+body.light-theme .sidebar-item {
+    color: #374151;
+}
+
+body.light-theme .sidebar-item:hover,
+body.light-theme .sidebar-item.active {
+    background: rgba(255, 107, 53, 0.15);
+    color: #FF6B35;
+}
+
+body.light-theme .bg-gray-700.rounded-lg {
+    background-color: #e5e7eb;
+}
+
+body.light-theme thead.text-gray-400 {
+    color: #4b5563;
+}
+
+body.light-theme .bg-gray-700.hover\:bg-gray-600 {
+    background-color: #f3f4f6;
+}
+
+body.light-theme .bg-gray-700.hover\:bg-gray-600:hover {
+    background-color: #e5e5e5;
+}
+
+body.light-theme .bg-green-900\/50 {
+    background-color: rgba(34, 197, 94, 0.16);
+}
+
+body.light-theme .bg-yellow-900\/50 {
+    background-color: rgba(234, 179, 8, 0.18);
+}
+
+body.light-theme .bg-red-900\/50 {
+    background-color: rgba(239, 68, 68, 0.16);
+}
+
+body.light-theme .bg-orange-900\/50 {
+    background-color: rgba(249, 115, 22, 0.16);
+}
+
+/* Admin supplier comparison table readability in light theme */
+body.light-theme .supplier-comparison-table tbody td:not(.text-green-400):not(.text-white) {
+    color: #334155;
+}
+
+body.light-theme select.bg-gray-700,
+body.light-theme input.bg-gray-700 {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+    color: #111827;
+}
+
+body.light-theme .bg-gradient-to-br.from-gray-600.to-gray-800 {
+    background: #e5e7eb;
+}
+
+body.light-theme .border-gray-900 {
+    border-color: #d1d5db;
+}
+
+body.light-theme ::-webkit-scrollbar-track {
+    background: #e5e7eb;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb {
+    background: #9ca3af;
+}
+
+body.light-theme ::-webkit-scrollbar-thumb:hover {
+    background: #FF6B35;
+}
+
+/* Light Theme Overrides */
+body.light-theme #desktopToggleBtn {
+    background-color: #f97316;
+    /* Button orange hi rahega */
+    color: white;
+    /* Light theme mein border white ya light-gray honi chahiye */
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar Parent relative for positioning button */
+#sidebar {
+    position: relative;
+    transition: width 0.3s ease;
+}
+
+/* Floating Toggle Button Style */
+/* Floating Toggle Button - Exact Match */
+#desktopToggleBtn {
+    position: absolute;
+    right: -14px;
+    /* Sidebar ki border par half-out rakhne ke liye */
+    top: 24px;
+    /* Isse header ki line ke pass rahega */
+    width: 28px;
+    height: 28px;
+    background-color: #f97316;
+    /* Orange-500 */
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    /* Fix: correctly align icon */
+    justify-content: center;
+    color: white;
+    border: 3px solid #111827;
+    /* Dark border to match dashboard bg */
+    cursor: pointer;
+    z-index: 100;
+    /* Taaki sidebar ke upar dikhe */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s ease;
+}
+
+/* Sidebar labels ko hide karne ka tarika jab collapse ho */
+.sidebar-collapsed .sidebar-label-text {
+    display: none;
+}
+
+.sidebar-collapsed .sidebar-lock-icon {
+    display: none;
+}
+
+#desktopToggleBtn:hover {
+    background-color: #ea580c;
+    /* Orange-600 */
+}
+
+/* Collapsed State Adjustment */
+.sidebar-collapsed {
+    width: 80px !important;
+}
+
+.sidebar-collapsed .sidebar-label {
+    display: none;
+}
+
+/* Light theme for profile dropdown */
+body.light-theme #profileMenu {
+    background-color: #ffffff;
+    border-color: #e5e7eb;
+}
+
+body.light-theme #profileMenu a {
+    color: #374151;
+}
+
+body.light-theme #profileMenu a:hover {
+    background-color: #f3f4f6;
+    color: #f97316;
+}
+
+body.light-theme #profileMenu hr {
+    border-color: #f3f4f6;
+}
+
+.dropdown-menu {
+    transition: all 0.3s ease-in-out;
+}
+
+.trigger-arrow {
+    display: inline-block;
+    /* Rotation ke liye zaroori hai */
+}
+
+/* Sidebar chota ho toh dropdown na dikhe */
+.sidebar-collapsed .dropdown-menu {
+    display: none !important;
+}

@@ -1,0 +1,9 @@
+import './sidebar';
+import './button';
+import './service';
+import './tenants';
+import './currencies';
+import './plans';
+import './theme';
+import './action-menus';
+import './payment-gateway';
