@@ -4,19 +4,12 @@
     @php
         $plans = $plans ?? collect();
         $currencies = $currencies ?? collect();
+        $featureServices = $featureServices ?? collect();
         $planStats = $planStats ?? [
             'total' => $plans->count(),
             'active' => $plans->where('status', 'Active')->count(),
             'inactive' => $plans->where('status', 'Inactive')->count(),
             'recommended' => $plans->where('is_recommended', true)->count(),
-        ];
-
-        $featureLabels = [
-            'inventory_management' => 'Inventory Management',
-            'ai_analytics' => 'AI Analytics',
-            'staff_management' => 'Staff Management',
-            'kitchen_display_system' => 'Kitchen Display System (KDS)',
-            'whatsapp_integration' => 'WhatsApp Integration',
         ];
     @endphp
 
@@ -135,10 +128,14 @@
                                         $actionData = [
                                             'id' => $plan['id'] ?? '',
                                             'name' => $plan['name'] ?? '',
+                                            'summary' => $plan['summary'] ?? '',
                                             'max-branches' => $plan['max_branches'] ?? 1,
                                             'trial-days' => $plan['trial_days'] ?? 0,
                                             'status' => $plan['status'] ?? 'Active',
                                             'is-recommended' => !empty($plan['is_recommended']) ? '1' : '0',
+                                            'default-currency-id' => $plan['default_currency_id'] ?? '',
+                                            'default-monthly-price' => $plan['default_monthly_price'] ?? '',
+                                            'default-yearly-price' => $plan['default_yearly_price'] ?? '',
                                             'features' => json_encode($plan['features'] ?? []),
                                             'prices' => json_encode($plan['prices'] ?? []),
                                         ];
@@ -202,6 +199,14 @@
                                     <p id="planSlugPreview" class="text-[11px] text-slate-500 mt-1">Slug preview: -</p>
                                 </div>
 
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1.5">Card Summary</label>
+                                    <textarea id="planSummary" name="summary" rows="3" maxlength="255"
+                                        placeholder="e.g. Flexible for your restaurant business"
+                                        class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500 resize-none"></textarea>
+                                    <p class="text-[11px] text-slate-500 mt-1">Shown on landing and checkout plan cards.</p>
+                                </div>
+
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-xs text-slate-400 mb-1.5">Trial Days</label>
@@ -236,20 +241,52 @@
                             </div>
 
                             <div class="bg-white/5 border border-white/10 rounded-xl p-4 space-y-3">
-                                <h3 class="text-sm font-semibold text-white">Features Access</h3>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    @foreach ($featureLabels as $featureKey => $featureLabel)
-                                        <label
-                                            class="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
-                                            <input type="hidden" name="features[{{ $featureKey }}]" value="0">
-                                            <input id="feature_{{ $featureKey }}" type="checkbox"
-                                                data-feature-checkbox="{{ $featureKey }}"
-                                                name="features[{{ $featureKey }}]" value="1"
-                                                class="rounded border-white/20 bg-transparent text-orange-500 focus:ring-orange-500">
-                                            {{ $featureLabel }}
-                                        </label>
-                                    @endforeach
+                                <div class="flex items-center justify-between gap-3">
+                                    <h3 class="text-sm font-semibold text-white">Features Access</h3>
+                                    <a href="{{ route('superadmin.services.index') }}"
+                                        class="text-[11px] font-medium text-orange-400 hover:text-orange-300 transition">
+                                        + Add / Manage Services
+                                    </a>
                                 </div>
+
+                                @if ($featureServices->isNotEmpty())
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        @foreach ($featureServices as $service)
+                                            @php
+                                                $serviceStatus = $service->status ?? 'Active';
+                                                $isActiveService = $serviceStatus === 'Active';
+                                            @endphp
+
+                                            <label
+                                                class="flex items-center gap-2 text-sm text-slate-300 bg-white/5 border border-white/10 rounded-lg px-3 py-2 {{ !$isActiveService ? 'opacity-70' : '' }}">
+                                                <input type="hidden" name="features[{{ $service->slug }}]" value="0">
+                                                <input id="feature_{{ $service->slug }}" type="checkbox"
+                                                    data-feature-checkbox="{{ $service->slug }}"
+                                                    name="features[{{ $service->slug }}]" value="1"
+                                                    class="rounded border-white/20 bg-transparent text-orange-500 focus:ring-orange-500">
+                                                <span class="flex-1 min-w-0">
+                                                    <span class="block font-medium text-white truncate">
+                                                        {{ $service->name }}
+                                                    </span>
+                                                    <span class="block text-[10px] text-slate-500 uppercase tracking-wider">
+                                                        {{ $service->slug }}
+                                                    </span>
+                                                </span>
+                                                @if (!$isActiveService)
+                                                    <span
+                                                        class="shrink-0 rounded-full bg-slate-500/20 px-2 py-0.5 text-[10px] text-slate-300 border border-slate-500/20">
+                                                        Inactive
+                                                    </span>
+                                                @endif
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <div
+                                        class="rounded-lg border border-amber-500/25 bg-amber-500/10 p-3 text-sm text-amber-300">
+                                        No services found. Add a new service first, then it will appear here.
+                                    </div>
+                                @endif
                             </div>
                         </section>
 
@@ -261,39 +298,74 @@
                                 </div>
 
                                 @if ($currencies->isNotEmpty())
+                                    @php
+                                        $defaultCurrency = $currencies->firstWhere('is_default', true) ?? $currencies->first();
+                                    @endphp
                                     <div class="space-y-3">
                                         @foreach ($currencies as $currency)
-                                            <div class="rounded-lg border border-white/10 bg-white/5 p-3">
-                                                <div class="flex items-center justify-between mb-2">
-                                                    <p class="text-sm font-medium text-white">
-                                                        {{ $currency->code }} ({{ $currency->name }})
-                                                    </p>
-                                                    @if ($currency->is_default)
+                                            @if ($defaultCurrency && $currency->id === $defaultCurrency->id)
+                                                <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+                                                    <div class="flex items-center justify-between mb-2">
+                                                        <p class="text-sm font-medium text-white">Plan Price</p>
                                                         <span
                                                             class="px-2 py-0.5 rounded-full text-[10px] bg-sky-500/15 text-sky-400">Default</span>
-                                                    @endif
-                                                </div>
-                                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label class="block text-xs text-slate-400 mb-1">Monthly
-                                                            Price</label>
-                                                        <input type="number" min="0" step="0.01"
-                                                            name="prices[{{ $currency->id }}][monthly]"
-                                                            data-price-monthly="{{ $currency->id }}" required
-                                                            placeholder="0.00"
-                                                            class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
                                                     </div>
-                                                    <div>
-                                                        <label class="block text-xs text-slate-400 mb-1">Yearly
-                                                            Price</label>
-                                                        <input type="number" min="0" step="0.01"
-                                                            name="prices[{{ $currency->id }}][yearly]"
-                                                            data-price-yearly="{{ $currency->id }}" required
-                                                            placeholder="0.00"
-                                                            class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                                                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                        <div>
+                                                            <label class="block text-xs text-slate-400 mb-1">Monthly
+                                                                Price</label>
+                                                            <input type="number" min="0" step="0.01"
+                                                                name="prices[{{ $currency->id }}][monthly]"
+                                                                data-price-monthly="{{ $currency->id }}"
+                                                                data-plan-price-primary="1" required
+                                                                placeholder="0.00"
+                                                                class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                                                        </div>
+                                                        <div>
+                                                            <label class="block text-xs text-slate-400 mb-1">Yearly
+                                                                Price</label>
+                                                            <input type="number" min="0" step="0.01"
+                                                                name="prices[{{ $currency->id }}][yearly]"
+                                                                data-price-yearly="{{ $currency->id }}"
+                                                                data-plan-price-primary="1" required
+                                                                placeholder="0.00"
+                                                                class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            @else
+                                                <div class="hidden" aria-hidden="true">
+                                                    <div class="rounded-lg border border-white/10 bg-white/5 p-3">
+                                                        <div class="flex items-center justify-between mb-2">
+                                                            <p class="text-sm font-medium text-white">
+                                                                {{ $currency->code }} ({{ $currency->name }})
+                                                            </p>
+                                                        </div>
+                                                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                            <div>
+                                                                <label class="block text-xs text-slate-400 mb-1">Monthly
+                                                                    Price</label>
+                                                                <input type="number" min="0" step="0.01"
+                                                                    name="prices[{{ $currency->id }}][monthly]"
+                                                                    data-price-monthly="{{ $currency->id }}"
+                                                                    data-plan-price-secondary="1" required
+                                                                    placeholder="0.00"
+                                                                    class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                                                            </div>
+                                                            <div>
+                                                                <label class="block text-xs text-slate-400 mb-1">Yearly
+                                                                    Price</label>
+                                                                <input type="number" min="0" step="0.01"
+                                                                    name="prices[{{ $currency->id }}][yearly]"
+                                                                    data-price-yearly="{{ $currency->id }}"
+                                                                    data-plan-price-secondary="1" required
+                                                                    placeholder="0.00"
+                                                                    class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endif
                                         @endforeach
                                     </div>
                                 @else
@@ -320,4 +392,61 @@
             </div>
         </div>
     </div>
+    <script>
+        (() => {
+            const parseJson = (raw) => {
+                try {
+                    return raw ? JSON.parse(raw) : {};
+                } catch {
+                    return {};
+                }
+            };
+
+            const applyPlanPrices = (button) => {
+                const prices = parseJson(button.dataset.prices);
+                const defaultCurrencyId = button.dataset.defaultCurrencyId || '';
+                const defaultMonthlyPrice = button.dataset.defaultMonthlyPrice || '';
+                const defaultYearlyPrice = button.dataset.defaultYearlyPrice || '';
+
+                const monthlyInputs = Array.from(document.querySelectorAll('[data-price-monthly]'));
+                const yearlyInputs = Array.from(document.querySelectorAll('[data-price-yearly]'));
+                const primaryMonthlyInput = document.querySelector('[data-plan-price-primary="1"][data-price-monthly]');
+                const primaryYearlyInput = document.querySelector('[data-plan-price-primary="1"][data-price-yearly]');
+
+                const fallbackPrice = defaultCurrencyId && prices[defaultCurrencyId] ? prices[defaultCurrencyId] : Object.values(prices)[0] || {};
+
+                if (primaryMonthlyInput) {
+                    primaryMonthlyInput.value = defaultMonthlyPrice || fallbackPrice.monthly || '';
+                }
+
+                if (primaryYearlyInput) {
+                    primaryYearlyInput.value = defaultYearlyPrice || fallbackPrice.yearly || '';
+                }
+
+                monthlyInputs.forEach((input) => {
+                    const currencyId = input.dataset.priceMonthly;
+                    const price = prices[currencyId];
+                    if (price?.monthly !== undefined) {
+                        input.value = price.monthly;
+                    }
+                });
+
+                yearlyInputs.forEach((input) => {
+                    const currencyId = input.dataset.priceYearly;
+                    const price = prices[currencyId];
+                    if (price?.yearly !== undefined) {
+                        input.value = price.yearly;
+                    }
+                    input.dataset.manual = '1';
+                });
+            };
+
+            document.addEventListener('click', (event) => {
+                const button = event.target.closest('.openPlanEditModal, .openPlanViewModal');
+                if (!button) return;
+
+                requestAnimationFrame(() => applyPlanPrices(button));
+            });
+        })();
+    </script>
 @endsection

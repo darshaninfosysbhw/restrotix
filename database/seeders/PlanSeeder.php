@@ -49,6 +49,19 @@ class PlanSeeder extends Seeder
             $services[$s['slug']] = $service;
         }
 
+        $baseFeatures = [
+            'inventory_management' => false,
+            'ai_analytics' => false,
+            'staff_management' => false,
+            'kitchen_display_system' => false,
+            'whatsapp_integration' => false,
+            'self_payment_enabled' => false,
+        ];
+
+        $makeFeatures = function (array $enabled = []) use ($baseFeatures): array {
+            return array_merge($baseFeatures, array_fill_keys($enabled, true));
+        };
+
         /*
         |--------------------------------------------------------------------------
         | Plans Setup (Logic: Create Plan -> Link Services -> Set Multi-Country Prices)
@@ -62,7 +75,9 @@ class PlanSeeder extends Seeder
                 'name' => 'Single Outlet',
                 'max_branches' => 1,
                 'trial_days' => 14,
-                'features' => ['1 Branch Only', 'Menu Management', 'Basic Reporting', 'Email Support'],
+                'features' => $makeFeatures([
+                    'self_payment_enabled',
+                ]),
                 'is_active' => true,
             ]
         );
@@ -79,7 +94,11 @@ class PlanSeeder extends Seeder
                 'name' => 'Multi-Branch',
                 'max_branches' => 5,
                 'trial_days' => 30,
-                'features' => ['Up to 5 Branches', 'Inventory Management', 'Menu Management', 'Advanced Reporting'],
+                'features' => $makeFeatures([
+                    'inventory_management',
+                    'staff_management',
+                    'kitchen_display_system',
+                ]),
                 'is_active' => true,
             ]
         );
@@ -96,7 +115,14 @@ class PlanSeeder extends Seeder
                 'name' => 'Enterprise',
                 'max_branches' => 20,
                 'trial_days' => 60,
-                'features' => ['Up to 20 Branches', 'Inventory Management', 'Advanced Analytics', 'Priority Support'],
+                'features' => $makeFeatures([
+                    'inventory_management',
+                    'ai_analytics',
+                    'staff_management',
+                    'kitchen_display_system',
+                    'whatsapp_integration',
+                    'self_payment_enabled',
+                ]),
                 'is_active' => true,
             ]
         );

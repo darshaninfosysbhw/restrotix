@@ -13,7 +13,8 @@
 
 </head>
 
-<body class="text-gray-200 bg-gray-900">
+<body class="light-theme text-gray-200 bg-gray-900">
+    @include('core.layouts.includes.theme-bootstrap')
     @include('core.layouts.includes.sidebar-waiter')
     @include('core.layouts.includes.header-waiter')
     @yield('content')

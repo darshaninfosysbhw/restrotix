@@ -22,8 +22,12 @@ class AppServiceProvider extends ServiceProvider
     {
         // Register Toast Manager component
         Blade::component('core.components.toast-manager', 'toast-manager');
+
+        // Register core components folder with namespace
+        // This allows: <x-core.landing.hero /> and <x-core.ui.button />
         Blade::anonymousComponentPath(resource_path('views/core/components'), 'core');
-        // Sirf modules folder ko point karo
+
+        // Register modules folder
         Blade::anonymousComponentPath(resource_path('views/modules'), 'modules');
     }
 }

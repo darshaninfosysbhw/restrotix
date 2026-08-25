@@ -86,9 +86,10 @@ class TenantController extends Controller
             'email'                     => 'required|email|unique:users,email',
             'phone'                     => 'required|string|max:20|unique:users,phone_number',
             'city'                      => 'required|string|max:255',
-            'subscription_plan'         => 'required|in:starter,growth,enterprise',
             'country_id'                => 'required|exists:countries,id',
             'subscription_plan'         => 'required|exists:plans,id',
+            'billing_cycle'             => 'required|in:monthly,yearly',
+            'subscription_status'       => 'nullable|in:trial,active,expired,canceled',
         ]);
 
         if ($validator->fails()) {
@@ -102,6 +103,13 @@ class TenantController extends Controller
         }
 
         try {
+            $billingCycle = strtolower((string) $request->billing_cycle);
+            if (!in_array($billingCycle, ['monthly', 'yearly'], true)) {
+                $billingCycle = 'monthly';
+            }
+
+            $subscriptionStatus = strtolower((string) ($request->subscription_status ?? 'trial'));
+
             // 2. Database Transaction (ताकि अगर एक भी स्टेप फेल हो तो कुछ भी सेव न हो)
             DB::beginTransaction();
 
@@ -111,9 +119,11 @@ class TenantController extends Controller
                 'slug'                       => $request->slug,
                 'owner_name'                 => $request->owner_name,
                 'country_id'                 => $request->country_id,
-                'subscription_status'        => $request->subscription_status ?? 'trial', // Default to trial
-                'subscription_ends_at'       => now()->addDays(14), // Default 14 days trial
-                'plan_id'                    => $request->subscription_plan, // Assuming subscription_plan is the plan_id
+                'subscription_status'        => $subscriptionStatus,
+                'subscription_ends_at'       => in_array($subscriptionStatus, ['trial'], true) ? now()->addDays(14) : null,
+                'is_banned'                  => in_array($subscriptionStatus, ['canceled'], true),
+                'plan_id'                    => $request->subscription_plan,
+                'billing_cycle'              => $billingCycle,
             ]);
 
             // STEP 2: Create Default Branch
@@ -164,6 +174,13 @@ class TenantController extends Controller
 
         $validator = Validator::make($request->all(), [
             'company_name' => 'required|string|max:255',
+            'slug' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-z0-9-]+$/',
+                Rule::unique('tenants', 'slug')->ignore($tenant->id),
+            ],
             'owner_name'   => 'required|string|max:255',
             'email'        => [
                 'required',
@@ -177,9 +194,10 @@ class TenantController extends Controller
                 Rule::unique('users', 'phone_number')->ignore(optional($adminUser)->id),
             ],
             'city'         => 'required|string|max:255',
-            'subscription_plan' => 'required|in:starter,growth,enterprise',
+            'subscription_plan' => 'required|exists:plans,id',
             'country_id' => 'required|exists:countries,id',
-            'status' => 'required|in:Active,Trial,Pending',
+            'billing_cycle' => 'required|in:monthly,yearly',
+            'subscription_status' => 'required|in:trial,active,expired,canceled',
         ]);
 
         if ($validator->fails()) {
@@ -195,19 +213,29 @@ class TenantController extends Controller
         try {
             DB::beginTransaction();
 
+            $billingCycle = strtolower((string) $request->billing_cycle);
+            if (!in_array($billingCycle, ['monthly', 'yearly'], true)) {
+                $billingCycle = 'monthly';
+            }
+
+            $subscriptionStatus = strtolower((string) $request->subscription_status);
+
             $tenantPayload = [
                 'company_name'           => $request->company_name,
+                'slug'                   => $request->slug,
                 'owner_name'             => $request->owner_name,
-                'subscription_plan'      => $request->subscription_plan,
+                'plan_id'                => $request->subscription_plan,
                 'country_id'             => $request->country_id,
+                'billing_cycle'          => $billingCycle,
+                'subscription_status'    => $subscriptionStatus,
             ];
 
-            if ($request->status === 'Pending') {
+            if ($subscriptionStatus === 'canceled') {
                 $tenantPayload['is_banned'] = true;
                 $tenantPayload['subscription_ends_at'] = null;
-            } elseif ($request->status === 'Trial') {
+            } elseif ($subscriptionStatus === 'trial') {
                 $tenantPayload['is_banned'] = false;
-                $tenantPayload['subscription_ends_at'] = now()->addDays(14)->toDateString();
+                $tenantPayload['subscription_ends_at'] = now()->addDays(14);
             } else {
                 $tenantPayload['is_banned'] = false;
                 $tenantPayload['subscription_ends_at'] = null;

@@ -24,6 +24,7 @@ class MenuItem extends Model
         'sale_price',
         'tax_percent',
         'type',
+        'has_variants',
         'is_available',
         'is_active',
         'is_recommended',
@@ -87,5 +88,17 @@ class MenuItem extends Model
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    // Item ke paas bohot saare variants (Half/Full) ho sakte hain
+    public function variants(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MenuItemVariant::class, 'menu_item_id');
+    }
+
+    // Item ke paas bohot saare active addons ho sakte hain
+    public function addons(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(MenuItemAddon::class, 'menu_item_id')->where('is_active', true);
     }
 }

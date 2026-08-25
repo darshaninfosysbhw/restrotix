@@ -16,61 +16,24 @@ class CheckSubscription
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // $user = Auth::user();
-        // // Safety check
-        // if (!$user) {
-        //     return redirect()->route('login');
-        // }
-
-        // // 1. Superadmin को छूट दें
-        // if ($user->role == 'superadmin') {
-        //     return $next($request);
-        // }
-
-        // // 2. इम्पर्सनेशन चेक (अगर सुपर-एडमिन किसी टेनेंट को देख रहा है)
-        // // अगर आपके पास सेशन में इम्पर्सनेट की आईडी है, तो उसे भी छूट दें
-        // if (session()->has('impersonated_by')) {
-        //     return $next($request);
-        // }
-
-        // $tenant = $user->tenant;
-
-        // // अगर टेनेंट ही नहीं है (जैसे कोई नया यूजर जिसका टेनेंट क्रिएट नहीं हुआ), तो आगे बढ़ने दें
-        // if (!$tenant) {
-        //     return $next($request);
-        // }
-
-        // // 2. क्या ट्रायल खत्म हो गया है?
-        // if ($tenant->isExpired()) {
-
-        //     // dd($tenant->trial_ends_at, $tenant->subscription_ends_at);
-        //     if ($tenant->subscription_status !== 'active') {
-
-        //         if ($request->routeIs('admin.billing*')) {
-        //             return $next($request);
-        //         }
-
-        //         return redirect()->route('admin.billing')
-        //             ->with('error', 'आपका ट्रायल/सब्सक्रिप्शन खत्म हो गया है। कृपया आगे बढ़ने के लिए पेमेंट करें।');
-        //     }
-        // }
-
-        // // 3. क्या टेनेंट बैन है?
-        // if ($tenant->is_banned) {
-        //     Auth::logout();
-        //     return redirect()->route('login')->with('error', 'आपका अकाउंट सस्पेंड कर दिया गया है।');
-        // }
-        // return $next($request);
-
-        // =====================================================================================
         $user = Auth::user();
 
         if (!$user) {
             return redirect()->route('login');
         }
 
-        // 2. SUPERADMIN BYPASS
-        if ($user->role == 'superadmin' && !session()->has('impersonated_by')) {
+        $isAdminPanelRoute = $request->is('admin*');
+        $isImpersonating = session()->has('impersonated_by');
+
+        // Superadmin ko tenant admin routes par bhejne ke bajay apne panel par redirect karo.
+        if ($user->role === 'superadmin' && !$isImpersonating && $isAdminPanelRoute) {
+            return redirect()->route('superadmin.dashboard')->with('toast', [
+                ['type' => 'info', 'message' => 'Aap Super Admin panel me ho. Admin panel ke liye impersonate use karein.', 'duration' => 5000]
+            ]);
+        }
+
+        // Superadmin apne own panel aur impersonation ke bahar baaki routes use kar sakta hai.
+        if ($user->role === 'superadmin' && !$isImpersonating) {
             return $next($request);
         }
 
@@ -79,20 +42,28 @@ class CheckSubscription
         $tenant = \App\Models\Tenant::find($tenantId);
 
         if (!$tenant) {
-            return $next($request);
+            return redirect()->route('login')->with('toast', [
+                ['type' => 'error', 'message' => 'Restaurant context missing hai. Please dubara login karein.', 'duration' => 5000]
+            ]);
         }
 
         // ✅ Impersonation → FULL BYPASS [Important!]
-        if (session()->has('impersonated_by')) {
+        if ($isImpersonating) {
             return $next($request);
         }
 
         if ($tenant->is_banned) {
             if (!session()->has('impersonated_by')) {
                 Auth::logout();
-                session()->flush();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
                 return redirect()->route('login')->with('toast', [
-                    ['type' => 'error', 'message' => 'आपका अकाउंट सस्पेंड कर दिया गया है।', 'duration' => 5000]
+                    [
+                        'type' => 'error',
+                        'message' => 'Your restaurant access has been cancelled. Please contact our support team.',
+                        'duration' => 6000,
+                    ],
                 ]);
             }
         }

@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 
 class ImpersonateController extends Controller
 {
-    public function impersonate($id)
+    public function impersonate(Request $request, $id)
     {
         $originalAdmin = Auth::user(); // SuperAdmin object
         $userToImpersonate = User::findOrFail($id);
@@ -28,24 +28,31 @@ class ImpersonateController extends Controller
 
         // 3. Login as new user
         Auth::login($userToImpersonate);
+        $request->session()->regenerate();
 
         return redirect()->route('admin.dashboard')->with('toast', [
             ['type' => 'success', 'message' => 'Now managing: ' . $userToImpersonate->tenant->company_name, 'duration' => 5000]
         ]);
     }
 
-    public function leave()
+    public function leave(Request $request)
     {
         if (!session()->has('impersonated_by')) {
             return redirect()->back();
         }
 
-        // 1. Tenant ID ko session se delete karo (Kyunki ab hum SuperAdmin hain)
-        session()->forget('active_tenant_id');
+        // 1. Pehle original superadmin id nikaalo
+        $adminId = $request->session()->pull('impersonated_by');
 
-        // 2. Wapas purane admin ko login karo
-        $adminId = session()->pull('impersonated_by');
+        // 2. Tenant context aur stale intended route ko clean karo
+        $request->session()->forget([
+            'active_tenant_id',
+            'url.intended',
+        ]);
+
+        // 3. Wapas purane admin ko login karo
         Auth::loginUsingId($adminId);
+        $request->session()->regenerate();
 
         return redirect()->route('superadmin.dashboard')->with('toast', [
             ['type' => 'success', 'message' => 'Back to SuperAdmin Control', 'duration' => 3000]

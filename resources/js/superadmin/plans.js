@@ -23,6 +23,7 @@
     if (!modal || !closeBtn || !cancelBtn || !backdrop || !form || !methodInput) return;
 
     const nameInput = document.getElementById('planName');
+    const summaryInput = document.getElementById('planSummary');
     const maxBranchesInput = document.getElementById('planMaxBranches');
     const trialDaysInput = document.getElementById('planTrialDays');
     const statusInput = document.getElementById('planStatus');
@@ -31,6 +32,11 @@
 
     const monthlyInputs = Array.from(document.querySelectorAll('[data-price-monthly]'));
     const yearlyInputs = Array.from(document.querySelectorAll('[data-price-yearly]'));
+    const primaryMonthlyInput = document.querySelector('[data-plan-price-primary="1"][data-price-monthly]');
+    const primaryYearlyInput = document.querySelector('[data-plan-price-primary="1"][data-price-yearly]');
+    const secondaryMonthlyInputs = Array.from(document.querySelectorAll('[data-plan-price-secondary="1"][data-price-monthly]'));
+    const secondaryYearlyInputs = Array.from(document.querySelectorAll('[data-plan-price-secondary="1"][data-price-yearly]'));
+    let isCreateMode = false;
 
     const priceMonthlyByCurrency = Object.fromEntries(
         monthlyInputs.map((input) => [input.dataset.priceMonthly, input])
@@ -92,7 +98,20 @@
         });
     };
 
+    const syncSecondaryPlanPrices = () => {
+        if (!isCreateMode || !primaryMonthlyInput || !primaryYearlyInput) return;
+
+        secondaryMonthlyInputs.forEach((input) => {
+            input.value = primaryMonthlyInput.value;
+        });
+
+        secondaryYearlyInputs.forEach((input) => {
+            input.value = primaryYearlyInput.value;
+        });
+    };
+
     const setCreateMode = () => {
+        isCreateMode = true;
         form.reset();
         form.action = modal.dataset.storeUrl || form.action;
         methodInput.disabled = true;
@@ -104,6 +123,7 @@
         if (statusInput) statusInput.value = 'Active';
         if (maxBranchesInput) maxBranchesInput.value = '1';
         if (trialDaysInput) trialDaysInput.value = '14';
+        if (summaryInput) summaryInput.value = '';
         if (recommendedInput) recommendedInput.checked = false;
 
         featureInputs.forEach((checkbox) => {
@@ -111,6 +131,7 @@
         });
 
         resetPricingInputs();
+        syncSecondaryPlanPrices();
         updateSlugPreview();
         setFieldsDisabled(false);
     };
@@ -127,6 +148,7 @@
         const data = button.dataset;
 
         if (nameInput) nameInput.value = data.name || '';
+        if (summaryInput) summaryInput.value = data.summary || '';
         if (maxBranchesInput) maxBranchesInput.value = data.maxBranches || '1';
         if (trialDaysInput) trialDaysInput.value = data.trialDays || '0';
         if (statusInput) statusInput.value = data.status || 'Active';
@@ -138,6 +160,15 @@
         });
 
         const prices = parseJsonDataset(data.prices);
+
+        if (primaryMonthlyInput) {
+            primaryMonthlyInput.value = data.defaultMonthlyPrice || '';
+        }
+
+        if (primaryYearlyInput) {
+            primaryYearlyInput.value = data.defaultYearlyPrice || '';
+        }
+
         Object.entries(priceMonthlyByCurrency).forEach(([currencyId, input]) => {
             input.value = prices[currencyId]?.monthly ?? '';
         });
@@ -151,6 +182,7 @@
     };
 
     const setEditMode = (button) => {
+        isCreateMode = false;
         const updateUrlTemplate = modal.dataset.updateUrlTemplate || '';
         form.action = updateUrlTemplate.replace('__ID__', button.dataset.id || '');
         methodInput.disabled = false;
@@ -165,6 +197,7 @@
     };
 
     const setViewMode = (button) => {
+        isCreateMode = false;
         form.action = modal.dataset.storeUrl || form.action;
         methodInput.disabled = true;
 
@@ -222,12 +255,20 @@
             if (yearlyInput.dataset.manual !== '1') {
                 yearlyInput.value = suggested;
             }
+
+            if (monthlyInput === primaryMonthlyInput) {
+                syncSecondaryPlanPrices();
+            }
         });
     });
 
     yearlyInputs.forEach((yearlyInput) => {
         yearlyInput.addEventListener('input', () => {
             yearlyInput.dataset.manual = '1';
+
+            if (yearlyInput === primaryYearlyInput) {
+                syncSecondaryPlanPrices();
+            }
         });
     });
 

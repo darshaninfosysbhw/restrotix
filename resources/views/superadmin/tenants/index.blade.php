@@ -102,9 +102,12 @@
                                     @elseif($restaurant['status'] === 'Trial')
                                         <span
                                             class="px-2.5 py-1 rounded-full text-xs bg-amber-400/15 text-amber-400">Trial</span>
+                                    @elseif($restaurant['status'] === 'Canceled')
+                                        <span
+                                            class="px-2.5 py-1 rounded-full text-xs bg-rose-400/10 text-rose-400">Canceled</span>
                                     @else
                                         <span
-                                            class="px-2.5 py-1 rounded-full text-xs bg-slate-500/20 text-slate-300">Pending</span>
+                                            class="px-2.5 py-1 rounded-full text-xs bg-rose-400/10 text-rose-400">Expired</span>
                                     @endif
                                 </td>
                                 <td class="py-3 px-4 whitespace-nowrap">
@@ -131,13 +134,15 @@
                                             'editData' => [
                                                 'id' => $restaurant['id'],
                                                 'name' => $restaurant['name'],
+                                                'slug' => $restaurant['slug'],
                                                 'owner' => $restaurant['owner'],
                                                 'email' => $restaurant['email'],
                                                 'phone' => $restaurant['phone'],
                                                 'city' => $restaurant['city'],
                                                 'country-id' => $restaurant['country_id'],
-                                                'plan' => $restaurant['plan_key'],
-                                                'status' => $restaurant['status'],
+                                                'plan-id' => $restaurant['plan_id'],
+                                                'billing-cycle' => $restaurant['billing_cycle'] ?? 'monthly',
+                                                'status-key' => $restaurant['status_key'] ?? strtolower($restaurant['status'] ?? ''),
                                             ],
                                         
                                             'deleteRoute' => route(
@@ -156,8 +161,8 @@
                 </table>
             </div>
             @if ($restaurants->hasPages())
-                <div class="mt-4">
-                    {{ $restaurants->links() }}
+                <div class="mt-4 flex justify-end">
+                    <x-core::ui.pagination :paginator="$restaurants" :show-summary="false" />
                 </div>
             @endif
         </div>
@@ -263,13 +268,22 @@
                         </div>
 
                         <div>
+                            <label class="block text-xs text-slate-400 mb-1.5">Billing Cycle</label>
+                            <select id="restaurantBillingCycle" name="billing_cycle" required
+                                class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
+                                <option value="monthly" selected>Monthly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+
+                        <div>
                             <label class="block text-xs text-slate-400 mb-1.5">Status</label>
                             <select id="restaurantStatus" name="subscription_status" required
                                 class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
                                 <option value="">Select status</option>
                                 <option value="trial">Trial</option>
                                 <option value="active">Active</option>
-                                <option value="pending">Pending</option>
+                                <option value="expired">Expired</option>
                                 <option value="canceled">Canceled</option>
                             </select>
                         </div>

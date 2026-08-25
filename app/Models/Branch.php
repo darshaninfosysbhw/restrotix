@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Traits\BelongsToCountry;
 
 class Branch extends Model
 {
     use HasFactory;
     use BelongsToCountry;
+    use SoftDeletes;
 
     protected $fillable = [
         'tenant_id',
@@ -26,6 +28,9 @@ class Branch extends Model
         'latitude',
         'longitude',
         'offline_billing_enabled',
+        'tax_setting',
+        'tax_rate',
+        'branch_menu_theme',
     ];
 
     protected $casts = [
@@ -59,5 +64,10 @@ class Branch extends Model
     public function manager()
     {
         return $this->hasOne(\App\Models\User::class)->where('role', 'manager');
+    }
+
+    public function paymentGateways()
+    {
+        return $this->hasMany(BranchPaymentGateway::class);
     }
 }

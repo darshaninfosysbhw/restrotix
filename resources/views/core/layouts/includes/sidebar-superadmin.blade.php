@@ -11,12 +11,10 @@
         class="sa-sidebar fixed md:static inset-y-0 left-0 z-[120] w-72 bg-[#0f172a] border-r border-white/5 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-out will-change-transform flex flex-col p-4">
         <!-- logo & collapse button -->
         <div class="flex items-center justify-between mb-8 px-2">
-            <div class="flex items-center gap-2">
-                <div
-                    class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 flex items-center justify-center">
-                    <i class="fas fa-crown text-white text-sm"></i>
-                </div>
-                <span class="text-xl font-bold text-white">Resto<span class="text-orange-500">RAP</span></span>
+            <div class="flex items-center">
+                <a href="{{ route('superadmin.dashboard') }}" class="mr-2 sm:mr-3 inline-flex items-center">
+                    <img src="{{ asset('images/logo.png') }}" alt="Restrotix" class="h-8 w-auto sm:h-10">
+                </a>
             </div>
             <button id="mobileSidebarCloseBtn" class="md:hidden text-slate-400 hover:text-white text-xl">
                 <i class="fas fa-times"></i>

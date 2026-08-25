@@ -13,11 +13,13 @@ export default defineConfig({
         tailwindcss(),
     ],
     server: {
-        host: '192.168.1.67', // <-- Ye line add karo (Aapka IP)
+        host: '192.168.1.68', // <-- Ye line add karo (Aapka IP)
+        // host: '127.0.0.1',
         port: 5173,
         strictPort: true,
         hmr: {
-            host: '192.168.1.67', // <-- Taki mobile pe auto-refresh bhi chale
+            // host: '127.0.0.1', // <-- Taki mobile pe auto-refresh bhi chale
+            host: '192.168.1.68',
         },
         watch: {
             ignored: ['**/storage/framework/views/**'],

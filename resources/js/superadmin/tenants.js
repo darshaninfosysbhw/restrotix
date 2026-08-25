@@ -12,12 +12,14 @@
     const modalSubmit = document.getElementById('restaurantModalSubmit');
     const editButtons = Array.from(document.querySelectorAll('.openRestaurantEditModal'));
     const companyNameInput = document.getElementById('restaurantCompanyName');
+    const slugInput = document.getElementById('restaurantSlug');
     const ownerNameInput = document.getElementById('restaurantOwnerName');
     const emailInput = document.getElementById('restaurantEmail');
     const phoneInput = document.getElementById('restaurantPhone');
     const countryInput = document.getElementById('restaurantCountry');
     const cityInput = document.getElementById('restaurantCity');
     const planInput = document.getElementById('restaurantPlan');
+    const billingCycleInput = document.getElementById('restaurantBillingCycle');
     const branchLimitInput = document.getElementById('restaurantBranchLimit');
     const addressInput = document.getElementById('restaurantAddress');
     const statusInput = document.getElementById('restaurantStatus');
@@ -28,6 +30,24 @@
     const countBadge = document.getElementById('restaurantCountBadge');
 
     if (!modal || !openBtn || !closeBtn || !cancelBtn || !backdrop || !form || !methodInput) return;
+
+    const normalizeStatusValue = (value) => {
+        const raw = String(value || '').trim().toLowerCase();
+
+        if (raw === 'cancelled') return 'canceled';
+        if (raw === 'pending') return 'expired';
+        if (['trial', 'active', 'expired', 'canceled'].includes(raw)) return raw;
+
+        return '';
+    };
+
+    const normalizeBillingCycleValue = (value) => {
+        const raw = String(value || '').trim().toLowerCase();
+
+        if (['monthly', 'yearly'].includes(raw)) return raw;
+
+        return 'monthly';
+    };
 
     const openModal = () => {
         modal.classList.remove('hidden');
@@ -46,9 +66,12 @@
         modalTitle.textContent = 'Add New Restaurant';
         modalSubtitle.textContent = 'Fill details to register a new restaurant tenant';
         modalSubmit.textContent = 'Register Restaurant';
-        if (statusInput) statusInput.value = 'Active';
+        if (planInput) planInput.value = '';
+        if (billingCycleInput) billingCycleInput.value = 'monthly';
+        if (statusInput) statusInput.value = 'trial';
         if (branchLimitInput) branchLimitInput.value = '';
         if (addressInput) addressInput.value = '';
+        if (slugInput) slugInput.value = '';
     };
 
     const setEditMode = (button) => {
@@ -58,13 +81,15 @@
         methodInput.disabled = false;
 
         if (companyNameInput) companyNameInput.value = data.name || '';
+        if (slugInput) slugInput.value = data.slug || '';
         if (ownerNameInput) ownerNameInput.value = data.owner || '';
         if (emailInput) emailInput.value = data.email || '';
         if (phoneInput) phoneInput.value = data.phone || '';
         if (countryInput) countryInput.value = data.countryId || '';
         if (cityInput) cityInput.value = data.city || '';
-        if (planInput) planInput.value = data.plan || '';
-        if (statusInput) statusInput.value = data.status || 'Active';
+        if (planInput) planInput.value = data.planId || '';
+        if (billingCycleInput) billingCycleInput.value = normalizeBillingCycleValue(data.billingCycle || 'monthly');
+        if (statusInput) statusInput.value = normalizeStatusValue(data.statusKey || data.status || 'trial');
         if (branchLimitInput) branchLimitInput.value = '1';
         if (addressInput) addressInput.value = '';
 

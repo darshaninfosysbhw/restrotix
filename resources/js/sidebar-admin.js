@@ -4,6 +4,11 @@
     const themeToggleBtn = document.getElementById('theme-toggle');
     const themeIcon = document.getElementById('theme-icon');
 
+    function applyThemeState(isLightTheme) {
+        document.body.classList.toggle('light-theme', isLightTheme);
+        document.body.classList.toggle('dark', !isLightTheme);
+    }
+
     function setIconBasedOnTheme() {
         if (document.body.classList.contains('light-theme')) {
             themeIcon.classList.remove('fa-sun');
@@ -15,16 +20,13 @@
     }
     if (themeToggleBtn && themeIcon) {
         const savedTheme = localStorage.getItem('restochain-theme');
-        if (savedTheme === 'light') {
-            document.body.classList.add('light-theme');
-        } else {
-            document.body.classList.remove('light-theme');
-        }
+        const isLightTheme = savedTheme !== 'dark';
+        applyThemeState(isLightTheme);
         setIconBasedOnTheme();
         themeToggleBtn.addEventListener('click', function () {
-            document.body.classList.toggle('light-theme');
-            localStorage.setItem('restochain-theme', document.body.classList.contains('light-theme') ?
-                'light' : 'dark');
+            const isLightThemeNow = document.body.classList.toggle('light-theme');
+            document.body.classList.toggle('dark', !isLightThemeNow);
+            localStorage.setItem('restochain-theme', isLightThemeNow ? 'light' : 'dark');
             setIconBasedOnTheme();
         });
     }

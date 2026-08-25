@@ -12,7 +12,15 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="text-gray-200 bg-gray-900 min-h-screen">
+@php
+    $publicMenuTheme = $publicMenuTheme ?? 'dark';
+    $bodyThemeClass = $publicMenuTheme === 'light'
+        ? 'light-theme bg-slate-50 text-slate-900'
+        : 'dark bg-gray-900 text-gray-200';
+@endphp
+
+<body class="{{ $bodyThemeClass }} min-h-screen">
+    <x-toast-manager />
     @yield('content')
 </body>
 

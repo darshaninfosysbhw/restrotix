@@ -74,10 +74,17 @@
 
             const currentBranchId = Number(pageRoot?.dataset?.branchId || 0);
 
-            const orderSound = new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3');
+            const orderSound = new Audio(@json(asset('sounds/ForOrder.m4a')));
+            const waiterCallSound = new Audio(@json(asset('sounds/forWaiter.m4a')));
+            const kitchenReadySound = new Audio(@json(asset('sounds/forKitchen.m4a')));
+            const audioStorageKey = currentBranchId > 0
+                ? `kds_sound_enabled_v1:${currentBranchId}`
+                : 'kds_sound_enabled_v1';
             orderSound.preload = 'auto';
+            waiterCallSound.preload = 'auto';
+            kitchenReadySound.preload = 'auto';
 
-            let audioEnabled = false;
+            let audioEnabled = localStorage.getItem(audioStorageKey) === '1';
 
             function setAudioButtonState() {
                 if (!enableAudioBtn || !audioBtnLabel || !audioOffCross) return;
@@ -100,6 +107,7 @@
             async function toggleAudioState() {
                 if (audioEnabled) {
                     audioEnabled = false;
+                    localStorage.setItem(audioStorageKey, '0');
                     setAudioButtonState();
                     return;
                 }
@@ -109,9 +117,11 @@
                     orderSound.pause();
                     orderSound.currentTime = 0;
                     audioEnabled = true;
+                    localStorage.setItem(audioStorageKey, '1');
                     setAudioButtonState();
                 } catch (error) {
                     audioEnabled = false;
+                    localStorage.setItem(audioStorageKey, '0');
                     setAudioButtonState();
                     console.warn('Unable to enable sound:', error);
                 }
@@ -138,45 +148,55 @@
                 }
             }
 
-            function playWaiterCallSound() {
-                const AudioCtx = window.AudioContext || window.webkitAudioContext;
-                if (!AudioCtx || !audioEnabled) return;
+            function playKitchenReadySound() {
+                if (!audioEnabled) {
+                    console.warn('⚠️ Audio is disabled');
+                    return;
+                }
 
-                const ctx = new AudioCtx();
-                const now = ctx.currentTime;
-
-                const beep = (start, duration, freq) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-
-                    osc.type = 'triangle';
-                    osc.frequency.value = freq;
-
-                    gain.gain.setValueAtTime(0.0001, start);
-                    gain.gain.exponentialRampToValueAtTime(0.08, start + 0.02);
-                    gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-
-                    osc.start(start);
-                    osc.stop(start + duration + 0.02);
-                };
-
-                beep(now, 0.15, 880);
-                beep(now + 0.2, 0.18, 1046);
-
-                setTimeout(() => {
-                    ctx.close().catch(() => {});
-                }, 800);
+                kitchenReadySound.currentTime = 0;
+                kitchenReadySound.play().catch(() => {});
             }
 
-            function animateHighlight(tableNumber, type) {
-                if (!tableNumber) return;
+            function playWaiterCallSound() {
+                if (!audioEnabled) return;
 
-                const ringClass = type === 'waiter' ? 'ring-blue-500' : 'ring-orange-500';
+                waiterCallSound.currentTime = 0;
+                waiterCallSound.play().catch(() => {});
+            }
 
-                document.querySelectorAll(`[data-table-number="${String(tableNumber)}"]`).forEach((card) => {
+            function emitKdsToast(type, message) {
+                if (!message || typeof window.showToast !== 'function') return;
+
+                window.showToast({
+                    type,
+                    message,
+                    duration: 3500,
+                });
+            }
+
+            function formatKdsTableLabel(tableNum) {
+                const cleanTableNum = String(tableNum ?? '').trim();
+                return cleanTableNum ? `Table ${cleanTableNum}` : 'Table';
+            }
+
+            function animateHighlight(highlight = {}) {
+                const tableNumber = String(highlight?.tableNumber ?? '').trim();
+                const kotNumber = String(highlight?.kotNumber ?? '').trim();
+                const batchKey = String(highlight?.batchKey ?? (
+                    tableNumber && kotNumber ? `${tableNumber}:${kotNumber}` : ''
+                )).trim();
+                const type = String(highlight?.type ?? 'order');
+                const ringClass = type === 'waiter'
+                    ? 'ring-blue-500'
+                    : (type === 'ready' ? 'ring-green-500' : 'ring-orange-500');
+                const selector = batchKey
+                    ? `[data-batch-key="${batchKey}"]`
+                    : (tableNumber ? `[data-table-number="${tableNumber}"]` : '');
+
+                if (!selector) return;
+
+                document.querySelectorAll(selector).forEach((card) => {
                     card.classList.add('ring-2', ringClass, 'ring-offset-1', 'ring-offset-gray-900');
 
                     setTimeout(() => {
@@ -192,7 +212,7 @@
             }
 
             function updateTimers() {
-                const cards = document.querySelectorAll('#kds-cards [data-order-id]');
+                const cards = document.querySelectorAll('#kds-cards [data-batch-key]');
 
                 cards.forEach((card) => {
                     const createdAt = card.getAttribute('data-created-at');
@@ -256,8 +276,8 @@
                         currentCompleted.textContent = `Completed Today: ${Number(data.completed_today || 0)}`;
                     }
 
-                    if (highlight && highlight.tableNumber) {
-                        animateHighlight(highlight.tableNumber, highlight.type || 'order');
+                    if (highlight && (highlight.tableNumber || highlight.batchKey || highlight.kotNumber)) {
+                        animateHighlight(highlight);
                     }
 
                     updateTimers();
@@ -288,8 +308,32 @@
 
                     await refreshKdsData({
                         tableNumber: e?.orderData?.table_number ?? '',
+                        kotNumber: e?.orderData?.kot_number ?? '',
+                        batchKey: e?.orderData?.batch_key ?? '',
                         type: 'order'
                     });
+                })
+                .listen('KitchenStatusUpdated', async (e) => {
+                    const payload = e?.kitchenData || {};
+                    const itemStatus = String(payload?.item_status ?? '').toLowerCase();
+                    const kitchenStatus = String(payload?.kitchen_status ?? '').toLowerCase();
+                    const isReady = itemStatus === 'ready';
+                    const isServed = itemStatus === 'served' || (kitchenStatus === 'served' && !isReady);
+                    await refreshKdsData({
+                        tableNumber: payload?.table_number ?? '',
+                        kotNumber: payload?.kot_number ?? '',
+                        batchKey: payload?.batch_key ?? '',
+                        type: isReady || isServed ? 'ready' : 'order'
+                    });
+
+                    if (isReady) {
+                        playKitchenReadySound();
+                        emitKdsToast('success', `${formatKdsTableLabel(payload?.table_number)}: Kitchen ready`);
+                    }
+
+                    if (isServed) {
+                        emitKdsToast('success', `${formatKdsTableLabel(payload?.table_number)}: Served`);
+                    }
                 })
                 .listen('WaiterCalled', async (e) => {
                     playWaiterCallSound();

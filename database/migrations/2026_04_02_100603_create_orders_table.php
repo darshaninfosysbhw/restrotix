@@ -49,6 +49,8 @@ return new class extends Migration
                 'served'
             ])->default('pending');
 
+            $table->timestamp('served_at')->nullable();
+
             // 🔥 PAYMENT STATUS
             $table->enum('payment_status', [
                 'pending',

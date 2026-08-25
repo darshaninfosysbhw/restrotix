@@ -16,7 +16,25 @@ class TenantResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $isTrial = !$this->is_banned && $this->trial_ends_at && now()->lt($this->trial_ends_at);
+        $subscriptionStatus = strtolower((string) ($this->subscription_status ?? ''));
+        if ($subscriptionStatus === '') {
+            if ($this->is_banned) {
+                $subscriptionStatus = 'canceled';
+            } elseif ($this->subscription_ends_at && now()->lt($this->subscription_ends_at)) {
+                $subscriptionStatus = 'trial';
+            } else {
+                $subscriptionStatus = 'active';
+            }
+        }
+
+        $statusLabel = match ($subscriptionStatus) {
+            'trial' => 'Trial',
+            'active' => 'Active',
+            'pending', 'expired' => 'Expired',
+            'canceled', 'cancelled' => 'Canceled',
+            default => ucfirst($subscriptionStatus),
+        };
+
         $joinedDate = $this->created_at;
         $joinedBs = $joinedDate ? $this->toFullBsDate($joinedDate) : '-';
         $adminUser = $this->users->firstWhere('role', 'admin') ?? $this->users->first();
@@ -30,10 +48,14 @@ class TenantResource extends JsonResource
             'email' => optional($adminUser)->email ?? '-',
             'phone' => optional($adminUser)->phone_number ?? '-',
             'city' => optional($this->branches->first())->city ?? '-',
-            'plan' => ucfirst($this->subscription_plan ?? 'starter'),
-            'plan_key' => strtolower($this->subscription_plan ?? 'starter'),
+            'slug' => $this->slug,
+            'plan' => $this->plan?->name ?? ucfirst($this->subscription_plan ?? 'starter'),
+            'plan_id' => $this->plan_id,
+            'plan_key' => $this->plan?->slug ?? strtolower((string) ($this->subscription_plan ?? 'starter')),
+            'billing_cycle' => $this->billing_cycle ?? 'monthly',
             'branches' => $this->branches_count ?? 0,
-            'status' => $this->is_banned ? 'Pending' : ($isTrial ? 'Trial' : 'Active'),
+            'status' => $statusLabel,
+            'status_key' => $subscriptionStatus,
             'joined' => optional($joinedDate)->format('d M Y') ?? '-',
             'joined_bs' => $joinedBs,
         ];

@@ -81,7 +81,8 @@
             @forelse ($tables as $table)
                 <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 card-hover table-card cursor-pointer"
                     data-id="{{ $table['id'] }}" data-name="{{ $table['display_name'] }}"
-                    data-table-number="{{ $table['table_number'] }}" data-orders='@json($table['active_orders'] ?? [])'>
+                    data-table-number="{{ $table['table_number'] }}" data-qr-token="{{ $table['qr_token'] ?? '' }}"
+                    data-orders='@json($table['active_orders'] ?? [])'>
 
                     <div class="flex justify-between items-center mb-1">
                         <h3 class="text-white font-semibold">
@@ -93,6 +94,11 @@
                                 class="waiter-call-bell hidden items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-blue-500/60 bg-blue-500/20 text-blue-300 font-semibold">
                                 <i class="fas fa-bell animate-bounce"></i>
                                 <span class="waiter-call-count"></span>
+                            </span>
+                            <span
+                                class="bill-request-bell hidden items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-orange-500/60 bg-orange-500/20 text-orange-300 font-semibold">
+                                <i class="fas fa-file-invoice-dollar animate-pulse"></i>
+                                <span class="bill-request-count"></span>
                             </span>
                             <span
                                 class="table-status-pill text-xs px-2 py-1 rounded-full
@@ -266,6 +272,7 @@
                             <option value="reserved">Reserved</option>
                             <option value="occupied">Occupied</option>
                             <option value="calling_waiter">Calling Waiter</option>
+                            <option value="request_bill">Request Bill</option>
                             <option value="out_of_service">Out Of Service</option>
                         </select>
                     </div>
@@ -370,6 +377,11 @@
         .waiter-call-active {
             animation: waiterCardNudge 1.2s ease-in-out infinite;
             box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.45), 0 0 18px rgba(59, 130, 246, 0.2);
+        }
+
+        .request-bill-active {
+            animation: waiterCardNudge 1.2s ease-in-out infinite;
+            box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.45), 0 0 18px rgba(249, 115, 22, 0.2);
         }
 
         #printSheet .sheet-title {
@@ -737,11 +749,14 @@
             const listArea = document.getElementById('activeOrdersList');
             const ALERT_STORAGE_KEY = 'table_order_activity_v1';
             const WAITER_ALERT_STORAGE_KEY = 'table_waiter_call_activity_v1';
+            const BILL_ALERT_STORAGE_KEY = 'table_bill_request_activity_v1';
+            const EMPTY_ORDERS_ICON_HTML = @json(trim(view('core.components.table.partials.empty-orders-icon')->render()));
             window.currentOpenTable = null;
             let activeFetchController = null;
             let activeRequestId = 0;
             let tableOrderActivity = {};
             let tableWaiterCallActivity = {};
+            let tableBillRequestActivity = {};
 
             function normalizeTableNum(tableNum) {
                 return String(tableNum ?? '');
@@ -771,6 +786,18 @@
                 localStorage.setItem(WAITER_ALERT_STORAGE_KEY, JSON.stringify(tableWaiterCallActivity));
             }
 
+            function loadBillRequestActivity() {
+                try {
+                    tableBillRequestActivity = JSON.parse(localStorage.getItem(BILL_ALERT_STORAGE_KEY) || '{}');
+                } catch (e) {
+                    tableBillRequestActivity = {};
+                }
+            }
+
+            function saveBillRequestActivity() {
+                localStorage.setItem(BILL_ALERT_STORAGE_KEY, JSON.stringify(tableBillRequestActivity));
+            }
+
             function formatActivityTime(timestamp) {
                 if (!timestamp) return '';
                 const dt = new Date(timestamp);
@@ -788,12 +815,16 @@
 
                 const activity = tableOrderActivity[normalizedTableNum] || {};
                 const waiterActivity = tableWaiterCallActivity[normalizedTableNum] || {};
+                const billRequestActivity = tableBillRequestActivity[normalizedTableNum] || {};
                 const badge = card.querySelector('.new-order-badge');
                 const activityText = card.querySelector('.last-order-activity');
                 const waiterBell = card.querySelector('.waiter-call-bell');
                 const waiterCount = card.querySelector('.waiter-call-count');
+                const billBell = card.querySelector('.bill-request-bell');
+                const billCount = card.querySelector('.bill-request-count');
                 const unreadCount = Number(activity.unread_count || 0);
                 const waiterUnreadCount = Number(waiterActivity.unread_count || 0);
+                const billUnreadCount = Number(billRequestActivity.unread_count || 0);
 
                 if (badge) {
                     if (unreadCount > 0) {
@@ -835,6 +866,24 @@
                         card.classList.remove('waiter-call-active');
                     }
                 }
+
+                if (billBell) {
+                    if (billUnreadCount > 0) {
+                        billBell.classList.remove('hidden');
+                        billBell.classList.add('flex');
+                        if (billCount) {
+                            billCount.textContent = billUnreadCount > 1 ? `x${billUnreadCount}` : '';
+                        }
+                        card.classList.add('request-bill-active');
+                    } else {
+                        billBell.classList.add('hidden');
+                        billBell.classList.remove('flex');
+                        if (billCount) {
+                            billCount.textContent = '';
+                        }
+                        card.classList.remove('request-bill-active');
+                    }
+                }
             }
 
             function applyAllCardsActivityUi() {
@@ -856,6 +905,19 @@
                 statusPill.textContent = 'Calling waiter';
             };
 
+            window.markTableAsRequestBill = function(tableNum) {
+                const normalizedTableNum = normalizeTableNum(tableNum);
+                const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+                if (!card) return;
+
+                const statusPill = card.querySelector('.table-status-pill');
+                if (!statusPill) return;
+
+                statusPill.className =
+                    'table-status-pill text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400';
+                statusPill.textContent = 'Request bill';
+            };
+
             function markTableActivitySeen(tableNum) {
                 const normalizedTableNum = normalizeTableNum(tableNum);
                 if (!tableOrderActivity[normalizedTableNum]) return;
@@ -871,6 +933,15 @@
 
                 tableWaiterCallActivity[normalizedTableNum].unread_count = 0;
                 saveWaiterCallActivity();
+                applyCardActivityUi(normalizedTableNum);
+            }
+
+            function markBillRequestSeen(tableNum) {
+                const normalizedTableNum = normalizeTableNum(tableNum);
+                if (!tableBillRequestActivity[normalizedTableNum]) return;
+
+                tableBillRequestActivity[normalizedTableNum].unread_count = 0;
+                saveBillRequestActivity();
                 applyCardActivityUi(normalizedTableNum);
             }
 
@@ -896,10 +967,34 @@
                 applyCardActivityUi(normalizedTableNum);
             };
 
+            window.registerBillRequest = function(tableNum) {
+                const normalizedTableNum = normalizeTableNum(tableNum);
+                const existing = tableBillRequestActivity[normalizedTableNum] || {};
+                tableBillRequestActivity[normalizedTableNum] = {
+                    unread_count: Number(existing.unread_count || 0) + 1,
+                    requested_at: new Date().toISOString()
+                };
+                saveBillRequestActivity();
+                applyCardActivityUi(normalizedTableNum);
+            };
+
             function renderLoadingState(tableNum) {
                 listArea.innerHTML = `
                     <div class="text-center p-10 text-gray-500">
                         Loading active orders for Table ${tableNum}...
+                    </div>`;
+            }
+
+            function renderEmptyOrdersState() {
+                return `
+                    <div class="flex min-h-[240px] items-center justify-center px-4 py-10 text-center">
+                        <div>
+                            <div class="mx-auto flex items-center justify-center">
+                                ${EMPTY_ORDERS_ICON_HTML}
+                            </div>
+                            <h3 class="mt-4 text-base font-semibold text-gray-700 dark:text-gray-100">No active orders</h3>
+                            <p class="mt-1 text-sm text-gray-500">Fresh orders will appear here when the table starts cooking.</p>
+                        </div>
                     </div>`;
             }
 
@@ -942,26 +1037,54 @@
                     }
 
                     console.error("Order fetch error:", err);
-                    listArea.innerHTML =
-                        `<div class="text-center p-10 text-red-400">Unable to load active orders</div>`;
+                    listArea.innerHTML = `
+                        <div class="flex min-h-[240px] items-center justify-center px-4 py-10 text-center">
+                            <div>
+                                <i class="fas fa-triangle-exclamation text-2xl text-red-400"></i>
+                                <div class="mt-3 text-sm text-red-400">Unable to load active orders</div>
+                            </div>
+                        </div>`;
                 }
             };
 
             function renderOrdersToDrawer(tableNum, orders) {
                 if (!orders || orders.length === 0) {
-                    listArea.innerHTML = `<div class="text-center p-10 text-gray-600">No active orders</div>`;
+                    listArea.innerHTML = renderEmptyOrdersState();
                     return;
                 }
 
                 let html = '';
                 orders.forEach(order => {
                     order.items.forEach(item => {
+                        const addons = item.order_item_addons || item.orderItemAddons || [];
+                        const addonsHtml = addons.length
+                            ? `<div class="mt-1.5 text-[11px] text-orange-400/90 leading-5 pl-1">` +
+                          addons.map(addon => {
+                              const qty = Number(addon.quantity || 1);
+                              const qtyText = qty > 1 ? ` x${qty}` : '';
+                              const parsePrice = (value) => {
+                                  const cleaned = String(value ?? '').replace(/,/g, '').trim();
+                                  const number = Number(cleaned);
+                                  return Number.isFinite(number) ? number : 0;
+                              };
+                              const storedPrice = parsePrice(addon.price);
+                              const priceValue = storedPrice > 0
+                                  ? storedPrice
+                                  : parsePrice(addon.masterAddon?.price ?? addon.menu_item_addon_price ?? 0);
+                              const price = priceValue.toFixed(2);
+                              const name = addon.addon_name ?? addon.name ?? addon.masterAddon?.name ?? 'Addon';
+                              return `<div class="flex items-center justify-between gap-3"><span>${name}${qtyText}</span><span class="text-orange-300">₹${price}</span></div>`;
+                          }).join('') +
+                              `</div>`
+                            : '';
+
                         html += `
                         <div class="flex justify-between items-center p-3 rounded-xl border border-gray-800 mb-2">
                             <div class="flex flex-col">
                                 <span class="text-sm font-medium text-gray-200">
                                     <span class="text-orange-500 font-bold">${item.quantity}x</span> ${item.item_name}
                                 </span>
+                                ${addonsHtml}
                                 <span class="text-[10px] text-gray-500 mt-0.5">Table ${tableNum} • ${order.status}</span>
                             </div>
                             <div class="h-2 w-2 rounded-full bg-orange-500 animate-pulse"></div>
@@ -978,10 +1101,13 @@
 
                     const tableNum = card.dataset.tableNumber;
                     window.currentOpenTable = tableNum;
+                    window.currentOpenTableId = card.dataset.id || null;
+                    window.currentOpenTableQrToken = card.dataset.qrToken || null;
                     document.getElementById('drawerTitle').innerText = card.dataset.name;
                     renderLoadingState(tableNum);
                     markTableActivitySeen(tableNum);
                     markWaiterCallSeen(tableNum);
+                    markBillRequestSeen(tableNum);
 
                     // Har click par server se fresh data lao
                     window.refreshFromServer(tableNum);
@@ -1006,6 +1132,7 @@
 
             loadTableOrderActivity();
             loadWaiterCallActivity();
+            loadBillRequestActivity();
             applyAllCardsActivityUi();
         })();
     </script>

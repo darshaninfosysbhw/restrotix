@@ -8,21 +8,8 @@ use Illuminate\Http\Request;
 
 class RegisterTenantController extends Controller
 {
-    public function index()
-    {
-        // मान लो डिफॉल्ट करेंसी INR (ID: 1) है
-        $currencyId = session('currency_id', 1);
-
-        $plans = Plan::with(['services', 'prices'])
-            ->where('is_active', true)
-            ->get()
-            ->sortBy(function ($plan) use ($currencyId) {
-                $priceRecord = $plan->getPriceForCurrency($currencyId);
-                return $priceRecord ? $priceRecord->monthly_price : 0;
-            });
-
-        return view('index', compact('plans'));
-    }
+    // Home logic moved to App\Http\Controllers\HomeController@index
+    // This controller continues to own tenant registration related views.
 
     public function showPricing()
     {

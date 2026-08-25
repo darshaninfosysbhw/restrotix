@@ -20,7 +20,7 @@ class LoginController extends Controller
             'password' => ['required'],
         ]);
 
-        if (Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
 
             $user = Auth::user();
@@ -29,14 +29,33 @@ class LoginController extends Controller
             // 1. Tenant Check (Agar company banned hai toh logout kar do)
             if ($user->tenant && $user->tenant->is_banned) {
                 Auth::logout();
-                return back()->withErrors(['email' => 'आपकी कंपनी का एक्सेस बंद कर दिया गया है।']);
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                return redirect()->route('login')
+                    ->withInput(['email' => $request->email])
+                    ->with('toast', [
+                        [
+                            'type' => 'error',
+                            'message' => 'Your restaurant access has been cancelled. Please contact our support team.',
+                            'duration' => 6000,
+                        ],
+                    ]);
             }
 
             // 2. --- REDIRECTION LOGIC (Standard Industry Level) ---
 
             // SuperAdmin ke liye alag raasta
             if ($role === 'superadmin') {
-                return redirect()->intended(route('superadmin.dashboard'));
+                // SuperAdmin should always land on the global dashboard,
+                // even if the browser still remembers a tenant route.
+                $request->session()->forget([
+                    'impersonated_by',
+                    'active_tenant_id',
+                    'url.intended',
+                ]);
+
+                return redirect()->route('superadmin.dashboard');
             }
 
             // Chef ke liye direct KDS Module ka raasta

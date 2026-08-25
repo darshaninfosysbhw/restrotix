@@ -28,4 +28,9 @@ class PaymentGateway extends Model
     {
         return $query->where('is_active', true);
     }
+
+    public function branchConfigurations()
+    {
+        return $this->hasMany(BranchPaymentGateway::class, 'payment_gateway_id');
+    }
 }

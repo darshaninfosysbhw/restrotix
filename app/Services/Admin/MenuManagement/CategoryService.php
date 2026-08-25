@@ -8,10 +8,7 @@ use Illuminate\Support\Facades\Storage;
 
 class CategoryService
 {
-    /**
-     * Fetch all parent categories with their children (Tree Structure)
-     */
-    public function getAllCategories($tenantId)
+    public function getCategoryQuery($tenantId)
     {
         return MenuCategory::query()
             ->where('tenant_id', $tenantId)
@@ -33,8 +30,46 @@ class CategoryService
                     ])
                     ->with('branch:id,branch_name'),
             ])
-            ->orderBy('sort_order', 'asc')
-            ->get();
+            ->orderBy('sort_order', 'asc');
+    }
+
+    /**
+     * Fetch all parent categories with their children (Tree Structure)
+     */
+    public function getAllCategories($tenantId)
+    {
+        return $this->getCategoryQuery($tenantId)->get();
+    }
+
+    public function getPaginatedCategories($tenantId, int $perPage = 25, ?string $search = null)
+    {
+        $query = $this->getCategoryQuery($tenantId);
+
+        $search = trim((string) $search);
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $like = '%' . $search . '%';
+
+                $builder->where('name', 'like', $like)
+                    ->orWhere('code', 'like', $like)
+                    ->orWhere('slug', 'like', $like)
+                    ->orWhereHas('branch', function ($branchQuery) use ($like) {
+                        $branchQuery->where('branch_name', 'like', $like);
+                    })
+                    ->orWhereHas('children', function ($childQuery) use ($like) {
+                        $childQuery->where('name', 'like', $like)
+                            ->orWhere('code', 'like', $like)
+                            ->orWhere('slug', 'like', $like)
+                            ->orWhereHas('branch', function ($branchQuery) use ($like) {
+                                $branchQuery->where('branch_name', 'like', $like);
+                            });
+                    });
+            });
+        }
+
+        return $query
+            ->paginate($perPage)
+            ->withQueryString();
     }
 
     public function getParentCategories($tenantId)

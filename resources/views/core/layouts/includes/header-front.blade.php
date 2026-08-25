@@ -3,12 +3,8 @@
     <div class="container mx-auto px-4 sm:px-6 py-4">
         <div class="flex justify-between items-center">
             <div class="flex items-center">
-                <div
-                    class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg gradient-orange flex items-center justify-center mr-2 sm:mr-3">
-                    <i class="fas fa-utensils text-white text-sm sm:text-base"></i>
-                </div>
-                <a href="{{ url('/') }}" class="text-xl sm:text-2xl font-bold text-gray-900">
-                    RestoChain<span class="text-orange-500">ERP</span>
+                <a href="{{ url('/') }}" class="mr-2 sm:mr-3 inline-flex items-center">
+                    <img src="{{ asset('images/logo.png') }}" alt="Restrotix" class="h-8 w-auto sm:h-10">
                 </a>
             </div>
 
@@ -106,11 +102,12 @@
             <div class="flex items-center space-x-3 sm:space-x-4">
                 <a href="{{ route('login') }}"
                     class="font-medium text-gray-700 hover:text-orange-500 transition hidden md:block">Login</a>
-                <button
-                    class="bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 sm:py-2.5 sm:px-6 rounded-lg transition shadow-md text-sm sm:text-base">
+                <button type="button"
+                    class="bg-[#a52a28] hover:bg-[#851817] text-white font-medium py-2 px-4 sm:py-2.5 sm:px-6 rounded-lg transition shadow-md text-sm sm:text-base">
                     Get Started
                 </button>
-                <button id="mobile-menu-button" class="md:hidden text-gray-700">
+                <button id="mobile-menu-button" type="button" aria-controls="mobile-menu" aria-expanded="false"
+                    class="md:hidden text-gray-700">
                     <i class="fas fa-bars text-xl"></i>
                 </button>
             </div>
@@ -128,7 +125,7 @@
                     RestoChain<span class="text-orange-500">ERP</span>
                 </a>
             </div>
-            <button id="close-menu" class="text-gray-700">
+            <button id="close-menu" type="button" class="text-gray-700">
                 <i class="fas fa-times text-xl"></i>
             </button>
         </div>
@@ -190,7 +187,7 @@
         </nav>
 
         <button
-            class="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-3 rounded-lg transition shadow-md mt-8">
+            class="w-full bg-[#a52a28] hover:bg-[#851817] text-white font-medium py-3 rounded-lg transition shadow-md mt-8">
             Get Started
         </button>
     </div>

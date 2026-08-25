@@ -7,14 +7,6 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class PlanResource extends JsonResource
 {
-    private const FEATURE_KEYS = [
-        'inventory_management',
-        'ai_analytics',
-        'staff_management',
-        'kitchen_display_system',
-        'whatsapp_integration',
-    ];
-
     /**
      * Transform the resource into an array.
      */
@@ -24,7 +16,7 @@ class PlanResource extends JsonResource
         $defaultCurrencyCode = $request->attributes->get('default_currency_code');
         $defaultCurrencySymbol = $request->attributes->get('default_currency_symbol');
 
-        $features = $this->normalizeFeatures($this->features ?? []);
+        $features = $this->resolveSelectedFeatures();
         $enabledFeatures = collect($features)
             ->filter(fn($enabled) => (bool) $enabled)
             ->keys()
@@ -48,6 +40,8 @@ class PlanResource extends JsonResource
             'id' => (int) $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'summary' => (string) ($this->summary ?? ''),
+            'marketing_summary' => (string) $this->marketing_summary,
             'max_branches' => (int) $this->max_branches,
             'trial_days' => (int) $this->trial_days,
             'status' => $this->is_active ? 'Active' : 'Inactive',
@@ -55,6 +49,7 @@ class PlanResource extends JsonResource
             'tenants_count' => (int) ($this->tenants_count ?? 0),
             'features' => $features,
             'enabled_features' => $enabledFeatures,
+            'default_currency_id' => $defaultCurrencyId ? (int) $defaultCurrencyId : null,
             'default_currency_code' => $defaultCurrencyCode,
             'default_currency_symbol' => $defaultCurrencySymbol,
             'default_monthly_price' => $defaultPrice['monthly'] ?? null,
@@ -63,30 +58,38 @@ class PlanResource extends JsonResource
         ];
     }
 
-    private function normalizeFeatures($rawFeatures): array
+    private function resolveSelectedFeatures(): array
     {
-        $normalized = array_fill_keys(self::FEATURE_KEYS, false);
+        $selectedServices = $this->relationLoaded('services')
+            ? $this->services
+            : collect();
 
-        if (!is_array($rawFeatures)) {
-            return $normalized;
+        if ($selectedServices->isNotEmpty()) {
+            return $selectedServices
+                ->filter(fn ($service) => !empty($service?->slug))
+                ->mapWithKeys(fn ($service) => [(string) $service->slug => true])
+                ->all();
+        }
+
+        $rawFeatures = $this->features ?? [];
+
+        if (!is_array($rawFeatures) || empty($rawFeatures)) {
+            return [];
         }
 
         $isList = array_values($rawFeatures) === $rawFeatures;
 
         if ($isList) {
-            foreach ($rawFeatures as $featureKey) {
-                if (array_key_exists($featureKey, $normalized)) {
-                    $normalized[$featureKey] = true;
-                }
-            }
-
-            return $normalized;
+            return collect($rawFeatures)
+                ->filter(fn ($featureKey) => is_string($featureKey) && trim($featureKey) !== '')
+                ->mapWithKeys(fn ($featureKey) => [trim((string) $featureKey) => true])
+                ->all();
         }
 
-        foreach (self::FEATURE_KEYS as $key) {
-            $normalized[$key] = filter_var($rawFeatures[$key] ?? false, FILTER_VALIDATE_BOOLEAN);
-        }
-
-        return $normalized;
+        return collect($rawFeatures)
+            ->filter(fn ($enabled) => filter_var($enabled, FILTER_VALIDATE_BOOLEAN))
+            ->keys()
+            ->mapWithKeys(fn ($featureKey) => [(string) $featureKey => true])
+            ->all();
     }
 }

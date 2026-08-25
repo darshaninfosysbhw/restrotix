@@ -15,11 +15,13 @@ class Tenant extends Model
     protected $fillable = [
         'plan_id',
         'country_id',
+        'currency_id',
         'company_name',
         'slug',
         'owner_name',
         'logo',
         'subscription_status',
+        'billing_cycle',
         'subscription_ends_at', // Main Expiry Date
         'is_banned',
     ];
@@ -27,6 +29,7 @@ class Tenant extends Model
     protected $casts = [
         'subscription_ends_at' => 'datetime',
         'country_id' => 'integer',
+        'currency_id' => 'integer',
         'plan_id' => 'integer',
         'is_banned' => 'boolean',
     ];
@@ -50,12 +53,22 @@ class Tenant extends Model
         return $this->belongsTo(Country::class);
     }
 
+    public function currency()
+    {
+        return $this->belongsTo(Currency::class);
+    }
+
     public function services()
     {
         return $this->belongsToMany(Service::class, 'tenant_service')
             ->using(TenantService::class)
             ->withPivot('status', 'expires_at')
             ->withTimestamps();
+    }
+
+    public function branchPaymentGateways()
+    {
+        return $this->hasMany(BranchPaymentGateway::class);
     }
 
     // --- Scopes ---
@@ -86,6 +99,20 @@ class Tenant extends Model
      */
     public function isExpired(): bool
     {
+        $status = strtolower((string) ($this->subscription_status ?? ''));
+
+        if ($status === 'active') {
+            return false;
+        }
+
+        if ($status === 'expired') {
+            return true;
+        }
+
+        if ($this->is_banned) {
+            return true;
+        }
+
         if (!$this->subscription_ends_at) return true;
         return now()->greaterThan($this->subscription_ends_at);
     }
@@ -122,8 +149,10 @@ class Tenant extends Model
 
     public function scopePending(Builder $query): Builder
     {
-        return $query->where('subscription_status', 'pending')
-            ->where('is_banned', false);
+        return $query->where(function (Builder $subQuery) {
+            $subQuery->where('is_banned', true)
+                ->orWhere('subscription_status', 'pending');
+        });
     }
 
     public function scopeBanned(Builder $query): Builder

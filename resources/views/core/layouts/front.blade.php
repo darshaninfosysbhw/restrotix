@@ -11,6 +11,7 @@
 </head>
 
 <body class="text-gray-800">
+    <x-toast-manager />
     @include('core.layouts.includes.header-front')
     @yield('content')
     @include('core.layouts.includes.footer-front')

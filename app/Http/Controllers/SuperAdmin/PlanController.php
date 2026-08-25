@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\SuperAdmin\PlanResource;
 use App\Models\Currency;
 use App\Models\Plan;
+use App\Models\Service;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
@@ -14,14 +15,6 @@ use Illuminate\Validation\Rule;
 
 class PlanController extends Controller
 {
-    private const FEATURE_KEYS = [
-        'inventory_management',
-        'ai_analytics',
-        'staff_management',
-        'kitchen_display_system',
-        'whatsapp_integration',
-    ];
-
     public function index(Request $request)
     {
         $activeCurrencies = Currency::query()
@@ -34,9 +27,10 @@ class PlanController extends Controller
 
         $plans = Plan::query()
             ->withCount('tenants')
-            ->with(['prices.currency'])
+            ->with(['prices.currency', 'services'])
             ->latest()
             ->get();
+        $featureServices = $this->featureServices();
 
         $request->attributes->set('default_currency_id', $defaultCurrency?->id);
         $request->attributes->set('default_currency_code', $defaultCurrency?->code);
@@ -55,14 +49,15 @@ class PlanController extends Controller
             'plans' => $plansMapped,
             'planStats' => $planStats,
             'currencies' => $activeCurrencies,
-            'featureKeys' => self::FEATURE_KEYS,
+            'featureServices' => $featureServices,
         ]);
     }
 
     public function store(Request $request)
     {
         $activeCurrencyIds = $this->activeCurrencyIds();
-        $validator = $this->validatePlanRequest($request, $activeCurrencyIds);
+        $featureSlugs = $this->featureServiceSlugs();
+        $validator = $this->validatePlanRequest($request, $activeCurrencyIds, $featureSlugs);
 
         if ($validator->fails()) {
             return redirect()->back()->withInput()->with('toast', [[
@@ -73,18 +68,22 @@ class PlanController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($request, $validator, $activeCurrencyIds) {
+            DB::transaction(function () use ($request, $validator, $activeCurrencyIds, $featureSlugs) {
                 $payload = $validator->validated();
+                $selectedFeatureSlugs = $this->selectedFeatureSlugs($payload['features'] ?? [], $featureSlugs);
 
                 $plan = Plan::create([
                     'name' => $payload['name'],
                     'slug' => $this->buildUniqueSlug($payload['name']),
+                    'summary' => trim((string) ($payload['summary'] ?? '')) ?: null,
                     'max_branches' => $payload['max_branches'],
                     'trial_days' => $payload['trial_days'] ?? 0,
-                    'features' => $this->normalizeFeatures($payload['features'] ?? []),
+                    'features' => $this->normalizeFeatures($selectedFeatureSlugs, $featureSlugs),
                     'is_active' => $payload['status'] === 'Active',
                     'is_recommended' => $request->boolean('is_recommended'),
                 ]);
+
+                $this->syncPlanServices($plan, $selectedFeatureSlugs);
 
                 if ($plan->is_recommended) {
                     Plan::where('id', '!=', $plan->id)->update(['is_recommended' => false]);
@@ -118,7 +117,8 @@ class PlanController extends Controller
     public function update(Request $request, Plan $plan)
     {
         $activeCurrencyIds = $this->activeCurrencyIds();
-        $validator = $this->validatePlanRequest($request, $activeCurrencyIds, $plan);
+        $featureSlugs = $this->featureServiceSlugs();
+        $validator = $this->validatePlanRequest($request, $activeCurrencyIds, $featureSlugs, $plan);
 
         if ($validator->fails()) {
             return redirect()->back()->withInput()->with('toast', [[
@@ -129,20 +129,24 @@ class PlanController extends Controller
         }
 
         try {
-            DB::transaction(function () use ($request, $validator, $plan, $activeCurrencyIds) {
+            DB::transaction(function () use ($request, $validator, $plan, $activeCurrencyIds, $featureSlugs) {
                 $payload = $validator->validated();
+                $selectedFeatureSlugs = $this->selectedFeatureSlugs($payload['features'] ?? [], $featureSlugs);
 
                 $isRecommended = $request->boolean('is_recommended');
 
                 $plan->update([
                     'name' => $payload['name'],
                     'slug' => $this->buildUniqueSlug($payload['name'], $plan->id),
+                    'summary' => trim((string) ($payload['summary'] ?? '')) ?: null,
                     'max_branches' => $payload['max_branches'],
                     'trial_days' => $payload['trial_days'] ?? 0,
-                    'features' => $this->normalizeFeatures($payload['features'] ?? []),
+                    'features' => $this->normalizeFeatures($selectedFeatureSlugs, $featureSlugs),
                     'is_active' => $payload['status'] === 'Active',
                     'is_recommended' => $isRecommended,
                 ]);
+
+                $this->syncPlanServices($plan, $selectedFeatureSlugs);
 
                 if ($isRecommended) {
                     Plan::where('id', '!=', $plan->id)->update(['is_recommended' => false]);
@@ -200,10 +204,11 @@ class PlanController extends Controller
         }
     }
 
-    private function validatePlanRequest(Request $request, array $activeCurrencyIds, ?Plan $plan = null)
+    private function validatePlanRequest(Request $request, array $activeCurrencyIds, array $featureSlugs, ?Plan $plan = null)
     {
         $rules = [
             'name' => ['required', 'string', 'max:255', Rule::unique('plans', 'name')->ignore($plan?->id)],
+            'summary' => 'nullable|string|max:255',
             'trial_days' => 'required|integer|min:0',
             'max_branches' => 'required|integer|min:1',
             'status' => 'required|in:Active,Inactive',
@@ -211,7 +216,7 @@ class PlanController extends Controller
             'features' => 'required|array',
         ];
 
-        foreach (self::FEATURE_KEYS as $featureKey) {
+        foreach ($featureSlugs as $featureKey) {
             $rules["features.$featureKey"] = 'nullable|boolean';
         }
 
@@ -223,15 +228,50 @@ class PlanController extends Controller
         return Validator::make($request->all(), $rules);
     }
 
-    private function normalizeFeatures(array $rawFeatures): array
+    private function normalizeFeatures(array $selectedFeatureSlugs, array $featureSlugs): array
     {
-        $normalized = [];
+        $normalized = array_fill_keys($featureSlugs, false);
 
-        foreach (self::FEATURE_KEYS as $key) {
-            $normalized[$key] = filter_var($rawFeatures[$key] ?? false, FILTER_VALIDATE_BOOLEAN);
+        foreach ($featureSlugs as $key) {
+            $normalized[$key] = in_array($key, $selectedFeatureSlugs, true);
         }
 
         return $normalized;
+    }
+
+    private function featureServices()
+    {
+        return Service::query()
+            ->orderByRaw("CASE WHEN status = 'Active' THEN 0 ELSE 1 END")
+            ->orderBy('name')
+            ->get(['id', 'name', 'slug', 'status']);
+    }
+
+    private function featureServiceSlugs(): array
+    {
+        return $this->featureServices()
+            ->pluck('slug')
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    private function selectedFeatureSlugs(array $rawFeatures, array $featureSlugs): array
+    {
+        return collect($featureSlugs)
+            ->filter(fn (string $featureSlug) => filter_var($rawFeatures[$featureSlug] ?? false, FILTER_VALIDATE_BOOLEAN))
+            ->values()
+            ->all();
+    }
+
+    private function syncPlanServices(Plan $plan, array $selectedFeatureSlugs): void
+    {
+        $serviceIds = Service::query()
+            ->whereIn('slug', $selectedFeatureSlugs)
+            ->pluck('id')
+            ->all();
+
+        $plan->services()->sync($serviceIds);
     }
 
     private function activeCurrencyIds(): array

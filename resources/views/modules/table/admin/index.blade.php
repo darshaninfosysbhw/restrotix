@@ -14,11 +14,13 @@
                     <p class="text-sm text-gray-400 mt-2">Manage restaurant tables & QR access</p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 flex gap-4">
+                <div class="flex flex-wrap items-center justify-end gap-3">
+                    @include('core.components.table.table-sound-toggle')
+
                     <button id="printAllQrBtn" type="button"
                         class="inline-flex justify-center items-center gap-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 px-4 py-2.5 rounded-lg text-sm">
                         <i class="fas fa-print"></i>
-                        Print All QR
+                        Print All Posters
                     </button>
 
                     <button id="openTableModal" type="button"

@@ -11,7 +11,8 @@
 
 </head>
 
-<body class="text-slate-200 antialiased sa-theme-dark">
+<body class="light-theme text-slate-200 antialiased sa-theme-dark">
+    @include('core.layouts.includes.theme-bootstrap')
     @include('core.layouts.includes.sidebar-superadmin')
     @include('core.layouts.includes.header-superadmin')
     @yield('content')

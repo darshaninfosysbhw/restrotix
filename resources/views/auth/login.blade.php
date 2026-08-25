@@ -11,15 +11,13 @@
 
 <body class="bg-gradient-to-br from-orange-100 via-orange-200 to-orange-300 min-h-screen flex flex-col font-sans">
 
-    <header class="p-6">
-        <div class="flex items-center gap-2">
-            <div class="bg-orange-600 p-2 px-3 rounded-lg">
-                <i class="fas fa-utensils text-white text-xl"></i>
-            </div>
-            <a href="{{ url('/') }}" class="text-2xl font-bold text-gray-800 tracking-tight  transition">
-                RestoChain <span class="text-orange-600">LOGIN</span>
-            </a>
+    <x-toast-manager />
 
+    <header class="p-6">
+        <div class="flex items-center">
+            <a href="{{ url('/') }}" class="mr-2 sm:mr-3 inline-flex items-center">
+                <img src="{{ asset('images/logo.png') }}" alt="Restrotix" class="h-8 w-auto sm:h-10">
+            </a>
         </div>
     </header>
 
@@ -51,8 +49,11 @@
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
                                 Email ID <span class="text-red-500">*</span>
                             </label>
-                            <input type="email" name="email" placeholder="Enter Email Here"
+                            <input type="email" name="email" value="{{ old('email') }}" placeholder="Enter Email Here"
                                 class="w-full px-4 py-3 rounded-lg border border-gray-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 outline-none transition-all">
+                            @error('email')
+                                <p class="mt-2 text-xs font-medium text-red-500">{{ $message }}</p>
+                            @enderror
                         </div>
 
                         <div>
@@ -68,18 +69,28 @@
                                     <i id="eyeIcon" class="far fa-eye"></i>
                                 </button>
                             </div>
+                            @error('password')
+                                <p class="mt-2 text-xs font-medium text-red-500">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <label class="inline-flex items-center gap-2 text-sm text-gray-600">
+                                <input type="checkbox" name="remember"
+                                    class="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-400"
+                                    @checked(old('remember'))>
+                                <span>Remember me</span>
+                            </label>
+
+                            <a href="#"
+                                class="text-[#ff743c] font-medium hover:text-[#e65a2b] hover:underline">Forgot
+                                password?</a>
                         </div>
 
                         <button type="submit"
                             class="w-full bg-[#ff743c] hover:bg-[#e65a2b] text-white font-semibold py-3 rounded-lg transition-all shadow-lg active:scale-[0.98]">
                             Login
                         </button>
-
-                        <div class="text-center">
-                            <a href="#"
-                                class="text-[#ff743c] font-medium hover:text-[#e65a2b] hover:underline">Forgot
-                                password?</a>
-                        </div>
                     </form>
 
                     <script>

@@ -43,7 +43,13 @@ class CheckServiceAddon
 
         if (!$hasService) {
             return redirect()->route('admin.dashboard')
-                ->with('error', 'यह सर्विस (' . ucfirst($serviceName) . ') आपके एक्टिव प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।');
+                ->with('toast', [
+                    [
+                        'type' => 'error',
+                        'message' => 'यह सर्विस (' . ucfirst($serviceName) . ') आपके एक्टिव प्लान में नहीं है। कृपया Add-on खरीदें।',
+                        'duration' => 6000,
+                    ],
+                ]);
         }
 
         return $next($request);

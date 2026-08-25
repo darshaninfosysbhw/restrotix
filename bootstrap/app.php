@@ -3,7 +3,11 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use App\Support\ForbiddenRedirector;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -42,5 +46,35 @@ return Application::configure(basePath: dirname(__DIR__))
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (AuthorizationException $e, Request $request) {
+            return app(ForbiddenRedirector::class)->handle($request, $e->getMessage() ?: null);
+        });
+
+        $exceptions->render(function (HttpExceptionInterface $e, Request $request) {
+            $status = (int) $e->getStatusCode();
+
+            if ($status === 419) {
+                if ($request->expectsJson()) {
+                    return response()->json([
+                        'message' => 'Your session has expired. Please login again.',
+                    ], 419);
+                }
+
+                return redirect()
+                    ->route('login')
+                    ->with('toast', [
+                        [
+                            'type' => 'warning',
+                            'message' => 'Your session has expired. Please login again.',
+                            'duration' => 6000,
+                        ],
+                    ]);
+            }
+
+            if ($status !== 403) {
+                return null;
+            }
+
+            return app(ForbiddenRedirector::class)->handle($request, $e->getMessage() ?: null);
+        });
     })->create();

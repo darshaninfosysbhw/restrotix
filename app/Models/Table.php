@@ -59,6 +59,11 @@ class Table extends Model
         return $this->hasMany(Order::class, 'table_id');
     }
 
+    public function accessSessions()
+    {
+        return $this->hasMany(TableAccessSession::class, 'table_id');
+    }
+
     /**
      * Helper: Table ka live QR Link nikalne ke liye
      */

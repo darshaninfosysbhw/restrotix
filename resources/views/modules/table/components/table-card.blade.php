@@ -1,7 +1,12 @@
 @forelse ($tables as $table)
     <div class="bg-gray-800 border border-gray-700 rounded-lg p-4 card-hover table-card cursor-pointer"
         data-id="{{ $table['id'] }}" data-name="{{ $table['display_name'] }}"
-        data-table-number="{{ $table['table_number'] }}" data-orders='@json($table['active_orders'] ?? [])'>
+        data-table-number="{{ $table['table_number'] }}" data-qr-token="{{ $table['qr_token'] ?? '' }}"
+        data-branch-id="{{ $table['branch_id'] ?? 0 }}"
+        data-branch-tax-setting="{{ $table['branch_tax_setting'] ?? 'exclusive' }}"
+        data-branch-tax-rate="{{ $table['branch_tax_rate'] ?? 0 }}"
+        data-branch-tax-label="{{ $table['branch_tax_label'] ?? 'Tax' }}"
+        data-orders='@json($table['active_orders'] ?? [])'>
 
         <div class="flex justify-between items-center mb-1">
             <h3 class="text-white font-semibold">
@@ -12,6 +17,11 @@
                     class="waiter-call-bell hidden items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-blue-500/60 bg-blue-500/20 text-blue-300 font-semibold">
                     <i class="fas fa-bell animate-bounce"></i>
                     <span class="waiter-call-count"></span>
+                </span>
+                <span
+                    class="bill-request-bell hidden items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-orange-500/60 bg-orange-500/20 text-orange-300 font-semibold">
+                    <i class="fas fa-file-invoice-dollar animate-pulse"></i>
+                    <span class="bill-request-count"></span>
                 </span>
                 <span
                     class="table-status-pill text-xs px-2 py-1 rounded-full
@@ -39,13 +49,15 @@
         <div class="flex items-center justify-between">
 
             <img class="qrPreview cursor-pointer border border-gray-600 rounded-lg p-2 card-hover"
-                src="{{ $table['qr_code_inline'] }}" data-name="Table {{ $table['table_number'] }}"
+                src="{{ $table['qr_code_inline'] }}" alt="Table {{ $table['table_number'] }} QR"
+                data-name="Table {{ $table['table_number'] }}" data-table-number="{{ $table['table_number'] }}"
                 data-qr="{{ $table['qr_code_inline'] }}" />
 
             <div class="flex gap-2">
 
                 <button class="viewQrBtn text-xs px-2 py-1 border border-gray-600 rounded-lg text-gray-300"
-                    data-name="Table {{ $table['table_number'] }}" data-qr="{{ $table['qr_code_inline'] }}">
+                    data-name="Table {{ $table['table_number'] }}" data-table-number="{{ $table['table_number'] }}"
+                    data-qr="{{ $table['qr_code_inline'] }}">
                     View
                 </button>
 

@@ -1,0 +1,25 @@
+                                                                                   TAX INVOICE
+      Food Panda
+      Food Panda - Main
+      Butwal, Lumbani (Nepal)
+      Phone: 9876543210 | Email: foodpanda@gmail.com
+                                                                                           PAID
+      PAN / VAT No.: N/A
+                                         TAX INVOICE
+      INVOICE NO.                                                                     INVOICE DATE
+      INV-20260812-AJDDEE                                                 12 Aug 2026, 12:31 PM
+      TABLE NO.                                                                          ORDER ID
+      T-01                                                                 ORD-6A7C67BAAD743
+      ORDER SUMMARY
+       Item                                                          Qty         Rate      Amount
+       Hot Coffee                                                     1         150.00      140.00
+       Masala Chai                                                    1          80.00       70.00
+      Subtotal                                                                             ₹189.30
+      VAT (13%)                                                                              ₹0.00
+      Total Payable                                                                      ₹189.30
+      Payment Mode                                                                            Paid
+      Tender Amount                                                                        ₹190.00
+      Change to Return                                                                       ₹0.70
+      Amount in words: One Hundred Eighty Nine Rupees Only
+                                              THANK YOU
+                                        Thank you for your visit! Visit again

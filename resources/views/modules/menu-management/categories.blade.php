@@ -95,6 +95,10 @@
 </style>
 
 @section('content')
+    @php
+        $categoryPaginator = $categoryPaginator ?? null;
+    @endphp
+
     <div class="flex-1 overflow-y-auto p-6 bg-gray-900 space-y-6">
         <div class="bg-gray-800 border border-gray-700 rounded-xl p-5 md:p-6">
             <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -155,11 +159,30 @@
         </div>
 
         <div class="bg-gray-800 border border-gray-700 rounded-xl p-5">
-            <div class="flex items-center gap-2 mb-4">
-                <span class="text-sm text-gray-400">All Branches</span>
-                <span class="px-2.5 py-1 rounded-full text-xs bg-orange-500/10 text-orange-500 border border-orange-500/30">
-                    Total : {{ $stats['total'] ?? 0 }}
-                </span>
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-sm text-gray-400">All Categories</span>
+                    <span
+                        class="px-2.5 py-1 rounded-full text-xs bg-orange-500/10 text-orange-500 border border-orange-500/30">
+                        Total : {{ $stats['total'] ?? 0 }}
+                    </span>
+                </div>
+
+                <form id="categorySearchForm" method="GET" action="{{ route('admin.menu.categories.index') }}"
+                    class="flex flex-col sm:flex-row sm:items-center gap-2 w-full lg:w-auto">
+                    <div class="relative w-full sm:w-72">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <input id="categoryTableSearch" name="search" type="text" value="{{ request('search') }}"
+                            placeholder="Search category, code, branch..."
+                            class="w-full bg-gray-900 text-sm border border-gray-700 rounded-lg pl-9 pr-3 py-2 text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500/50">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <a href="{{ route('admin.menu.categories.index') }}"
+                            class="px-3 py-2 rounded-lg text-xs bg-white/5 hover:bg-white/10 text-gray-300 border border-white/10 transition">
+                            Reset
+                        </a>
+                    </div>
+                </form>
             </div>
 
             <div class="overflow-x-auto overflow-y-visible">
@@ -181,7 +204,9 @@
                                 $parentHasChildren = !empty($parentChildren);
                             @endphp
                             <tr class="hover:bg-white/5 transition group">
-                                <td class="py-4 px-4">{{ $loop->iteration }}</td>
+                                <td class="py-4 px-4">
+                                    {{ !empty($categoryPaginator) && $categoryPaginator->firstItem() ? $categoryPaginator->firstItem() + $loop->index : $loop->iteration }}
+                                </td>
 
                                 <td class="py-4 px-6">
                                     <div class="flex items-center gap-3">
@@ -359,6 +384,11 @@
                     </tbody>
                 </table>
             </div>
+            @if (!empty($categoryPaginator))
+                <div class="mt-4 border-t border-gray-700 pt-4">
+                    <x-core::ui.pagination :paginator="$categoryPaginator" label="categories" />
+                </div>
+            @endif
         </div>
     </div>
 
@@ -490,6 +520,8 @@
             const openBtn = document.getElementById('openTableModal');
             const backdrop = document.getElementById('tableModalBackdrop');
             const closeBtns = document.querySelectorAll('#closeTableModal, #closeTableModalBtn');
+            const searchForm = document.getElementById('categorySearchForm');
+            const searchInput = document.getElementById('categoryTableSearch');
             const activeToggle = document.getElementById('isActiveToggle');
             const statusLabel = document.getElementById('statusLabel');
             const modalTitle = document.getElementById('modalTitle');
@@ -662,6 +694,20 @@
                         return;
                     }
                     codeManuallyEdited = true;
+                });
+            }
+
+            if (searchInput && searchForm) {
+                let searchTimer = null;
+
+                searchInput.addEventListener('input', function() {
+                    if (searchTimer) {
+                        window.clearTimeout(searchTimer);
+                    }
+
+                    searchTimer = window.setTimeout(function() {
+                        searchForm.requestSubmit();
+                    }, 300);
                 });
             }
 

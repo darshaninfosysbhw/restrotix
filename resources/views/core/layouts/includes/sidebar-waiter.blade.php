@@ -161,11 +161,26 @@
             @endif --}}
 
 
-            <a href="#"
-                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
-                <i class="fas fa-cog w-5 mr-3"></i>
-                <span class="sidebar-label-text">Settings</span>
-            </a>
+            @if ($userRole == 'admin' || $userRole == 'superadmin')
+                <div class="dropdown-container">
+                    <button
+                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all">
+                        <div class="flex items-center">
+                            <i class="fas fa-cog w-5 mr-3"></i>
+                            <span class="sidebar-label-text">Settings</span>
+                        </div>
+                        <div class="flex items-center sidebar-label-text">
+                            <i class="fas fa-chevron-right text-[10px] transition-transform duration-200 trigger-arrow"></i>
+                        </div>
+                    </button>
+                    <div class="dropdown-menu hidden pl-12 space-y-1">
+                        <a href="{{ route('admin.branches.payment-gateways') }}"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.branches.payment-gateways*') ? 'text-orange-500' : '' }}">
+                            Payment Settings
+                        </a>
+                    </div>
+                </div>
+            @endif
         </nav>
 
         <div class="px-4 py-4 border-t border-gray-700">

@@ -25,7 +25,16 @@ class SetUserCurrency
         }
 
         $userIp = $request->ip();
-        $currencyCode = 'INR'; // डिफ़ॉल्ट
+        $defaultCurrencyCode = Currency::query()
+            ->where('is_default', true)
+            ->where('is_active', true)
+            ->value('code')
+            ?? Currency::query()
+                ->where('is_active', true)
+                ->value('code')
+            ?? 'NPR';
+
+        $currencyCode = $defaultCurrencyCode;
 
         // Localhost टेस्टिंग के लिए (चूंकि तुम अभी नेपाल में हो)
         if ($userIp === '127.0.0.1' || $userIp === '::1') {
@@ -40,12 +49,26 @@ class SetUserCurrency
                     $currencyCode = ($country === 'NP') ? 'NPR' : 'INR';
                 }
             } catch (\Exception $e) {
-                $currencyCode = 'INR';
+                $currencyCode = $defaultCurrencyCode;
             }
         }
 
         // डेटाबेस से ID निकाल कर सेशन में डालो
-        $currency = Currency::where('code', $currencyCode)->first() ?? Currency::where('code', 'INR')->first();
+        $currency = Currency::query()
+            ->where('code', $currencyCode)
+            ->where('is_active', true)
+            ->first()
+            ?? Currency::query()
+                ->where('code', $defaultCurrencyCode)
+                ->where('is_active', true)
+                ->first()
+            ?? Currency::query()
+                ->where('is_active', true)
+                ->first();
+
+        if (! $currency) {
+            return $next($request);
+        }
 
         session([
             'currency_id' => $currency->id,

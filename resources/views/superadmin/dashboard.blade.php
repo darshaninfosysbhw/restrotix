@@ -8,7 +8,7 @@
                     <div>
                         <p class="text-sm text-slate-400">Total Registered Restaurants</p>
                         <p class="text-2xl font-bold text-white mt-1">{{ $stats['total_tenants'] ?? 0 }}</p>
-                        <p class="text-xs text-slate-400 mt-2">Includes active, trial and pending</p>
+                        <p class="text-xs text-slate-400 mt-2">Includes active, trial and expired</p>
                         <a href="{{ route('superadmin.tenants.index') }}"
                             class="inline-block text-[11px] text-orange-500 hover:text-orange-400 mt-2">View Details</a>
                     </div>

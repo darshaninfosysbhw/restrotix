@@ -1,5 +1,6 @@
 @forelse ($orderCards as $order)
-    <div data-order-id="{{ $order['id'] }}" data-table-number="{{ $order['table_number'] ?? '' }}"
+    <div data-order-id="{{ $order['id'] }}" data-batch-key="{{ $order['batch_key'] ?? '' }}"
+        data-table-number="{{ $order['table_number'] ?? '' }}" data-kot-number="{{ $order['kot_number'] ?? '' }}"
         data-created-at="{{ $order['created_at_iso'] ?? '' }}"
         class="border rounded-xl p-4 {{ $order['card_class'] }} transition-all duration-300">
 
@@ -12,22 +13,29 @@
             </span>
         </div>
 
-        <h4 class="font-bold text-white">
-            Order #{{ $order['order_number'] }}
-        </h4>
-        <p class="text-[11px] text-gray-500 mt-1">
-            {{ $order['order_type'] }}
-            @if (!empty($order['table_number']))
-                • Table {{ $order['table_number'] }}
+        <div class="mb-3 ">
+            @if (!empty($order['kot_label']))
+                <p class="text-[11px] font-bold text-white leading-none text-center">
+                    {{ $order['kot_label'] }}
+                </p>
             @endif
-        </p>
+            <h4 class="mt-1 text-[12px] font-medium leading-tight text-white break-words">
+                Order: <span class="text-orange-400 text-[12px] ">{{ $order['order_number'] }}</span>
+            </h4>
+            <p class="mt-1 text-[11px] text-gray-500">
+                {{ $order['order_type'] }}
+                @if (!empty($order['table_number']))
+                    • Table {{ $order['table_number'] }}
+                @endif
+            </p>
+        </div>
 
         <ul class="mt-3 space-y-2 text-sm text-gray-300">
             @forelse ($order['items'] as $item)
                 <li class="flex flex-col border-b border-gray-700/30 pb-2 last:border-0 last:pb-0">
                     <div class="flex justify-between items-start gap-2">
                         <span
-                            class="{{ in_array($item['status'], ['ready', 'rejected']) ? 'text-gray-500 line-through' : '' }}">
+                            class="{{ in_array($item['status'], ['ready', 'served', 'rejected']) ? 'text-gray-500 line-through' : '' }}">
                             {{ $item['quantity'] }}x {{ $item['item_name'] }}
                         </span>
 
@@ -67,9 +75,36 @@
                             {{ $item['rejection_reason'] ?? 'N/A' }}</span>
                     @endif
 
+                    @if (!empty($item['addons']))
+                        <div
+                            class="mt-2 rounded-lg border border-orange-500/15 bg-orange-500/5 px-2.5 py-2 space-y-1.5">
+                            @foreach ($item['addons'] as $addon)
+                                @php
+                                    $isDone = in_array($item['status'] ?? 'new', ['ready', 'served', 'rejected']);
+                                @endphp
+                                <div
+                                    class="flex items-start gap-2 text-[11px] font-medium {{ $isDone ? 'text-gray-500 line-through' : 'text-orange-700 dark:text-orange-300' }}">
+                                    <span
+                                        class="mt-1 h-1.5 w-1.5 rounded-full {{ $isDone ? 'bg-gray-400' : 'bg-orange-500' }} shrink-0"></span>
+                                    <div class="flex-1 min-w-0 flex items-center justify-between gap-2">
+                                        <span class="truncate leading-4">{{ $addon['addon_name'] }}</span>
+                                        @if (($addon['quantity'] ?? 1) > 1)
+                                            <span
+                                                class="shrink-0 rounded-full border {{ $isDone ? 'border-gray-400/30 bg-gray-500/10 text-gray-500' : 'border-orange-500/30 bg-orange-500/10 text-orange-700 dark:text-orange-200' }} px-1.5 py-0.5 text-[10px] font-semibold">
+                                                x{{ $addon['quantity'] }}
+                                            </span>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
+
                     @if (!empty($item['notes']))
-                        <span class="text-left text-red-400 text-[10px] italic mt-0.5">Note:
-                            {{ $item['notes'] }}</span>
+                        <span
+                            class="text-left text-orange-400 text-[10px] italic mt-0.5 bg-orange-500/10 px-1.5 py-0.5 rounded w-max">
+                            Note: {{ $item['notes'] }}
+                        </span>
                     @endif
                 </li>
             @empty
@@ -87,9 +122,10 @@
         @if (!empty($order['action']))
             <form action="{{ route('admin.kds.update-status', $order['id']) }}" method="POST">
                 @csrf
+                <input type="hidden" name="kot_number" value="{{ $order['kot_number'] ?? '' }}">
                 <input type="hidden" name="status" value="{{ $order['action']['next_status'] }}">
-                <button type="submit"
-                    class="w-full mt-4 py-2 text-xs font-bold rounded-lg transition-all {{ $order['action']['button_class'] }}">
+                <button type="submit" @if (!empty($order['action']['disabled'])) disabled @endif
+                    class="w-full mt-4 py-2 text-xs font-bold rounded-lg transition-all {{ $order['action']['button_class'] }} {{ !empty($order['action']['disabled']) ? 'cursor-not-allowed opacity-75' : '' }}">
                     {{ $order['action']['label'] }}
                 </button>
             </form>
@@ -115,14 +151,13 @@
             </p>
         </div>
     </div>
-
 @endforelse
 
 <script>
     function updateItemStatus(itemId, status) {
         axios.post(`/admin/kds/item/${itemId}/status`, {
-                status: status
-            })
+            status: status
+        })
             .then(res => {
                 if (res.data.success) {
                     location.reload();

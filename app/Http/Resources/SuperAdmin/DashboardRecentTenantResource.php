@@ -12,8 +12,24 @@ class DashboardRecentTenantResource extends JsonResource
 
     public function toArray(Request $request): array
     {
-        $isTrial = !$this->is_banned && $this->trial_ends_at && now()->lt($this->trial_ends_at);
-        $status = $this->is_banned ? 'Pending' : ($isTrial ? 'Trial' : 'Active');
+        $subscriptionStatus = strtolower((string) ($this->subscription_status ?? ''));
+        if ($subscriptionStatus === '') {
+            if ($this->is_banned) {
+                $subscriptionStatus = 'canceled';
+            } elseif ($this->subscription_ends_at && now()->lt($this->subscription_ends_at)) {
+                $subscriptionStatus = 'trial';
+            } else {
+                $subscriptionStatus = 'active';
+            }
+        }
+
+        $status = match ($subscriptionStatus) {
+            'trial' => 'Trial',
+            'active' => 'Active',
+            'pending', 'expired' => 'Expired',
+            'canceled', 'cancelled' => 'Canceled',
+            default => ucfirst($subscriptionStatus),
+        };
         $ownerEmail = optional($this->users->firstWhere('role', 'admin') ?? $this->users->first())->email;
         $joinedDate = $this->created_at;
 
@@ -24,6 +40,7 @@ class DashboardRecentTenantResource extends JsonResource
             'owner_user_id' => optional($this->users->firstWhere('role', 'admin') ?? $this->users->first())->id,
             'email' => $ownerEmail ?: '-',
             'plan' => ucfirst($this->subscription_plan ?? 'starter'),
+            'billing_cycle' => $this->billing_cycle ?? 'monthly',
             'branches_count' => (int) ($this->branches_count ?? 0),
             'status' => $status,
             'joined_at' => optional($joinedDate)->format('d M Y') ?? '-',
