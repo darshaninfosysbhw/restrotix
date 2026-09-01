@@ -4,11 +4,9 @@
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="mb-6 md:mb-0">
                 <div class="flex items-center">
-                    <div
-                        class="w-8 h-8 sm:w-10 sm:h-10 rounded-lg gradient-orange flex items-center justify-center mr-2 sm:mr-3">
-                        <i class="fas fa-utensils text-white text-sm sm:text-base"></i>
-                    </div>
-                    <span class="text-xl sm:text-2xl font-bold">RestoChain<span class="text-orange-500">ERP</span></span>
+                       <a href="{{ url('/') }}" class="mr-2 sm:mr-3 inline-flex items-center">
+                    <img src="{{ asset('images/header-logo.png') }}" alt="Restrotix" class="h-8 w-auto sm:h-10">
+                </a>
                 </div>
                 <p class="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">Multi-branch restaurant management
                     simplified.</p>
@@ -31,7 +29,7 @@
         </div>
 
         <div class="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-gray-400 text-xs sm:text-sm">
-            <p>&copy; 2023 RestoChain ERP. All rights reserved. | <a href="#"
+            <p>&copy; 2023 Restrotix Software. All rights reserved. | <a href="#"
                     class="hover:text-white transition">Privacy Policy</a> | <a href="#"
                     class="hover:text-white transition">Terms of Service</a></p>
         </div>

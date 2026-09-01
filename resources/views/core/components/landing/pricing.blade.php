@@ -169,7 +169,7 @@
 
         <div class="text-center mt-8 sm:mt-12 text-gray-600 text-sm sm:text-base">
             <p>All plans include a 14-day free trial. No credit card required.</p>
-            <a href="{{ url('/pricing') }}"
+            <a href="#pricing"
                 class="inline-flex items-center justify-center mt-5 bg-[#a52a28] hover:bg-[#851817] text-white font-semibold py-2.5 sm:py-3 px-6 sm:px-8 rounded-lg transition shadow-md">
                 View Full Features
                 <i class="fas fa-arrow-right ml-2"></i>

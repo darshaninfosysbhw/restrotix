@@ -57,7 +57,7 @@
     </div>
     <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
         @php
-            $services = $allowedServiceSlugs ?? ($activeServiceSlugs ?? []);
+            $services = $activeServiceSlugs ?? [];
             $userRole = auth()->user()->role;
         @endphp
 
@@ -82,8 +82,63 @@
                 <span class="sidebar-label-text">Employee</span>
             </a>
         @endif
+        
+         @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter' || $userRole == 'manager')
+                <a href="{{ route('admin.tables.index') }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    <i class="fas fa-chair w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Table</span>
+                </a>
+            @endif
 
-        {{-- @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
+            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter')
+                <div class="dropdown-container">
+                    <button
+                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all">
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-pie w-5 mr-3"></i>
+                            <span class="sidebar-label-text">Menu Mangement</span>
+                        </div>
+                        <div class="flex items-center sidebar-label-text">
+                            <i
+                                class="fas fa-chevron-right text-[10px] transition-transform duration-200 trigger-arrow"></i>
+                        </div>
+                    </button>
+                    <div class="dropdown-menu hidden pl-12 space-y-1">
+
+                        <a href="{{ route('admin.menu.categories.index') }}"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Categories</a>
+
+                        <a href="{{ route('menu.items') }}"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
+                            Items</a>
+
+                        <a href="{{ route('menu.preview') }}"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
+                            Preview</a>
+                    </div>
+                </div>
+            @endif
+            
+            
+            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'chef')
+                <a href="{{ route('admin.kds.index') }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    <i class="fas fa-utensils w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Kitchen Orders (KDS)</span>
+                </a>
+            @endif
+            
+              @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
+            <a href="{{ route('admin.orders.history') }}"
+                class="sidebar-item {{ request()->routeIs('admin.orders.history') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+                <i class="fas fa-clock-rotate-left w-5 mr-3"></i>
+                <span class="sidebar-label-text">Order History</span>
+            </a>
+        @endif
+
+
+        @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
             @php $isBillingActive = in_array('billing', $services); @endphp
             <a href="{{ $isBillingActive ? route('billing.index') : 'javascript:void(0)' }}"
                 class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
@@ -94,7 +149,7 @@
                     <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
                 @endif
             </a>
-        @endif --}}
+        @endif
 
         @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
             @php $isBillingActive = in_array('membership-card', $services); @endphp
@@ -161,13 +216,7 @@
             </a>
         @endif
 
-        @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
-            <a href="{{ route('admin.orders.history') }}"
-                class="sidebar-item {{ request()->routeIs('admin.orders.history') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
-                <i class="fas fa-clock-rotate-left w-5 mr-3"></i>
-                <span class="sidebar-label-text">Order History</span>
-            </a>
-        @endif
+      
 
         @if (in_array($userRole, ['admin', 'manager', 'account_manager', 'superadmin']))
             @php $isAccountActive = in_array('accounts', $services); @endphp
@@ -212,6 +261,11 @@
                     class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.settings.menu.*') ? 'text-orange-500' : '' }}">
                     Menu Settings
                 </a>
+                
+                 <a href="{{ route('admin.branches.payment-gateways') }}"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.branches.payment-gateways*') ? 'text-orange-500' : '' }}">
+                            Payment Settings
+                        </a>
             </div>
         </div>
     </nav>
@@ -268,7 +322,7 @@
 
         <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             @php
-                $services = $allowedServiceSlugs ?? ($activeServiceSlugs ?? []);
+                $services = $activeServiceSlugs ?? [];
                 $userRole = auth()->user()->role;
             @endphp
 
@@ -308,17 +362,9 @@
             @endif
 
             @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter')
-                @php
-                    $isMenuManagementRouteActive = request()->routeIs(
-                        'admin.menu.categories.index',
-                        'menu.items',
-                        'admin.menu.items.index',
-                        'menu.preview',
-                    );
-                @endphp
                 <div class="dropdown-container">
                     <button
-                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all {{ $isMenuManagementRouteActive ? 'text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }}">
+                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all">
                         <div class="flex items-center">
                             <i class="fas fa-chart-pie w-5 mr-3"></i>
                             <span class="sidebar-label-text">Menu Mangement</span>
@@ -328,35 +374,21 @@
                                 class="fas fa-chevron-right text-[10px] transition-transform duration-200 trigger-arrow"></i>
                         </div>
                     </button>
-                    <div class="dropdown-menu {{ $isMenuManagementRouteActive ? '' : 'hidden' }} pl-12 space-y-1">
+                    <div class="dropdown-menu hidden pl-12 space-y-1">
 
                         <a href="{{ route('admin.menu.categories.index') }}"
-                            class="block py-2 text-sm transition-colors {{ request()->routeIs('admin.menu.categories.index') ? 'text-orange-500 font-semibold' : 'text-gray-400 hover:text-orange-500' }}">Categories</a>
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Categories</a>
 
                         <a href="{{ route('menu.items') }}"
-                            class="block py-2 text-sm transition-colors {{ request()->routeIs('menu.items', 'admin.menu.items.index') ? 'text-orange-500 font-semibold' : 'text-gray-400 hover:text-orange-500' }}">Menu
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
                             Items</a>
+
                         <a href="{{ route('menu.preview') }}"
-                            class="block py-2 text-sm transition-colors {{ request()->routeIs('menu.preview') ? 'text-orange-500 font-semibold' : 'text-gray-400 hover:text-orange-500' }}">Menu
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
                             Preview</a>
                     </div>
                 </div>
             @endif
-
-            @if (in_array($userRole, ['admin', 'superadmin', 'waiter']))
-                @php $isMediaLibraryActive = in_array('media-library', $services); @endphp
-                <a href="{{ $isMediaLibraryActive ? route('admin.media-library.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isMediaLibraryActive ? (request()->routeIs('admin.media-library.index') ? 'text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500') : 'text-gray-500 opacity-60 italic' }}"
-                    onclick="{{ !$isMediaLibraryActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया Add-on खरीदें।')" : '' }}">
-                    <i class="fas fa-photo-film w-5 mr-3"></i>
-                    <span class="sidebar-label-text">Media Library</span>
-                    @if (!$isMediaLibraryActive)
-                        <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
-                    @endif
-                </a>
-            @endif
-
-
 
             @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'chef')
                 <a href="{{ route('admin.kds.index') }}"
@@ -396,20 +428,60 @@
 
 
 
-            @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
-                @php $isInventoryActive = in_array('table', $services); @endphp
-                <a href="{{ $isBillingActive ? route('table.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
-                    onclick="{{ !$isInventoryActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
-                    <i class="fas fa-chair w-5 mr-3"></i>
-                    <span class="sidebar-label-text">Table</span>
-                    @if (!$isInventoryActive)
-                        <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px]"></i>
+            <!--@if (in_array($userRole, ['admin', 'manager', 'superadmin']))-->
+            <!--    @php $isInventoryActive = in_array('table', $services); @endphp-->
+            <!--    <a href="{{ $isBillingActive ? route('table.index') : 'javascript:void(0)' }}"-->
+            <!--        class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"-->
+            <!--        onclick="{{ !$isInventoryActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">-->
+            <!--        <i class="fas fa-chair w-5 mr-3"></i>-->
+            <!--        <span class="sidebar-label-text">Table</span>-->
+            <!--        @if (!$isInventoryActive)-->
+            <!--            <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px]"></i>-->
+            <!--        @endif-->
+            <!--    </a>-->
+            <!--@endif-->
+
+
+
+
+            @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
+                @php $isBillingActive = in_array('billing', $services); @endphp
+                <a href="{{ $isBillingActive ? route('billing.index') : 'javascript:void(0)' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
+                    <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Billing System</span>
+                    @if (!$isBillingActive)
+                        <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
                     @endif
                 </a>
             @endif
 
+            @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
+                @php $isBillingActive = in_array('membership-card', $services); @endphp
+                <a href="{{ $isBillingActive ? route('membership-card.index') : 'javascript:void(0)' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
+                    <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Membership Card</span>
+                    @if (!$isBillingActive)
+                        <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
+                    @endif
+                </a>
+            @endif
 
+            @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
+                @php $isBillingActive = in_array('membership-card', $services); @endphp
+                <a href="{{ $isBillingActive ? route('membership-card.index') : 'javascript:void(0)' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
+                    <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
+                    <span class="sidebar-label-text">RestroTix Promotion</span>
+                    @if (!$isBillingActive)
+                        <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
+                    @endif
+                </a>
+            @endif
 
 
             {{-- @if (in_array($userRole, ['admin', 'manager', 'account_manager', 'superadmin']))
@@ -441,44 +513,6 @@
                 </div>
             @endif --}}
 
-            {{-- @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
-                @php $isBillingActive = in_array('billing', $services); @endphp
-                <a href="{{ $isBillingActive ? route('billing.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
-                    onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
-                    <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
-                    <span class="sidebar-label-text">Billing System</span>
-                    @if (!$isBillingActive)
-                        <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
-                    @endif
-                </a>
-            @endif --}}
-
-            @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
-                @php $isBillingActive = in_array('membership-card', $services); @endphp
-                <a href="{{ $isBillingActive ? route('membership-card.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
-                    onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
-                    <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
-                    <span class="sidebar-label-text">Membership Card</span>
-                    @if (!$isBillingActive)
-                        <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
-                    @endif
-                </a>
-            @endif
-
-            @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
-                @php $isBillingActive = in_array('membership-card', $services); @endphp
-                <a href="{{ $isBillingActive ? route('membership-card.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
-                    onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
-                    <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
-                    <span class="sidebar-label-text">RestroTix Promotion</span>
-                    @if (!$isBillingActive)
-                        <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
-                    @endif
-                </a>
-            @endif
 
             @if (in_array($userRole, ['admin', 'manager', 'purchase_manager', 'superadmin']))
                 @php $isInventoryActive = in_array('inventory', $services); @endphp
