@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>RestoChain ERP - Multi-Branch Restaurant Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .sidebar-item {
+            transition: all 0.2s;
+        }
+
+        .sidebar-item:hover,
+        .sidebar-item.active {
+            background: rgba(255, 107, 53, 0.2);
+            color: #FF6B35;
+        }
+
+        .card-hover {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #1F2937;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #4B5563;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF6B35;
+        }
+
+        /* Light theme overrides (same as before) */
+        body.light-theme {
+            background-color: #f3f4f6;
+        }
+
+        body.light-theme .bg-gray-900 {
+            background-color: #f9fafb;
+        }
+
+        body.light-theme .bg-gray-800 {
+            background-color: #ffffff;
+        }
+
+        body.light-theme .bg-gray-700 {
+            background-color: #f3f4f6;
+        }
+
+        body.light-theme .bg-gray-700\/50 {
+            background-color: rgba(243, 244, 246, 0.5);
+        }
+
+        body.light-theme .border-gray-700 {
+            border-color: #e5e7eb;
+        }
+
+        body.light-theme .border-gray-600 {
+            border-color: #d1d5db;
+        }
+
+        body.light-theme .text-white {
+            color: #111827;
+        }
+
+        body.light-theme .text-gray-200 {
+            color: #1f2937;
+        }
+
+        body.light-theme .text-gray-400 {
+            color: #6b7280;
+        }
+
+        body.light-theme .text-gray-300 {
+            color: #4b5563;
+        }
+
+        body.light-theme .sidebar-item {
+            color: #374151;
+        }
+
+        body.light-theme .sidebar-item:hover,
+        body.light-theme .sidebar-item.active {
+            background: rgba(255, 107, 53, 0.15);
+            color: #FF6B35;
+        }
+
+        body.light-theme .bg-gray-700.rounded-lg {
+            background-color: #e5e7eb;
+        }
+
+        body.light-theme thead.text-gray-400 {
+            color: #4b5563;
+        }
+
+        body.light-theme .bg-gray-700.hover\:bg-gray-600 {
+            background-color: #f3f4f6;
+        }
+
+        body.light-theme .bg-gray-700.hover\:bg-gray-600:hover {
+            background-color: #e5e5e5;
+        }
+
+        body.light-theme select.bg-gray-700,
+        body.light-theme input.bg-gray-700 {
+            background-color: #ffffff;
+            border-color: #d1d5db;
+            color: #111827;
+        }
+
+        body.light-theme .bg-gradient-to-br.from-gray-600.to-gray-800 {
+            background: #e5e7eb;
+        }
+
+        body.light-theme .border-gray-900 {
+            border-color: #d1d5db;
+        }
+
+        body.light-theme ::-webkit-scrollbar-track {
+            background: #e5e7eb;
+        }
+
+        body.light-theme ::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+        }
+
+        body.light-theme ::-webkit-scrollbar-thumb:hover {
+            background: #FF6B35;
+        }
+
+        /* Light Theme Overrides */
+        body.light-theme #desktopToggleBtn {
+            background-color: #f97316;
+            /* Button orange hi rahega */
+            color: white;
+            /* Light theme mein border white ya light-gray honi chahiye */
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Sidebar Parent relative for positioning button */
+        #sidebar {
+            position: relative;
+            transition: width 0.3s ease;
+        }
+
+        /* Floating Toggle Button Style */
+        /* Floating Toggle Button - Exact Match */
+        #desktopToggleBtn {
+            position: absolute;
+            right: -14px;
+            /* Sidebar ki border par half-out rakhne ke liye */
+            top: 24px;
+            /* Isse header ki line ke pass rahega */
+            width: 28px;
+            height: 28px;
+            background-color: #f97316;
+            /* Orange-500 */
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            /* Fix: correctly align icon */
+            justify-content: center;
+            color: white;
+            border: 3px solid #111827;
+            /* Dark border to match dashboard bg */
+            cursor: pointer;
+            z-index: 100;
+            /* Taaki sidebar ke upar dikhe */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        /* Sidebar labels ko hide karne ka tarika jab collapse ho */
+        .sidebar-collapsed .sidebar-label-text {
+            display: none;
+        }
+
+        #desktopToggleBtn:hover {
+            background-color: #ea580c;
+            /* Orange-600 */
+        }
+
+        /* Collapsed State Adjustment */
+        .sidebar-collapsed {
+            width: 80px !important;
+        }
+
+        .sidebar-collapsed .sidebar-label {
+            display: none;
+        }
+
+        /* Light theme for profile dropdown */
+        body.light-theme #profileMenu {
+            background-color: #ffffff;
+            border-color: #e5e7eb;
+        }
+
+        body.light-theme #profileMenu a {
+            color: #374151;
+        }
+
+        body.light-theme #profileMenu a:hover {
+            background-color: #f3f4f6;
+            color: #f97316;
+        }
+
+        body.light-theme #profileMenu hr {
+            border-color: #f3f4f6;
+        }
+
+        .dropdown-menu {
+            transition: all 0.3s ease-in-out;
+        }
+
+        .trigger-arrow {
+            display: inline-block;
+            /* Rotation ke liye zaroori hai */
+        }
+
+        /* Sidebar chota ho toh dropdown na dikhe */
+        .sidebar-collapsed .dropdown-menu {
+            display: none !important;
+        }
+    </style>
+
+</head>
+
+<body class="text-gray-200 bg-gray-900">
+
+    <!-- Mobile Sidebar (hidden by default) -->
+    <div id="mobileSidebar"
+        class="fixed inset-y-0 left-0 w-64 bg-gray-800 border-r border-gray-700 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col">
+        <!-- Close button inside sidebar -->
+        <div class="flex items-center justify-between px-6 py-5 border-b border-gray-700">
+            <div class="flex items-center">
+                <div
+                    class="w-8 h-8 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mr-3">
+                    <i class="fas fa-utensils text-white text-sm"></i>
+                </div>
+                <span class="text-xl font-bold text-white">Resto<span class="text-orange-500">Admin</span></span>
+            </div>
+            <button id="closeSidebarBtn" class="text-gray-400 hover:text-orange-500">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+            <a href="#"
+                class="sidebar-item active flex items-center px-4 py-3 text-sm font-medium rounded-lg text-orange-500 bg-gray-700/50">
+                <i class="fas fa-tachometer-alt w-5 mr-3"></i> Dashboard
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                <i class="fas fa-store w-5 mr-3"></i> All Branches
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                <i class="fas fa-chart-line w-5 mr-3"></i> Branch Performance
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                <i class="fas fa-boxes w-5 mr-3"></i> Global Inventory
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                <i class="fas fa-truck w-5 mr-3"></i> Supplier Management
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                <i class="fas fa-users w-5 mr-3"></i> Staff Overview
+            </a>
+            <a href="#"
+                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                <i class="fas fa-file-invoice w-5 mr-3"></i> Financial Analytics
+            </a>
+            <div class="dropdown-container">
+                <button
+                    class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500 focus:outline-none transition-all">
+                    <div class="flex items-center">
+                        <i class="fas fa-file-invoice w-5 mr-3"></i>
+                        <span class="sidebar-label-text">Financial Analytics</span>
+                    </div>
+                    <i
+                        class="fas fa-chevron-right text-[10px] transition-transform duration-200 sidebar-label-text trigger-arrow"></i>
+                </button>
+
+                <div class="dropdown-menu hidden pl-12 space-y-1">
+                    <a href="#" class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Revenue
+                        Reports</a>
+                    <a href="#" class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Expense
+                        Tracker</a>
+                    <a href="#" class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Tax
+                        Summary</a>
+                </div>
+            </div>
+            <a href="#"
+                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                <i class="fas fa-cog w-5 mr-3"></i> Settings
+            </a>
+        </nav>
+        <div class="px-4 py-4 border-t border-gray-700">
+            <div class="flex items-center">
+                <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
+                    <i class="fas fa-user text-white text-sm"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-white">Admin User</p>
+                    <p class="text-xs text-gray-400">Regional Manager</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backdrop for mobile sidebar -->
+    <div id="sidebarBackdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity md:hidden">
+    </div>
+
+    <!-- Main Container -->
+    <div class="flex h-screen overflow-hidden bg-gray-900">
+
+        <!-- Desktop Sidebar (unchanged) -->
+        <aside id="sidebar" class="hidden md:flex md:flex-col w-64 bg-gray-800 border-r border-gray-700">
+            <button id="desktopToggleBtn">
+                <i class="fas fa-angle-double-left text-xs" id="toggleIcon"></i>
+            </button>
+
+            <div class="flex items-center px-6 py-5 border-b border-gray-700">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-lg bg-orange-500 flex items-center justify-center mr-3 flex-shrink-0">
+                        <i class="fas fa-utensils text-white text-sm"></i>
+                    </div>
+                    <span class="sidebar-label text-xl font-bold text-white whitespace-nowrap">
+                        Resto<span class="text-orange-500">Admin</span>
+                    </span>
+                </div>
+            </div>
+            <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
+                <a href="#"
+                    class="sidebar-item active flex items-center px-4 py-3 text-sm font-medium rounded-lg text-orange-500 bg-gray-700/50">
+                    <i class="fas fa-tachometer-alt w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Dashboard</span>
+                </a>
+                <a href="#"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    <i class="fas fa-store w-5 mr-3"></i>
+                    <span class="sidebar-label-text">All Branches</span>
+                </a>
+                <a href="#"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    <i class="fas fa-chart-line w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Branch Performance</span>
+                </a>
+                <a href="#"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    <i class="fas fa-boxes w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Global Inventory</span>
+                </a>
+                <a href="#"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    <i class="fas fa-truck w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Supplier Management</span>
+                </a>
+                <a href="#"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    <i class="fas fa-users w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Staff Overview</span>
+                </a>
+
+                <div class="dropdown-container">
+                    <button
+                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500 focus:outline-none transition-all">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-invoice w-5 mr-3"></i>
+                            <span class="sidebar-label-text">Financial Analytics</span>
+                        </div>
+                        <i
+                            class="fas fa-chevron-right text-[10px] transition-transform duration-200 sidebar-label-text trigger-arrow"></i>
+                    </button>
+
+                    <div class="dropdown-menu hidden pl-12 space-y-1">
+                        <a href="#"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Revenue
+                            Reports</a>
+                        <a href="#"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Expense
+                            Tracker</a>
+                        <a href="#" class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Tax
+                            Summary</a>
+                    </div>
+                </div>
+                <div class="dropdown-container">
+                    <button
+                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500 focus:outline-none transition-all">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-invoice w-5 mr-3"></i>
+                            <span class="sidebar-label-text">Financial Analytics</span>
+                        </div>
+                        <i
+                            class="fas fa-chevron-right text-[10px] transition-transform duration-200 sidebar-label-text trigger-arrow"></i>
+                    </button>
+
+                    <div class="dropdown-menu hidden pl-12 space-y-1">
+                        <a href="#"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Revenue
+                            Reports</a>
+                        <a href="#"
+                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Expense
+                            Tracker</a>
+                        <a href="#" class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Tax
+                            Summary</a>
+                    </div>
+                </div>
+                <a href="#"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    <i class="fas fa-cog w-5 mr-3"></i>
+                    <span class="sidebar-label-text">Settings</span>
+                </a>
+            </nav>
+            <div class="px-4 py-4 border-t border-gray-700">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
+                        <i class="fas fa-user text-white text-sm"></i>
+                    </div>
+                    <div class="ml-3">
+                        <p class="text-sm font-medium text-white sidebar-label-text">Admin User</p>
+                        <p class="text-xs text-gray-400 sidebar-label-text">Regional Manager</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+
+            <!-- Top Header -->
+            <header class="bg-gray-800 border-b border-gray-700 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center">
+                    <!-- Mobile hamburger menu button (now functional) -->
+                    <button id="hamburgerBtn" class="md:hidden text-gray-400 mr-4 focus:outline-none">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h1 class="text-xl font-semibold text-white">Multi-Branch Dashboard</h1>
+                </div>
+
+                <!-- Branch Selector -->
+                <div class="hidden md:flex items-center space-x-3">
+                    <span class="text-sm text-gray-400">Viewing:</span>
+                    <select
+                        class="bg-gray-700 border border-gray-600 text-sm rounded-lg px-3 py-1.5 text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
+                        <option>All Branches (12)</option>
+                        <option>Downtown</option>
+                        <option>Westside</option>
+                        <option>East End</option>
+                        <option>Uptown</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center space-x-4">
+
+                    <!-- Search -->
+                    <div class="relative hidden md:block">
+                        <i
+                            class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm"></i>
+                        <input type="text" placeholder="Search..."
+                            class="bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                    </div>
+                    <!-- Theme toggle button (light/dark) -->
+                    <button id="theme-toggle"
+                        class="text-gray-400 hover:text-orange-500 text-xl mr-2 transition-colors">
+                        <i id="theme-icon" class="fas fa-sun"></i>
+                    </button>
+                    <!-- Notifications -->
+                    <div class="relative">
+                        <i class="fas fa-bell text-gray-400 text-xl cursor-pointer hover:text-orange-500"></i>
+                        <span
+                            class="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-xs rounded-full flex items-center justify-center">5</span>
+                    </div>
+
+
+
+
+                    <div class="relative">
+                        <div id="profileBtn" class="flex items-center space-x-2 cursor-pointer">
+                            <div class="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
+                                <i class="fas fa-user text-white text-sm"></i>
+                            </div>
+                            <span class="hidden md:inline text-sm font-medium text-white">Admin</span>
+                            <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                        </div>
+
+                        <div id="profileMenu"
+                            class="hidden absolute right-0 mt-3 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-[100]">
+                            <div class="py-2">
+                                <a href="#"
+                                    class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-orange-500 transition-colors">
+                                    <i class="fas fa-user-circle mr-2"></i> My Profile
+                                </a>
+                                <a href="#"
+                                    class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-orange-500 transition-colors">
+                                    <i class="fas fa-cog mr-2"></i> Settings
+                                </a>
+                                <hr class="border-gray-700 my-1">
+                                <a href="#"
+                                    class="block px-4 py-2 text-sm text-red-400 hover:bg-gray-700 transition-colors">
+                                    <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!--Dashboard-->
+            <div class="flex-1 overflow-y-auto p-6 bg-gray-900">
+
+                <!-- Key Metrics Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                    <!-- ... same cards ... (I'll keep them concise for space) -->
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Total Revenue (All Branches)</p>
+                                <h3 class="text-2xl font-bold text-white mt-1">₹2,84,500</h3>
+                                <p class="text-xs text-green-400 mt-2"><i class="fas fa-arrow-up mr-1"></i> +12.3% vs
+                                    last week</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center"><i
+                                    class="fas fa-rupee-sign text-orange-500 text-xl"></i></div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Total Orders</p>
+                                <h3 class="text-2xl font-bold text-white mt-1">1,256</h3>
+                                <p class="text-xs text-green-400 mt-2"><i class="fas fa-arrow-up mr-1"></i> +8.2% vs
+                                    last week</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center"><i
+                                    class="fas fa-shopping-cart text-blue-500 text-xl"></i></div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Avg. Order Value</p>
+                                <h3 class="text-2xl font-bold text-white mt-1">₹226</h3>
+                                <p class="text-xs text-yellow-400 mt-2"><i class="fas fa-minus mr-1"></i> 2% from last
+                                    week</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center"><i
+                                    class="fas fa-chart-pie text-purple-500 text-xl"></i></div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Active Branches</p>
+                                <h3 class="text-2xl font-bold text-white mt-1">12 / 12</h3>
+                                <p class="text-xs text-green-400 mt-2">All operational</p>
+                            </div>
+                            <div class="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center"><i
+                                    class="fas fa-store text-green-500 text-xl"></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map & Branch Performance -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 lg:col-span-2">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold text-white">Branch Locations & Performance</h3><button
+                                class="text-sm text-orange-500 hover:text-orange-400">View All Branches →</button>
+                        </div>
+                        <div class="relative bg-gray-700 rounded-lg h-64 overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-br from-gray-600 to-gray-800 opacity-50"></div>
+                            <!-- pins -->
+                            <div class="absolute top-1/4 left-1/4">
+                                <div class="relative group">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-green-500 border-2 border-gray-900 flex items-center justify-center">
+                                        <i class="fas fa-store text-white text-xs"></i>
+                                    </div>
+                                    <div
+                                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                        Downtown: ₹1,24,500</div>
+                                </div>
+                            </div>
+                            <div class="absolute top-1/3 right-1/3">
+                                <div class="relative group">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-green-500 border-2 border-gray-900 flex items-center justify-center">
+                                        <i class="fas fa-store text-white text-xs"></i>
+                                    </div>
+                                    <div
+                                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                        Westside: ₹98,200</div>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-1/3 left-1/3">
+                                <div class="relative group">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-yellow-500 border-2 border-gray-900 flex items-center justify-center">
+                                        <i class="fas fa-store text-white text-xs"></i>
+                                    </div>
+                                    <div
+                                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                        East End: ₹45,300</div>
+                                </div>
+                            </div>
+                            <div class="absolute bottom-1/4 right-1/4">
+                                <div class="relative group">
+                                    <div
+                                        class="w-6 h-6 rounded-full bg-green-500 border-2 border-gray-900 flex items-center justify-center">
+                                        <i class="fas fa-store text-white text-xs"></i>
+                                    </div>
+                                    <div
+                                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
+                                        Uptown: ₹1,02,800</div>
+                                </div>
+                            </div>
+                            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                                <div
+                                    class="w-10 h-10 rounded-full bg-orange-500 border-4 border-gray-900 flex items-center justify-center">
+                                    <i class="fas fa-user-tie text-white"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                        <h3 class="text-lg font-semibold text-white mb-4">Top Performing Branches</h3>
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">Downtown</p>
+                                    <p class="text-xs text-gray-400">Revenue: ₹1,24,500</p>
+                                </div><span
+                                    class="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded-full">+14%</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">Uptown</p>
+                                    <p class="text-xs text-gray-400">Revenue: ₹1,02,800</p>
+                                </div><span
+                                    class="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded-full">+8%</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">Westside</p>
+                                    <p class="text-xs text-gray-400">Revenue: ₹98,200</p>
+                                </div><span
+                                    class="text-xs bg-green-900/50 text-green-400 px-2 py-1 rounded-full">+5%</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">Northside</p>
+                                    <p class="text-xs text-gray-400">Revenue: ₹76,400</p>
+                                </div><span
+                                    class="text-xs bg-yellow-900/50 text-yellow-400 px-2 py-1 rounded-full">+2%</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">East End</p>
+                                    <p class="text-xs text-gray-400">Revenue: ₹45,300</p>
+                                </div><span class="text-xs bg-red-900/50 text-red-400 px-2 py-1 rounded-full">-2%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Inventory & Staff -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                        <h3 class="text-lg font-semibold text-white mb-4">Low Stock Across Branches</h3>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">Tomatoes</p>
+                                    <p class="text-xs text-gray-400">Affected: Downtown, Westside, Uptown</p>
+                                </div><span
+                                    class="text-xs bg-orange-900/50 text-orange-400 px-2 py-1 rounded-full">Reorder
+                                    soon</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">Chicken Breast</p>
+                                    <p class="text-xs text-gray-400">Affected: East End, Northside</p>
+                                </div><span
+                                    class="text-xs bg-red-900/50 text-red-400 px-2 py-1 rounded-full">Critical</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">Cooking Oil</p>
+                                    <p class="text-xs text-gray-400">Affected: All except Downtown</p>
+                                </div><span
+                                    class="text-xs bg-yellow-900/50 text-yellow-400 px-2 py-1 rounded-full">Low</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm font-medium text-white">Flour</p>
+                                    <p class="text-xs text-gray-400">Affected: Westside, Uptown</p>
+                                </div><span
+                                    class="text-xs bg-orange-900/50 text-orange-400 px-2 py-1 rounded-full">Reorder
+                                    soon</span>
+                            </div>
+                        </div>
+                        <button class="w-full mt-4 text-sm text-orange-500 hover:text-orange-400">Manage Global
+                            Inventory →</button>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                        <h3 class="text-lg font-semibold text-white mb-4">Staff Overview</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
+                            <div class="bg-gray-700/50 rounded-lg p-3 text-center">
+                                <p class="text-2xl font-bold text-white">86</p>
+                                <p class="text-xs text-gray-400">Total Staff</p>
+                            </div>
+                            <div class="bg-gray-700/50 rounded-lg p-3 text-center">
+                                <p class="text-2xl font-bold text-white">12</p>
+                                <p class="text-xs text-gray-400">On Leave</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center"><span
+                                    class="text-sm text-gray-400">Downtown</span><span
+                                    class="text-sm text-white">14/16</span><span
+                                    class="text-xs text-green-400">+2</span>
+                            </div>
+                            <div class="flex justify-between items-center"><span
+                                    class="text-sm text-gray-400">Westside</span><span
+                                    class="text-sm text-white">12/12</span><span
+                                    class="text-xs text-green-400">Full</span>
+                            </div>
+                            <div class="flex justify-between items-center"><span class="text-sm text-gray-400">East
+                                    End</span><span class="text-sm text-white">8/10</span><span
+                                    class="text-xs text-red-400">-2</span></div>
+                            <div class="flex justify-between items-center"><span
+                                    class="text-sm text-gray-400">Uptown</span><span
+                                    class="text-sm text-white">10/12</span><span
+                                    class="text-xs text-yellow-400">-2</span>
+                            </div>
+                        </div>
+                        <button class="w-full mt-4 text-sm text-orange-500 hover:text-orange-400">Manage Staff
+                            →</button>
+                    </div>
+                </div>
+
+                <!-- Supplier Comparison & Quick Actions -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 lg:col-span-2">
+                        <h3 class="text-lg font-semibold text-white mb-4">Supplier Price Comparison (Across Branches)
+                        </h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left">
+                                <thead class="text-xs text-gray-400 uppercase border-b border-gray-700">
+                                    <tr>
+                                        <th class="px-4 py-3">Ingredient</th>
+                                        <th class="px-4 py-3">Metro Foods</th>
+                                        <th class="px-4 py-3">Sysco</th>
+                                        <th class="px-4 py-3">Local Co-op</th>
+                                        <th class="px-4 py-3">Best Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-4 py-3 font-medium text-white">Onion (per kg)</td>
+                                        <td class="px-4 py-3">₹45</td>
+                                        <td class="px-4 py-3">₹52</td>
+                                        <td class="px-4 py-3 text-green-400 font-medium">₹42</td>
+                                        <td class="px-4 py-3"><span
+                                                class="bg-green-900/50 text-green-400 px-2 py-1 rounded-full text-xs">Local
+                                                Co-op</span></td>
+                                    </tr>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-4 py-3 font-medium text-white">Tomato (per kg)</td>
+                                        <td class="px-4 py-3">₹38</td>
+                                        <td class="px-4 py-3 text-green-400 font-medium">₹35</td>
+                                        <td class="px-4 py-3">₹40</td>
+                                        <td class="px-4 py-3"><span
+                                                class="bg-green-900/50 text-green-400 px-2 py-1 rounded-full text-xs">Sysco</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="border-b border-gray-700">
+                                        <td class="px-4 py-3 font-medium text-white">Chicken (per kg)</td>
+                                        <td class="px-4 py-3 text-green-400 font-medium">₹210</td>
+                                        <td class="px-4 py-3">₹225</td>
+                                        <td class="px-4 py-3">₹215</td>
+                                        <td class="px-4 py-3"><span
+                                                class="bg-green-900/50 text-green-400 px-2 py-1 rounded-full text-xs">Metro
+                                                Foods</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="px-4 py-3 font-medium text-white">Flour (per kg)</td>
+                                        <td class="px-4 py-3">₹32</td>
+                                        <td class="px-4 py-3">₹30</td>
+                                        <td class="px-4 py-3 text-green-400 font-medium">₹28</td>
+                                        <td class="px-4 py-3"><span
+                                                class="bg-green-900/50 text-green-400 px-2 py-1 rounded-full text-xs">Local
+                                                Co-op</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <button class="w-full mt-4 text-sm text-orange-500 hover:text-orange-400">View Full Comparison
+                            →</button>
+                    </div>
+                    <div class="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                        <h3 class="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+                        <div class="space-y-3">
+                            <button
+                                class="w-full bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-3 px-4 rounded-lg flex items-center justify-between"><span><i
+                                        class="fas fa-plus-circle mr-2 text-orange-500"></i> Add New Branch</span><i
+                                    class="fas fa-chevron-right text-gray-400"></i></button>
+                            <button
+                                class="w-full bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-3 px-4 rounded-lg flex items-center justify-between"><span><i
+                                        class="fas fa-sync-alt mr-2 text-orange-500"></i> Sync Menu to All
+                                    Branches</span><i class="fas fa-chevron-right text-gray-400"></i></button>
+                            <button
+                                class="w-full bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-3 px-4 rounded-lg flex items-center justify-between"><span><i
+                                        class="fas fa-truck mr-2 text-orange-500"></i> Bulk Order Supplies</span><i
+                                    class="fas fa-chevron-right text-gray-400"></i></button>
+                            <button
+                                class="w-full bg-gray-700 hover:bg-gray-600 text-white text-sm font-medium py-3 px-4 rounded-lg flex items-center justify-between"><span><i
+                                        class="fas fa-file-pdf mr-2 text-orange-500"></i> Generate Consolidated
+                                    Report</span><i class="fas fa-chevron-right text-gray-400"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+
+        (function () {
+            // Theme toggle (same as before)
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const themeIcon = document.getElementById('theme-icon');
+
+            function setIconBasedOnTheme() {
+                if (document.body.classList.contains('light-theme')) {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                } else {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                }
+            }
+            const savedTheme = localStorage.getItem('restochain-theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+            } else {
+                document.body.classList.remove('light-theme');
+            }
+            setIconBasedOnTheme();
+            themeToggleBtn.addEventListener('click', function () {
+                document.body.classList.toggle('light-theme');
+                localStorage.setItem('restochain-theme', document.body.classList.contains('light-theme') ?
+                    'light' : 'dark');
+                setIconBasedOnTheme();
+            });
+
+            // Mobile sidebar toggle
+            const hamburger = document.getElementById('hamburgerBtn');
+            const mobileSidebar = document.getElementById('mobileSidebar');
+            const backdrop = document.getElementById('sidebarBackdrop');
+            const closeBtn = document.getElementById('closeSidebarBtn');
+
+            function openSidebar() {
+                mobileSidebar.classList.remove('-translate-x-full');
+                backdrop.classList.remove('hidden');
+            }
+
+            function closeSidebar() {
+                mobileSidebar.classList.add('-translate-x-full');
+                backdrop.classList.add('hidden');
+            }
+
+            if (hamburger) {
+                hamburger.addEventListener('click', openSidebar);
+            }
+            if (backdrop) {
+                backdrop.addEventListener('click', closeSidebar);
+            }
+            if (closeBtn) {
+                closeBtn.addEventListener('click', closeSidebar);
+            }
+        })();
+        //end here mobile sidebar script
+
+        // Desktop sidebar toggle script
+        const desktopToggleBtn = document.getElementById('desktopToggleBtn');
+        const sidebar = document.getElementById('sidebar');
+        const toggleIcon = document.getElementById('toggleIcon');
+
+        desktopToggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('sidebar-collapsed');
+            if (sidebar.classList.contains('sidebar-collapsed')) {
+                toggleIcon.classList.replace('fa-angle-double-left', 'fa-angle-double-right');
+            } else {
+                toggleIcon.classList.replace('fa-angle-double-right', 'fa-angle-double-left');
+            }
+        });
+        // end Desktop Sidebar logic script
+
+        // Profile Dropdown Logic
+        const profileBtn = document.getElementById('profileBtn');
+        const profileMenu = document.getElementById('profileMenu');
+
+        profileBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            profileMenu.classList.toggle('hidden');
+        });
+
+        // Bahar click karne par dropdown band ho jaye
+        window.addEventListener('click', (e) => {
+            if (!profileBtn.contains(e.target)) {
+                profileMenu.classList.add('hidden');
+            }
+        });
+
+        // end profile dropdown logic script
+
+        // Jitne bhi dropdown-trigger hain, sab par event listener lagao(sidebar ke andar ke dropdowns ke liye)
+        document.querySelectorAll('.dropdown-trigger').forEach(button => {
+            button.addEventListener('click', function () {
+                const menu = this.nextElementSibling;
+                const arrow = this.querySelector('.trigger-arrow');
+                closeOtherDropdowns(menu);
+                menu.classList.toggle('hidden');
+                if (!menu.classList.contains('hidden')) {
+                    arrow.style.transform = 'rotate(90deg)';
+                } else {
+                    arrow.style.transform = 'rotate(0deg)';
+                }
+            });
+        });
+
+        // Sidebar collapsed ho toh dropdown band rahein (Optional logic)
+        function closeOtherDropdowns(currentMenu) {
+            document.querySelectorAll('.dropdown-menu').forEach(m => {
+                if (m !== currentMenu) {
+                    m.classList.add('hidden');
+                    m.previousElementSibling.querySelector('.trigger-arrow').style.transform = 'rotate(0deg)';
+                }
+            });
+        }
+
+
+    </script>
+</body>
+
+</html>
