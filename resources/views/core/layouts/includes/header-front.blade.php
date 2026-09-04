@@ -102,10 +102,11 @@
             <div class="flex items-center space-x-3 sm:space-x-4">
                 <a href="{{ route('login') }}"
                     class="font-medium text-gray-700 hover:text-orange-500 transition hidden md:block">Login</a>
-                <button type="button"
-                    class="bg-[#a52a28] hover:bg-[#851817] text-white font-medium py-2 px-4 sm:py-2.5 sm:px-6 rounded-lg transition shadow-md text-sm sm:text-base">
+                <a href="{{ url('/') }}#pricing"
+                    class="bg-[#a52a28] hover:bg-[#851817] text-white font-medium py-2 px-4 sm:py-2.5 sm:px-6 rounded-lg transition shadow-md text-sm sm:text-base hidden md:block">
                     Get Started
-                </button>
+                </a>
+                
                 <button id="mobile-menu-button" type="button" aria-controls="mobile-menu" aria-expanded="false"
                     class="md:hidden text-gray-700">
                     <i class="fas fa-bars text-xl"></i>
@@ -118,11 +119,8 @@
     <div id="mobile-menu" class="mobile-menu fixed inset-y-0 right-0 w-64 bg-white shadow-2xl z-50 p-6 md:hidden">
         <div class="flex justify-between items-center mb-8">
             <div class="flex items-center">
-                <div class="w-8 h-8 rounded-lg gradient-orange flex items-center justify-center mr-2">
-                    <i class="fas fa-utensils text-white"></i>
-                </div>
-                <a href="{{ url('/') }}" class="text-xl font-bold text-gray-900">
-                    RestoChain<span class="text-orange-500">ERP</span>
+               <a href="{{ url('/') }}" class="mr-2 sm:mr-3 inline-flex items-center">
+                    <img src="{{ asset('images/logo.png') }}" alt="Restrotix" class="h-8 w-auto sm:h-10">
                 </a>
             </div>
             <button id="close-menu" type="button" class="text-gray-700">
@@ -130,7 +128,7 @@
             </button>
         </div>
 
-        <nav class="flex flex-col space-y-6">
+        <nav class="flex flex-col space-y-6 mb-5">
 
             <a href="#pricing"
                 class="font-medium text-gray-700 hover:text-orange-500 transition py-2 border-b border-gray-100">Pricing</a>
@@ -183,12 +181,12 @@
                 class="font-medium text-gray-700 hover:text-orange-500 transition py-2 border-b border-gray-100">Case
                 Studies</a>
             <a href="{{ route('login') }}"
-                class="font-medium text-gray-700 hover:text-orange-500 transition py-2 border-b border-gray-100">Login</a>
+                class="font-medium text-gray-700 hover:text-orange-500 transition py-2  border-b border-gray-100">Login</a>
         </nav>
 
-        <button
-            class="w-full bg-[#a52a28] hover:bg-[#851817] text-white font-medium py-3 rounded-lg transition shadow-md mt-8">
+        <a href="{{ url('/') }}#pricing"
+            class="w-full bg-[#a52a28] hover:bg-[#851817] text-white font-medium py-2 rounded-lg transition shadow-md  px-4">
             Get Started
-        </button>
+        </a>
     </div>
 </header>

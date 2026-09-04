@@ -3,8 +3,6 @@
         'available' => 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm',
         'occupied' => 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm',
         'reserved' => 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm',
-        'calling_waiter' => 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm',
-        'request_bill' => 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm',
         'out_of_service' => 'border-slate-200 bg-slate-50 opacity-50',
     ];
 
@@ -12,8 +10,6 @@
         'available' => 'text-emerald-500',
         'occupied' => 'text-red-500',
         'reserved' => 'text-amber-500',
-        'calling_waiter' => 'text-sky-500',
-        'request_bill' => 'text-orange-500',
         'out_of_service' => 'text-slate-400',
     ];
 @endphp
@@ -112,6 +108,16 @@
                                         <span
                                             class="rounded-full border border-orange-500/30 bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-600">
                                             Current
+                                        </span>
+                                    @endif
+                                    @if (!empty($switchTable['is_calling_waiter']))
+                                        <span class="rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[10px] font-semibold text-sky-600">
+                                            Calling waiter
+                                        </span>
+                                    @endif
+                                    @if (!empty($switchTable['is_bill_requested']))
+                                        <span class="rounded-full border border-orange-200 bg-orange-50 px-2 py-0.5 text-[10px] font-semibold text-orange-600">
+                                            Bill requested
                                         </span>
                                     @endif
                                 </div>

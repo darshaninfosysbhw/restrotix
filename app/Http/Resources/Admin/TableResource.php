@@ -33,6 +33,9 @@ class TableResource extends JsonResource
                     'id'           => $order->id,
                     'order_number' => $order->order_number,
                     'status'       => $order->status,
+                    'grand_total'  => (float) $order->grand_total,
+                    'ordered_at'   => optional($order->ordered_at ?? $order->created_at)->format('h:i A'),
+                    'ordered_at_timestamp' => optional($order->ordered_at ?? $order->created_at)?->timestamp,
 
                     // 🌟 FIX: Items transform kar ke nested orderItemAddons pass kiye
                     'items'        => $order->items->map(function ($item) {
@@ -85,6 +88,9 @@ class TableResource extends JsonResource
             'capacity'       => (int) ($this->capacity ?? 0),
             'status'         => $computedStatus,
             'status_label'   => ucfirst(str_replace('_', ' ', $computedStatus)),
+            'is_calling_waiter' => (bool) $this->is_calling_waiter,
+            'is_bill_requested' => (bool) $this->is_bill_requested,
+            'transfer_state' => $this->transfer_state,
 
             // UI Visuals
             'status_color'   => $this->getStatusColor($computedStatus),
@@ -111,8 +117,6 @@ class TableResource extends JsonResource
             'available'          => 'green',
             'reserved'           => 'yellow',
             'booked', 'occupied' => 'red',
-            'calling_waiter'     => 'blue',
-            'request_bill'       => 'orange',
             'out_of_service'     => 'gray',
             default              => 'gray'
         };

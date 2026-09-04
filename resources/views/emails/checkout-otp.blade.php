@@ -40,7 +40,7 @@
                                     VERIFICATION CODE
                                 </div>
                                 <div
-                                    style="font-size:42px;font-weight:800;letter-spacing:0.35em;color:#111827;font-family:Courier New,monospace;">
+                                    style="font-size:20px;font-weight:800;letter-spacing:0.1em;color:#111827;font-family:Courier New,monospace;">
                                     {{ implode(' ', str_split($otpCode)) }}
                                 </div>
                             </div>

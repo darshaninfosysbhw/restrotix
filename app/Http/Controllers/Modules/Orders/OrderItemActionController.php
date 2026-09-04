@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Modules\Orders;
 
 use App\Http\Controllers\Controller;
+use App\Services\KitchenPickupAlertService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use App\Events\KitchenStatusUpdated;
 
 class OrderItemActionController extends Controller
@@ -14,6 +16,7 @@ class OrderItemActionController extends Controller
     public function serve($id): JsonResponse
     {
         $item = OrderItem::with('order')->findOrFail($id);
+        $pickupAlert = null;
 
         if ($item->status === 'rejected') {
             return response()->json([
@@ -29,7 +32,7 @@ class OrderItemActionController extends Controller
             ]);
         }
 
-        DB::transaction(function () use ($item) {
+        DB::transaction(function () use ($item, &$pickupAlert) {
             $updateData = [
                 'status' => 'served',
                 'served_at' => now(),
@@ -49,6 +52,11 @@ class OrderItemActionController extends Controller
 
             if ($order) {
                 $this->syncOrderStatus($order);
+                $pickupAlert = app(KitchenPickupAlertService::class)->completePickupForServed(
+                    $order,
+                    (int) ($item->kot_number ?? 0),
+                    Auth::id()
+                );
 
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => $order->id,
@@ -61,9 +69,18 @@ class OrderItemActionController extends Controller
             }
         });
 
+        if ($pickupAlert) {
+            broadcast(new \App\Events\KitchenPickupAlertUpdated(
+                app(KitchenPickupAlertService::class)->payload($pickupAlert)
+            ))->toOthers();
+        }
+
         return response()->json([
             'success' => true,
-            'message' => 'Item served successfully'
+            'message' => 'Item served successfully',
+            'pickup_alert' => $pickupAlert
+                ? app(KitchenPickupAlertService::class)->payload($pickupAlert)
+                : null,
         ]);
     }
 

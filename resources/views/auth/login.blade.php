@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restrochain Login</title>
+    <title>Restrotix Login</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 </head>
@@ -112,7 +112,7 @@
     </main>
 
     <footer class="p-6 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
-        <div>© 2026 Restrochain</div>
+        <div>© 2026 Restrotix</div>
         <div class="flex gap-6 uppercase tracking-wider">
             <a href="#" class="hover:text-gray-800">Terms of Use</a>
             <a href="#" class="hover:text-gray-800">Privacy Policy</a>

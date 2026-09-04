@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class TableAccessSessionService
 {
     private const DEFAULT_SESSION_MINUTES = 30;
-    private const TABLE_GRACE_MINUTES = 10;
+    private const TABLE_GRACE_MINUTES = 2;
 
     public function bootstrapFromScan(Table $table, Request $request): TableAccessSession
     {

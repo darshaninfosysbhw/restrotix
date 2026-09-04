@@ -94,8 +94,6 @@
                             <option value="available">Available</option>
                             <option value="reserved">Reserved</option>
                             <option value="occupied">Occupied</option>
-                            <option value="calling_waiter">Calling Waiter</option>
-                            <option value="request_bill">Request Bill</option>
                             <option value="out_of_service">Out Of Service</option>
                         </select>
                     </div>
@@ -118,6 +116,10 @@
 @endif
 
 @include('core.components.table.table-drawer')
+@include('core.components.table.partials.transfer-table-modal', [
+    'activeWaiters' => $activeWaiters ?? [],
+    'isManager' => $isAdmin ?? false,
+])
 
 <div id="qrModal" class="fixed inset-0 z-[130] hidden">
 
@@ -138,9 +140,16 @@
             </button>
 
             <div
-                class="rounded-[30px] bg-white/10 backdrop-blur-sm p-0 overflow-hidden border border-white/20 shadow-[0_35px_90px_rgba(0,0,0,0.35)]">
+                class="relative min-h-[360px] sm:min-h-[540px] rounded-[30px] bg-white/10 backdrop-blur-sm p-0 overflow-hidden border border-white/20 shadow-[0_35px_90px_rgba(0,0,0,0.35)]">
+                <div id="posterLoadingState"
+                    class="absolute inset-0 z-10 flex items-center justify-center bg-white/90 text-gray-700">
+                    <div class="flex flex-col items-center gap-3">
+                        <i class="fas fa-spinner fa-spin text-2xl text-orange-500"></i>
+                        <span class="text-sm font-semibold">Generating poster...</span>
+                    </div>
+                </div>
                 <img id="qrPosterImage" src="" alt="Table QR Poster"
-                    class="block w-full h-auto max-h-[78vh] object-contain bg-white">
+                    class="block w-full h-auto max-h-[78vh] object-contain bg-white opacity-0 transition-opacity duration-150">
             </div>
 
             <!-- BUTTONS -->
@@ -477,6 +486,7 @@
         const qrCloseBtn = document.getElementById('qrCloseBtn');
         const printAllQrBtn = document.getElementById('printAllQrBtn');
         const qrPosterImage = document.getElementById('qrPosterImage');
+        const posterLoadingState = document.getElementById('posterLoadingState');
         const downloadBtn = document.getElementById('downloadBtn');
         const printSingleBtn = document.getElementById('printSingleBtn');
         const printSheet = document.getElementById('printSheet');
@@ -488,10 +498,38 @@
         let activePosterKey = '';
         let posterRequestToken = 0;
         const posterTemplateUrl = @json(asset('images/RestoTix.png'));
+        const currentTenantName = @json(trim((string) (optional(auth()->user()->tenant)->company_name ?? 'FOOD PANDA')));
 
-        if (!qrModal || !qrBox || !qrCloseBtn || !qrPosterImage || !downloadBtn || !printSingleBtn ||
-            !printSheet) {
+        if (!qrModal || !qrBox || !qrCloseBtn || !qrPosterImage || !posterLoadingState || !downloadBtn ||
+            !printSingleBtn || !printSheet) {
             return;
+        }
+
+        function setPosterLoadingState(isLoading) {
+            posterLoadingState.classList.toggle('hidden', !isLoading);
+        }
+
+        function setPosterImageSource(dataUrl) {
+            return new Promise((resolve) => {
+                let settled = false;
+
+                const finish = () => {
+                    if (settled) return;
+                    settled = true;
+                    qrPosterImage.classList.remove('opacity-0');
+                    setPosterLoadingState(false);
+                    resolve();
+                };
+
+                qrPosterImage.classList.add('opacity-0');
+                qrPosterImage.onload = finish;
+                qrPosterImage.onerror = finish;
+                qrPosterImage.src = dataUrl;
+
+                if (qrPosterImage.complete && qrPosterImage.naturalWidth > 0) {
+                    finish();
+                }
+            });
         }
 
         function downloadDataUrl(fileName, dataUrl) {
@@ -557,6 +595,8 @@
         }
 
         async function buildPosterDataUrl(data) {
+            const restaurantName = String(data?.restaurantName ?? currentTenantName ?? '').trim() || 'FOOD PANDA';
+
             const [templateImg, qrImg] = await Promise.all([
                 loadImageElement(posterTemplateUrl),
                 loadImageElement(data?.qr || '')
@@ -597,6 +637,21 @@
                 64,
                 '#fff8f2'
             );
+
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
+            ctx.shadowBlur = 6;
+            drawTextFit(
+                ctx,
+                restaurantName.toUpperCase(),
+                canvas.width / 2,
+                272,
+                650,
+                "Georgia, 'Times New Roman', serif",
+                36,
+                '#ffffff'
+            );
+            ctx.restore();
 
             // QR panel - keep template frame, fill inner area and place QR inside.
             const panelX = 295;
@@ -793,9 +848,10 @@
         }
 
         async function ensurePosterDataUrl(data) {
-            const cacheKey = `${data?.name ?? ''}::${data?.qr ?? ''}::${data?.tableNumber ?? data?.table_number ?? ''}`;
+            const cacheKey = `${data?.name ?? ''}::${data?.restaurantName ?? currentTenantName ?? ''}::${data?.qr ?? ''}::${data?.tableNumber ?? data?.table_number ?? ''}`;
 
             if (activePosterDataUrl && activePosterKey === cacheKey) {
+                await setPosterImageSource(activePosterDataUrl);
                 return activePosterDataUrl;
             }
 
@@ -807,7 +863,7 @@
                 if (requestToken === posterRequestToken) {
                     activePosterDataUrl = posterDataUrl;
                     activePosterKey = cacheKey;
-                    qrPosterImage.src = posterDataUrl;
+                    await setPosterImageSource(posterDataUrl);
                 }
 
                 return posterDataUrl;
@@ -815,7 +871,7 @@
                 if (requestToken === posterRequestToken) {
                     activePosterDataUrl = data?.qr || '';
                     activePosterKey = cacheKey;
-                    qrPosterImage.src = data?.qr || '';
+                    await setPosterImageSource(data?.qr || '');
                 }
 
                 return data?.qr || '';
@@ -825,10 +881,13 @@
         function openQR(data) {
             activeQr = {
                 name: data?.name || `Table ${normalizeTableNumber(data)}`,
+                restaurantName: data?.restaurantName || currentTenantName,
                 qr: data?.qr || '',
                 tableNumber: data?.tableNumber || data?.table_number || normalizeTableNumber(data),
             };
-            qrPosterImage.src = '';
+            setPosterLoadingState(true);
+            qrPosterImage.classList.add('opacity-0');
+            qrPosterImage.removeAttribute('src');
             qrModal.classList.remove('hidden');
             document.body.classList.add('overflow-hidden');
             ensurePosterDataUrl(activeQr);
@@ -845,7 +904,8 @@
                 openQR({
                     name: btn.dataset.name,
                     qr: btn.dataset.qr,
-                    tableNumber: btn.dataset.tableNumber
+                    tableNumber: btn.dataset.tableNumber,
+                    restaurantName: currentTenantName
                 });
             });
         });
@@ -856,7 +916,8 @@
                 openQR({
                     name: img.dataset.name,
                     qr: img.dataset.qr,
-                    tableNumber: img.dataset.tableNumber
+                    tableNumber: img.dataset.tableNumber,
+                    restaurantName: currentTenantName
                 });
             });
         });
@@ -897,12 +958,14 @@
                     const data = {
                         name: btn.dataset.name,
                         qr: btn.dataset.qr,
-                        tableNumber: btn.dataset.tableNumber
+                        tableNumber: btn.dataset.tableNumber,
+                        restaurantName: currentTenantName
                     };
                     const posterDataUrl = await ensurePosterDataUrl({
                         name: data.name,
                         qr: data.qr,
-                        tableNumber: data.tableNumber
+                        tableNumber: data.tableNumber,
+                        restaurantName: data.restaurantName
                     });
                     posterDataUrls.push(posterDataUrl);
                 }
@@ -1059,7 +1122,12 @@
 
         async function serveDrawerItem(itemId) {
             try {
-                await postDrawerItemAction(`/admin/order-items/${itemId}/serve`);
+                const result = await postDrawerItemAction(`/admin/order-items/${itemId}/serve`);
+                if (result.pickup_alert) {
+                    window.dispatchEvent(new CustomEvent('kitchen-pickup-alert-resolved', {
+                        detail: result.pickup_alert,
+                    }));
+                }
                 await refreshCurrentTableDrawer();
             } catch (error) {
                 alert(error.message || 'Unable to mark item as served');
@@ -1531,6 +1599,13 @@
         function printKotPdfInHiddenFrame(pdfUrl, context = {}) {
             if (!pdfUrl) return;
 
+            const useMobilePdfViewer = window.matchMedia('(max-width: 767px)').matches ||
+                window.matchMedia('(pointer: coarse)').matches;
+            if (useMobilePdfViewer) {
+                window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+                return;
+            }
+
             const frameId = 'kot-print-frame';
             document.getElementById(frameId)?.remove();
 
@@ -1673,7 +1748,54 @@
             });
         }
 
+        function syncTableStatsFromCards() {
+            const counts = {
+                available: 0,
+                reserved: 0,
+                occupied: 0,
+                calling_waiter: 0,
+                request_bill: 0
+            };
+
+            document.querySelectorAll('.table-card').forEach((card) => {
+                const status = String(card.dataset.status || '').toLowerCase();
+                if (Object.prototype.hasOwnProperty.call(counts, status)) counts[status]++;
+                if (card.dataset.isCallingWaiter === '1') counts.calling_waiter++;
+                if (card.dataset.isBillRequested === '1') counts.request_bill++;
+            });
+
+            Object.entries(counts).forEach(([status, count]) => {
+                const element = document.querySelector(`[data-table-stat="${status}"]`);
+                if (element) element.textContent = String(count);
+            });
+        }
+        window.syncTableStatsFromCards = syncTableStatsFromCards;
+
         window.markTableAsCallingWaiter = function(tableNum) {
+            const normalizedTableNum = normalizeTableNum(tableNum);
+            const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            if (!card) return;
+
+            card.dataset.isCallingWaiter = '1';
+            const waiterBell = card.querySelector('.waiter-call-bell');
+            if (waiterBell) waiterBell.style.display = 'flex';
+            window.updateWaiterTableCard?.(normalizedTableNum, JSON.parse(card.dataset.orders || '[]'),
+                card.dataset.status, { is_calling_waiter: true });
+        };
+
+        window.markTableAsBillRequested = function(tableNum) {
+            const normalizedTableNum = normalizeTableNum(tableNum);
+            const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            if (!card) return;
+
+            card.dataset.isBillRequested = '1';
+            const billBell = card.querySelector('.bill-request-bell');
+            if (billBell) billBell.style.display = 'flex';
+            window.updateWaiterTableCard?.(normalizedTableNum, JSON.parse(card.dataset.orders || '[]'),
+                card.dataset.status, { is_bill_requested: true });
+        };
+
+        window.markTableAsAvailable = function(tableNum, clearSignals = false) {
             const normalizedTableNum = normalizeTableNum(tableNum);
             const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
             if (!card) return;
@@ -1681,9 +1803,30 @@
             const statusPill = card.querySelector('.table-status-pill');
             if (!statusPill) return;
 
+            card.dataset.status = 'available';
+            if (clearSignals) {
+                card.dataset.isCallingWaiter = '0';
+                card.dataset.isBillRequested = '0';
+                const waiterBell = card.querySelector('.waiter-call-bell');
+                const billBell = card.querySelector('.bill-request-bell');
+                if (waiterBell) waiterBell.style.display = 'none';
+                if (billBell) billBell.style.display = 'none';
+            }
+            card.classList.remove('request-bill-active', 'waiter-call-active', 'kitchen-ready-active');
+            const kitchenBadge = card.querySelector('.kitchen-status-badge');
+            if (kitchenBadge) {
+                kitchenBadge.classList.add('hidden');
+                kitchenBadge.textContent = 'Kitchen';
+            }
+
             statusPill.className =
-                'table-status-pill text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400';
-            statusPill.textContent = 'Calling waiter';
+                'table-status-pill text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400';
+            statusPill.textContent = 'Available';
+            window.updateWaiterTableCard?.(normalizedTableNum, [], 'available', clearSignals ? {
+                is_calling_waiter: false,
+                is_bill_requested: false
+            } : {});
+            syncTableStatsFromCards();
         };
 
         function setKitchenStatusBadge(tableNum, className, label) {
@@ -1710,11 +1853,24 @@
         window.markTableAsOccupied = function(tableNum) {
             const normalizedTableNum = normalizeTableNum(tableNum);
             const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            if (!card) return;
+
+            card.dataset.status = 'occupied';
+            card.classList.remove('request-bill-active', 'waiter-call-active', 'kitchen-ready-active');
+
+            const statusPill = card.querySelector('.table-status-pill');
+            if (statusPill) {
+                statusPill.className =
+                    'table-status-pill text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400';
+                statusPill.textContent = 'Occupied';
+            }
+
             const kitchenBadge = card?.querySelector('.kitchen-status-badge');
             if (kitchenBadge) {
                 kitchenBadge.classList.add('hidden');
             }
             clearKitchenReadyState(tableNum);
+            syncTableStatsFromCards();
         };
 
         window.markTableAsKitchenPreparing = function(tableNum) {
@@ -1776,6 +1932,14 @@
             window.currentOpenTableOrders = [];
             resetDrawerKotSelectionState();
             setKotPrintButtonState(false);
+            if (typeof window.setDrawerGenerateBillButtonState === 'function') {
+                const hasMatchingBillingDraft = Boolean(
+                    String(window.currentOpenTableId || '').trim() &&
+                    window.currentBillingDraftPayload &&
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                );
+                window.setDrawerGenerateBillButtonState(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
+            }
             setDrawerSubtitle(formatOrderItemCount(0));
             listArea.innerHTML = `
                 <div class="text-center p-10 text-gray-500">
@@ -1848,6 +2012,13 @@
                 window.currentOpenTableOrders = [];
                 resetDrawerKotSelectionState();
                 setKotPrintButtonState(false);
+                const hasMatchingBillingDraft = Boolean(
+                    String(window.currentOpenTableId || '').trim() &&
+                    window.currentBillingDraftPayload &&
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                );
+                window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
+                window.refreshBillingDraftForCurrentTable?.(true);
                 setDrawerSubtitle(formatOrderItemCount(0));
                 listArea.innerHTML =
                     `<div class="text-center p-10 text-red-400">Unable to load active orders</div>`;
@@ -1860,6 +2031,15 @@
                 resetDrawerKotSelectionState();
                 setKotPrintButtonState(false);
                 setDrawerSubtitle(formatOrderItemCount(0));
+                if (typeof window.markTableAsAvailable === 'function') {
+                    window.markTableAsAvailable(tableNum);
+                }
+                const hasMatchingBillingDraft = Boolean(
+                    String(window.currentOpenTableId || '').trim() &&
+                    window.currentBillingDraftPayload &&
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                );
+                window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
                 listArea.innerHTML = `
                     <div class="flex min-h-[240px] items-center justify-center px-4 py-10 text-center">
                         <div>
@@ -1870,11 +2050,13 @@
                             <p class="mt-1 text-sm text-gray-500">Fresh orders will appear here.Click 'Add Item' to place an order.</p>
                         </div>
                     </div>`;
+                window.refreshBillingDraftForCurrentTable?.();
                 return;
             }
 
             window.currentOpenTableOrders = orders;
             setKotPrintButtonState(true);
+            window.setDrawerGenerateBillButtonState?.(true);
             const totalItems = getOrderItemCount(orders);
             const primaryStatus = getPrimaryOrderStatus(orders);
             setDrawerSubtitle(formatOrderItemCount(totalItems), primaryStatus);
@@ -1970,18 +2152,21 @@
                                         <i class="fas fa-check w-3.5"></i>
                                         <span>Served</span>
                                     </button>
-                                    <button type="button" data-item-action="cancelled" data-item-id="${item.id}"
-                                        ${actionLocked ? 'disabled aria-disabled="true"' : ''}
-                                        class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition ${actionLocked ? 'cursor-not-allowed bg-gray-50 text-gray-400 opacity-50' : 'text-red-600 hover:bg-red-50'}">
-                                        <i class="fas fa-ban w-3.5"></i>
-                                        <span>Cancelled</span>
-                                    </button>
+                                    @if (in_array(auth()->user()->role, ['admin', 'manager'], true))
+                                        <button type="button" data-item-action="cancelled" data-item-id="${item.id}"
+                                            ${actionLocked ? 'disabled aria-disabled="true"' : ''}
+                                            class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition ${actionLocked ? 'cursor-not-allowed bg-gray-50 text-gray-400 opacity-50' : 'text-red-600 hover:bg-red-50'}">
+                                            <i class="fas fa-ban w-3.5"></i>
+                                            <span>Cancelled</span>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                      </div>`;
                 });
             });
             listArea.innerHTML = html;
+            window.refreshBillingDraftForCurrentTable?.();
         }
 
         function renderKotViewToDrawer(tableNum, orders) {
@@ -1989,6 +2174,12 @@
 
             if (!orders || orders.length === 0) {
                 setKotPrintButtonState(false);
+                const hasMatchingBillingDraft = Boolean(
+                    String(window.currentOpenTableId || '').trim() &&
+                    window.currentBillingDraftPayload &&
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                );
+                window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
                 setDrawerSubtitle(formatOrderItemCount(0));
                 listArea.innerHTML = `
                     <div class="flex min-h-[240px] items-center justify-center px-4 py-10 text-center">
@@ -2000,12 +2191,15 @@
                             <p class="mt-1 text-sm text-gray-500">Fresh orders will appear here when the table starts cooking.</p>
                         </div>
                     </div>`;
+                window.refreshBillingDraftForCurrentTable?.();
                 return;
             }
 
-            const groups = getKotGroupsFromOrders(orders);
-            if (!groups.length) {
-                setKotPrintButtonState(false);
+                window.setDrawerGenerateBillButtonState?.(true);
+                const groups = getKotGroupsFromOrders(orders);
+                if (!groups.length) {
+                    setKotPrintButtonState(false);
+                    window.setDrawerGenerateBillButtonState?.(true);
                 setDrawerSubtitle('0 KOT batches');
                 listArea.innerHTML = `
                     <div class="flex min-h-[240px] items-center justify-center px-4 py-10 text-center">
@@ -2017,6 +2211,13 @@
                             <p class="mt-1 text-sm text-gray-500">Orders will appear here once a KOT is generated.</p>
                         </div>
                     </div>`;
+                const hasMatchingBillingDraft = Boolean(
+                    String(window.currentOpenTableId || '').trim() &&
+                    window.currentBillingDraftPayload &&
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                );
+                window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
+                window.refreshBillingDraftForCurrentTable?.();
                 return;
             }
 
@@ -2134,6 +2335,7 @@
             }).join('');
 
             listArea.innerHTML = html;
+            window.refreshBillingDraftForCurrentTable?.();
         }
 
         if (drawerOrdersTabBtn) {
@@ -2147,12 +2349,14 @@
         // Table Card Click
         document.querySelectorAll('.table-card').forEach(card => {
             card.addEventListener('click', (e) => {
-                if (e.target.closest('button') || e.target.closest('img')) return;
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('img')) return;
 
                 const tableNum = card.dataset.tableNumber;
                 window.currentOpenTable = tableNum;
                 window.currentOpenTableId = card.dataset.id || null;
                 window.currentOpenTableBranchId = card.dataset.branchId || null;
+                window.currentBillingDraftPayload = null;
+                window.currentBillingDraftTableId = null;
                 window.currentOpenTableDrawerView = 'orders';
                 syncDrawerViewTabs();
                 const drawerTitle = document.getElementById('drawerTitle');

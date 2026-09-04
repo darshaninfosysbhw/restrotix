@@ -271,8 +271,6 @@
                             <option value="available">Available</option>
                             <option value="reserved">Reserved</option>
                             <option value="occupied">Occupied</option>
-                            <option value="calling_waiter">Calling Waiter</option>
-                            <option value="request_bill">Request Bill</option>
                             <option value="out_of_service">Out Of Service</option>
                         </select>
                     </div>
@@ -905,6 +903,27 @@
                 statusPill.textContent = 'Calling waiter';
             };
 
+            window.markTableAsAvailable = function(tableNum) {
+                const normalizedTableNum = normalizeTableNum(tableNum);
+                const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+                if (!card) return;
+
+                const statusPill = card.querySelector('.table-status-pill');
+                if (!statusPill) return;
+
+                card.dataset.status = 'available';
+                card.classList.remove('request-bill-active', 'waiter-call-active', 'kitchen-ready-active');
+                const kitchenBadge = card.querySelector('.kitchen-status-badge');
+                if (kitchenBadge) {
+                    kitchenBadge.classList.add('hidden');
+                    kitchenBadge.textContent = 'Kitchen';
+                }
+
+                statusPill.className =
+                    'table-status-pill text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400';
+                statusPill.textContent = 'Available';
+            };
+
             window.markTableAsRequestBill = function(tableNum) {
                 const normalizedTableNum = normalizeTableNum(tableNum);
                 const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
@@ -1049,6 +1068,9 @@
 
             function renderOrdersToDrawer(tableNum, orders) {
                 if (!orders || orders.length === 0) {
+                    if (typeof window.markTableAsAvailable === 'function') {
+                        window.markTableAsAvailable(tableNum);
+                    }
                     listArea.innerHTML = renderEmptyOrdersState();
                     return;
                 }

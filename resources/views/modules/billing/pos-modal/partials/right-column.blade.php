@@ -10,7 +10,7 @@
                 <div>
                     <p class="text-slate-700">Invoice No: <span id="billingInvoiceNo" class="font-semibold">##</span></p>
                     <p class="mt-2 text-slate-700">Dine In: <span id="billingDineInTable" class="font-semibold">Table
-                            1</span></p>
+                            N/A</span></p>
                 </div>
 
                 <div class="text-right">
@@ -234,6 +234,11 @@
                         Confirm Checkout
                     </button>
                 </div>
+                <button type="button" id="billingHoldBtn"
+                    class="h-8 w-full rounded-sm border border-amber-500 bg-amber-50 px-1 text-[13px] font-semibold text-amber-600 transition hover:bg-amber-100 cursor-pointer"
+                    data-billing-action="hold">
+                    Hold Bill
+                </button>
             </div>
         </div>
     </div>
@@ -256,6 +261,7 @@
             const taxLabelEl = document.getElementById('billingRightTaxLabel');
             const remarksRow = document.getElementById('billingInvoiceRemarksRow');
             const remarksText = document.getElementById('billingInvoiceRemarksText');
+            const holdBillingBtn = document.getElementById('billingHoldBtn');
             const confirmPrintBtn = document.getElementById('billingConfirmPrintBtn');
             const confirmCheckoutBtn = document.getElementById('billingConfirmCheckoutBtn');
             const estimateDownloadBtn = document.getElementById('billingDownloadEstimateBtn');
@@ -700,9 +706,61 @@
             ).trim();
 
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            const tenderInput = document.getElementById('billingTenderAmount');
             const saveBillingUrl = @json(route('admin.billing.checkout.store', [], false));
+            const saveBillingDraftUrl = @json(route('admin.billing.drafts.store', [], false));
             const estimatePdfUrl = @json(route('admin.billing.estimate.pdf', [], false));
+            const getCurrentBillingMode = () => String(window.billingPaymentMode || 'paid').toLowerCase();
+            const getSelectedPaymentMethod = () => String(window.billingPaymentMethod || '').trim();
+            const getTenderAmountValue = () => pickNumber(
+                tenderInput?.value,
+                window.billingTenderAmountValue,
+                0
+            );
+            const isTenderAmountRequired = () => getCurrentBillingMode() === 'paid';
+            const isPaymentMethodRequired = () => getCurrentBillingMode() === 'paid';
+            const hasRequiredTenderAmount = () => !isTenderAmountRequired() || getTenderAmountValue() > 0;
+            const hasRequiredPaymentMethod = () => !isPaymentMethodRequired() || getSelectedPaymentMethod() !== '';
+            const showBlockingToast = (message) => {
+                if (typeof window.showToast === 'function') {
+                    window.showToast({
+                        type: 'error',
+                        message,
+                        duration: 3000,
+                    });
+                    return;
+                }
+
+                alert(message);
+            };
+            const validateBeforeConfirm = () => {
+                if (isPaymentMethodRequired() && !hasRequiredPaymentMethod()) {
+                    showBlockingToast('Please select payment method before confirming the bill.');
+                    return false;
+                }
+
+                if (isTenderAmountRequired() && !hasRequiredTenderAmount()) {
+                    showBlockingToast('Please enter tender amount before confirming the bill.');
+                    tenderInput?.focus();
+                    return false;
+                }
+
+                return true;
+            };
+            const ensureTenderAmount = () => {
+                if (hasRequiredTenderAmount()) {
+                    return true;
+                }
+
+                showBlockingToast('Please enter tender amount before confirming the bill.');
+                tenderInput?.focus();
+                return false;
+            };
             const saveBillingRequest = async (action = 'checkout') => {
+                if (!validateBeforeConfirm()) {
+                    return null;
+                }
+
                 const snapshot = buildSnapshot(window.billingEstimateInvoiceData || {});
                 const tableNumber = String(window.currentOpenTable || document.getElementById(
                     'billingDineInTable')?.textContent?.replace(/^Table/i, '')?.trim() || '').trim();
@@ -712,8 +770,11 @@
                 const tableId = window.currentOpenTableId || currentCard?.dataset?.id || null;
                 const qrToken = window.currentOpenTableQrToken || currentCard?.dataset?.qrToken || null;
                 const paymentMode = String(window.billingPaymentMode || 'paid');
-                const paymentMethod = paymentMode === 'paid' ? String(window.billingPaymentMethod ||
-                    'cash') : '';
+                const paymentMethod = paymentMode === 'paid' ? getSelectedPaymentMethod() : '';
+                if (paymentMode === 'paid' && !paymentMethod) {
+                    showBlockingToast('Please select payment method before confirming the bill.');
+                    return null;
+                }
                 const tenderAmount = pickNumber(document.getElementById('billingTenderAmount')?.value,
                     window.billingTenderAmountValue, snapshot.tenderAmount);
                 const changeAmount = Math.max(tenderAmount - snapshot.grandTotal, 0);
@@ -767,6 +828,166 @@
                 if (!response.ok || !result?.success) {
                     throw new Error(result?.message || 'Unable to save billing.');
                 }
+
+                return result.data || {};
+            };
+
+            const buildBillingDraftPayload = () => {
+                const snapshot = buildSnapshot(window.billingEstimateInvoiceData || {});
+                const tableNumber = String(window.currentOpenTable || document.getElementById(
+                    'billingDineInTable')?.textContent?.replace(/^Table/i, '')?.trim() || '').trim();
+                const currentCard = tableNumber ? document.querySelector(
+                    `.table-card[data-table-number="${tableNumber}"]`) : null;
+                const taxConfig = resolveTaxConfig(tableNumber);
+                const tableId = window.currentOpenTableId || currentCard?.dataset?.id || null;
+                const qrToken = window.currentOpenTableQrToken || currentCard?.dataset?.qrToken || null;
+                const paymentMode = String(
+                    window.billingPaymentMode ||
+                    document.querySelector('[data-payment-mode-root]')?.dataset?.paymentMode ||
+                    'paid'
+                ).toLowerCase();
+                const paymentMethod = paymentMode === 'paid'
+                    ? String(
+                        window.billingPaymentMethod ||
+                        document.getElementById('billingSelectedPaymentMethod')?.value ||
+                        ''
+                    ).trim()
+                    : '';
+                const tenderAmount = pickNumber(document.getElementById('billingTenderAmount')?.value,
+                    window.billingTenderAmountValue, snapshot.tenderAmount);
+                const changeAmount = Math.max(tenderAmount - snapshot.grandTotal, 0);
+                const paidAmount = paymentMode === 'paid' ? snapshot.grandTotal : (
+                    paymentMode === 'partial' ? tenderAmount : 0);
+                const dueAmount = paymentMode === 'unpaid' ? snapshot.grandTotal : Math.max(snapshot
+                    .grandTotal - paidAmount, 0);
+                const overallDiscountAmount = pickNumber(
+                    document.getElementById('billingLeftOverallDiscount')?.value,
+                    window.billingOverallDiscountAmount,
+                    snapshot.overallDiscountAmount
+                );
+                const overallDiscountPercent = pickNumber(
+                    document.getElementById('billingLeftDiscountAmount')?.value,
+                    snapshot.itemBaseTotal > 0 ? (overallDiscountAmount / snapshot.itemBaseTotal) * 100 : 0
+                );
+                const discountMode = String(
+                    window.billingDiscountSource ||
+                    document.querySelector('[data-pos-discount-root]')?.dataset?.discountMode ||
+                    'amount'
+                ).toLowerCase();
+                const multiplePaymentEnabled = document.getElementById('billingMultiplePaymentEnabled')?.value === '1';
+                const notesSnapshot = getInvoiceRemarks();
+                const currentOrder = window.billingCurrentOrderPayload || {};
+                const billingState = {
+                    payment_mode: paymentMode,
+                    payment_method: paymentMethod,
+                    discount_mode: discountMode,
+                    multiple_payment_enabled: multiplePaymentEnabled,
+                    tender_amount: tenderAmount,
+                    change_amount: changeAmount,
+                    paid_amount: paidAmount,
+                    due_amount: dueAmount,
+                    overall_discount_amount: overallDiscountAmount,
+                    overall_discount_percent: overallDiscountPercent,
+                    tax_amount: snapshot.taxAmount,
+                    grand_total: snapshot.grandTotal,
+                    notes_snapshot: notesSnapshot,
+                };
+
+                return {
+                    id: currentOrder.id || currentOrder.order_id || null,
+                    order_id: currentOrder.id || currentOrder.order_id || null,
+                    tenant_id: currentOrder.tenant_id || null,
+                    branch_id: currentOrder.branch_id || null,
+                    table_id: tableId,
+                    table_number: tableNumber,
+                    qr_token: qrToken,
+                    order_number: currentOrder.order_number || currentOrder.order_no || null,
+                    order_by_label: currentOrder.order_by_label || currentOrder.order_by_label_name || currentOrder.order_by || 'Guest',
+                    created_at: currentOrder.created_at || null,
+                    ordered_at: currentOrder.ordered_at || currentOrder.ordered_at_iso || null,
+                    status: currentOrder.status || 'running',
+                    payment_status: currentOrder.payment_status || 'pending',
+                    payment_mode: billingState.payment_mode,
+                    payment_method: billingState.payment_method,
+                    discount_mode: billingState.discount_mode,
+                    multiple_payment_enabled: billingState.multiple_payment_enabled,
+                    item_count: snapshot.itemCount,
+                    total_qty: snapshot.totalQty,
+                    subtotal_before_discount: snapshot.itemBaseTotal,
+                    item_discount_amount: snapshot.itemDiscountTotal,
+                    subtotal_after_item_discount: snapshot.subtotalAfterItemDiscount,
+                    overall_discount_percent: billingState.overall_discount_percent,
+                    overall_discount_amount: billingState.overall_discount_amount,
+                    tax_setting: taxConfig.setting,
+                    tax_rate_snapshot: taxConfig.ratePercent,
+                    tax_amount: billingState.tax_amount,
+                    grand_total: billingState.grand_total,
+                    tender_amount: billingState.tender_amount,
+                    change_amount: billingState.change_amount,
+                    paid_amount: billingState.paid_amount,
+                    due_amount: billingState.due_amount,
+                    customer_name_snapshot: document.getElementById(
+                            'billingCustomerName')?.textContent?.trim() ||
+                        'Cash Customer',
+                    notes_snapshot: billingState.notes_snapshot,
+                    billing_state: billingState,
+                    items: (snapshot.items || []).map((item) => normalizeBillingItem(item)),
+                    held_at: new Date().toISOString(),
+                };
+            };
+
+            const saveBillingDraft = async () => {
+                if (typeof window.syncBillingEstimateInvoice === 'function') {
+                    try {
+                        window.syncBillingEstimateInvoice();
+                    } catch (error) {
+                        console.warn('Billing draft sync before hold failed', error);
+                    }
+                }
+
+                const payload = buildBillingDraftPayload();
+                const tableId = payload.table_id;
+                const tableNumber = String(payload.table_number || '').trim();
+
+                if (!tableId || !tableNumber) {
+                    showBlockingToast('Unable to determine table for hold action.');
+                    return null;
+                }
+
+                if (!Array.isArray(payload.items) || payload.items.length === 0) {
+                    showBlockingToast('No billing items available to hold.');
+                    return null;
+                }
+
+                const response = await fetch(saveBillingDraftUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: JSON.stringify({
+                        table_id: tableId,
+                        table_number: tableNumber,
+                        payload,
+                    }),
+                });
+
+                const result = await response.json();
+                if (!response.ok || !result?.success) {
+                    throw new Error(result?.message || 'Unable to hold billing.');
+                }
+
+                const heldPayload = result?.data?.payload || payload;
+                window.currentBillingDraftPayload = heldPayload;
+                window.currentBillingDraftTableId = String(tableId);
+                window.dispatchEvent(new CustomEvent('billing-draft-updated', {
+                    detail: {
+                        tableId,
+                        payload: heldPayload,
+                    },
+                }));
 
                 return result.data || {};
             };
@@ -836,7 +1057,7 @@
                 };
             };
 
-            const openEstimatePdf = (payload, outputMode = 'download') => {
+            const openEstimatePdf = (payload, outputMode = 'download', targetWindowName = '') => {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = estimatePdfUrl;
@@ -854,6 +1075,9 @@
                     }
                     form.target = downloadFrame.name;
                 } else {
+                    if (targetWindowName) {
+                        form.target = targetWindowName;
+                    } else {
                     const printFrameId = 'billingEstimatePrintFrame';
                     let printFrame = document.getElementById(printFrameId);
                     if (!printFrame) {
@@ -876,6 +1100,7 @@
                     };
 
                     form.target = printFrame.name;
+                    }
                 }
 
                 const appendField = (name, value) => {
@@ -1245,26 +1470,89 @@
                 });
             };
 
+            const refreshConfirmActionState = () => {
+                const tenderRequired = isTenderAmountRequired();
+                const tenderValid = hasRequiredTenderAmount();
+                const paymentMethodRequired = isPaymentMethodRequired();
+                const paymentMethodValid = hasRequiredPaymentMethod();
+                const blocked = (tenderRequired && !tenderValid) || (paymentMethodRequired && !paymentMethodValid);
+
+                [confirmPrintBtn, confirmCheckoutBtn].forEach((button) => {
+                    if (!button) return;
+
+                    button.setAttribute('aria-disabled', String(blocked));
+                    button.classList.toggle('opacity-60', blocked);
+                    button.classList.toggle('cursor-not-allowed', blocked);
+                    button.title = !paymentMethodValid
+                        ? 'Please select payment method first.'
+                        : (tenderRequired && !tenderValid ? 'Please enter tender amount first.' : '');
+                });
+            };
+
             window.syncBillingEstimateInvoice = syncFromLeft;
             window.requestBillingEstimateInvoiceSync = requestSyncFromLeft;
             window.addEventListener('billing-estimate-invoice-updated', requestSyncFromLeft);
             window.addEventListener('billing-discount-mode-changed', requestSyncFromLeft);
             window.addEventListener('billing-payment-mode-changed', requestSyncFromLeft);
-            const tenderInput = document.getElementById('billingTenderAmount');
             if (tenderInput) {
                 tenderInput.addEventListener('input', requestSyncFromLeft);
+                tenderInput.addEventListener('input', refreshConfirmActionState);
+                tenderInput.addEventListener('change', refreshConfirmActionState);
             }
             requestSyncFromLeft();
+            refreshConfirmActionState();
             const closeBillingModal = () => {
                 document.getElementById('billingPosCloseBtn')?.click();
             };
 
+            if (holdBillingBtn) {
+                holdBillingBtn.addEventListener('click', async () => {
+                    try {
+                        holdBillingBtn.disabled = true;
+                        holdBillingBtn.textContent = 'Saving...';
+                        const result = await saveBillingDraft();
+                        if (!result) {
+                            return;
+                        }
+                        if (typeof window.showToast === 'function') {
+                            window.showToast({
+                                type: 'success',
+                                message: 'Bill held successfully. You can resume it later.',
+                                duration: 3000,
+                            });
+                        }
+                        window.setDrawerGenerateBillButtonState?.(true);
+                        closeBillingModal();
+                    } catch (error) {
+                        console.error(error);
+                        showBlockingToast(error.message || 'Unable to hold billing.');
+                    } finally {
+                        holdBillingBtn.disabled = false;
+                        holdBillingBtn.innerHTML = 'Hold Bill';
+                    }
+                });
+            }
+
             if (confirmCheckoutBtn) {
                 confirmCheckoutBtn.addEventListener('click', async () => {
+                    if (!ensureTenderAmount()) {
+                        return;
+                    }
+
                     try {
                         confirmCheckoutBtn.disabled = true;
                         confirmCheckoutBtn.textContent = 'Saving...';
                         const result = await saveBillingRequest('checkout');
+                        if (!result) {
+                            return;
+                        }
+                        window.billingEstimateInvoiceData = {};
+                        window.currentBillingDraftPayload = null;
+                        window.currentBillingDraftTableId = null;
+                        window.requestBillingEstimateInvoiceSync?.();
+                        if (window.currentOpenTable && typeof window.markTableAsAvailable === 'function') {
+                            window.markTableAsAvailable(window.currentOpenTable, true);
+                        }
                         closeBillingModal();
                         if (window.currentOpenTable && typeof window.refreshFromServer === 'function') {
                             await window.refreshFromServer(window.currentOpenTable);
@@ -1284,10 +1572,24 @@
 
             if (confirmPrintBtn) {
                 confirmPrintBtn.addEventListener('click', async () => {
+                    if (!ensureTenderAmount()) {
+                        return;
+                    }
+
                     try {
                         confirmPrintBtn.disabled = true;
                         confirmPrintBtn.textContent = 'Saving...';
                         const result = await saveBillingRequest('print');
+                        if (!result) {
+                            return;
+                        }
+                        window.billingEstimateInvoiceData = {};
+                        window.currentBillingDraftPayload = null;
+                        window.currentBillingDraftTableId = null;
+                        window.requestBillingEstimateInvoiceSync?.();
+                        if (window.currentOpenTable && typeof window.markTableAsAvailable === 'function') {
+                            window.markTableAsAvailable(window.currentOpenTable, true);
+                        }
                         if (result?.print_url) {
                             printPdfInHiddenFrame(result.print_url);
                         }
@@ -1305,6 +1607,10 @@
                 });
             }
 
+            window.addEventListener('billing-payment-mode-changed', refreshConfirmActionState);
+            window.addEventListener('billing-payment-method-changed', refreshConfirmActionState);
+            window.addEventListener('billing-estimate-invoice-updated', refreshConfirmActionState);
+
             if (estimateDownloadBtn) {
                 estimateDownloadBtn.addEventListener('click', () => {
                     try {
@@ -1319,12 +1625,17 @@
             if (estimatePrintBtn) {
                 estimatePrintBtn.addEventListener('click', () => {
                     try {
-                        openEstimatePdf(buildEstimatePdfPayload(), 'print');
+                        window.printCurrentBillingEstimate();
                     } catch (error) {
                         console.error(error);
                         alert(error.message || 'Unable to generate estimate PDF.');
                     }
                 });
             }
+
+            window.printCurrentBillingEstimate = (targetWindowName = '') => {
+                openEstimatePdf(buildEstimatePdfPayload(), 'print', targetWindowName);
+                return true;
+            };
         });
     </script>

@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Modules\PublicMenu;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
+use App\Models\Table;
 use App\Models\Tenant;
 use App\Services\Admin\MenuManagement\OrderStatusService;
 use App\Services\Payments\PaymentGatewayService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 class OrderStatusController extends Controller
 {
@@ -19,23 +22,48 @@ class OrderStatusController extends Controller
 
     public function orderStatus(Request $request, string $qr_token)
     {
-        $table = \App\Models\Table::query()
+        $table = Table::query()
             ->with('branch')
             ->where('qr_token', $qr_token)
             ->where('is_active', true)
             ->firstOrFail();
 
+        $paymentStatus = strtolower((string) $request->query('payment', ''));
         $order = null;
+        $latestOrder = Order::query()
+            ->where('table_id', $table->id)
+            ->latest()
+            ->with(['items.orderItemAddons.masterAddon', 'invoice'])
+            ->first();
+
         if ($request->filled('payment')) {
-            $order = \App\Models\Order::query()
-                ->where('table_id', $table->id)
-                ->latest()
-                ->with(['items.orderItemAddons.masterAddon'])
-                ->first();
+            $order = $latestOrder;
+
+            if (in_array($paymentStatus, ['completed', 'success', 'paid'], true)) {
+                return $this->renderThankYou($table, $order, $request, [
+                    'payment_status' => 'completed',
+                    'payment_mode' => (string) $request->query('payment_mode', 'Online'),
+                    'transaction_id' => (string) $request->query('transaction_id', ''),
+                    'message' => (string) $request->query('payment_message', 'Payment completed successfully.'),
+                ]);
+            }
         }
 
         if (!$order) {
-            [$table, $order] = $this->orderStatusService->resolveContext($qr_token);
+            try {
+                [$table, $order] = $this->orderStatusService->resolveContext($qr_token);
+            } catch (ModelNotFoundException $e) {
+                if ($latestOrder && in_array(strtolower((string) ($latestOrder->status ?? '')), ['completed', 'paid', 'delivered'], true)) {
+                    return $this->renderThankYou($table, $latestOrder, $request, [
+                        'payment_status' => 'completed',
+                        'payment_mode' => (string) ($latestOrder->invoice?->payment_mode ?? 'Online'),
+                        'transaction_id' => (string) ($latestOrder->invoice?->transaction_ref ?? ''),
+                        'message' => 'Payment completed successfully. Thank you for visiting.',
+                    ]);
+                }
+
+                throw $e;
+            }
         }
 
         $paymentFlow = $this->orderStatusService->resolvePaymentFlow($table);
@@ -104,8 +132,38 @@ class OrderStatusController extends Controller
 
     public function paymentReturn(Request $request, string $qr_token)
     {
-        [$table, $order] = $this->orderStatusService->resolveContext($qr_token);
+        $table = Table::query()
+            ->with('branch')
+            ->where('qr_token', $qr_token)
+            ->firstOrFail();
+
+        $order = Order::query()
+            ->where('table_id', $table->id)
+            ->with(['items.orderItemAddons.masterAddon', 'invoice'])
+            ->latest()
+            ->first();
+
+        if (!$order) {
+            return redirect()->route('public.order.thank-you', array_filter([
+                'qr_token' => $qr_token,
+                'payment_status' => 'completed',
+                'payment_mode' => (string) $request->query('payment_mode', 'Online'),
+                'transaction_id' => (string) $request->query('transaction_id', ''),
+                'payment_message' => (string) $request->query('payment_message', 'Thank you for visiting.'),
+            ]));
+        }
+
         $result = $this->paymentGatewayService->handleReturn($table, $order, $request);
+
+        if (($result['status'] ?? 'failed') === 'completed') {
+            return redirect()->route('public.order.thank-you', array_filter([
+                'qr_token' => $qr_token,
+                'payment_status' => 'completed',
+                'payment_mode' => $result['payment_mode'] ?? 'Online',
+                'transaction_id' => $result['transaction_id'] ?? '',
+                'payment_message' => $result['message'] ?? 'Payment completed successfully.',
+            ]));
+        }
 
         return redirect()->route('public.order.status', array_filter([
             'qr_token' => $qr_token,
@@ -115,6 +173,27 @@ class OrderStatusController extends Controller
             'gateway_name' => $result['gateway_name'] ?? '',
             'payment_message' => $result['message'] ?? '',
         ]));
+    }
+
+    public function thankYou(Request $request, string $qr_token)
+    {
+        $table = Table::query()
+            ->with('branch')
+            ->where('qr_token', $qr_token)
+            ->firstOrFail();
+
+        $latestOrder = Order::query()
+            ->where('table_id', $table->id)
+            ->with(['invoice'])
+            ->latest()
+            ->first();
+
+        return $this->renderThankYou($table, $latestOrder, $request, [
+            'payment_status' => (string) $request->query('payment_status', 'completed'),
+            'payment_mode' => (string) $request->query('payment_mode', (string) ($latestOrder?->invoice?->payment_mode ?? 'Online')),
+            'transaction_id' => (string) $request->query('transaction_id', (string) ($latestOrder?->invoice?->transaction_ref ?? '')),
+            'message' => (string) $request->query('payment_message', 'Thank you for visiting.'),
+        ]);
     }
 
     public function orderStatusPdf(Request $request, string $qr_token)
@@ -333,15 +412,39 @@ class OrderStatusController extends Controller
         return trim($rupeeWords . ' ' . $currencyLabel . ' Only');
     }
 
+    private function renderThankYou(Table $table, ?Order $order, Request $request, array $paymentResult = [])
+    {
+        $branch = $table->branch;
+        $tenant = $branch?->tenant ?? Tenant::query()->find($table->tenant_id);
+        $publicMenuTheme = strtolower((string) ($branch?->branch_menu_theme ?? 'dark')) === 'light'
+            ? 'light'
+            : 'dark';
+
+        return view('modules.public-menu.thank-you', [
+            'tenant' => $tenant,
+            'table' => $table,
+            'order' => $order,
+            'tableNumber' => (string) ($table->table_number ?? ''),
+            'qrToken' => (string) ($table->qr_token ?? ''),
+            'publicMenuTheme' => $publicMenuTheme,
+            'paymentResult' => array_merge([
+                'status' => 'completed',
+                'payment_mode' => 'Online',
+                'transaction_id' => '',
+                'message' => 'Thank you for visiting.',
+            ], $paymentResult),
+        ]);
+    }
+
     private function resolveInvoiceContext(string $qr_token): array
     {
-        $table = \App\Models\Table::query()
+        $table = Table::query()
             ->with('branch')
             ->where('qr_token', $qr_token)
             ->where('is_active', true)
             ->firstOrFail();
 
-        $order = \App\Models\Order::query()
+        $order = Order::query()
             ->where('table_id', $table->id)
             ->with(['items.orderItemAddons.masterAddon', 'invoice'])
             ->latest()

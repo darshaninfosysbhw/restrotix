@@ -19,7 +19,7 @@
                     </p>
 
                     <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 lg:space-x-6">
-                        <a href="{{ route('checkout') }}"
+                        <a href="#pricing"
                             class="gradient-orange text-white font-semibold py-3 px-6 sm:py-4 sm:px-8 rounded-lg shadow-lg hover:shadow-xl transition flex items-center justify-center text-sm sm:text-base">
                             Start Free Trial
                             <i class="fas fa-arrow-right ml-3"></i>

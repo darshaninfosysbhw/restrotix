@@ -37,11 +37,31 @@
                     </p>
                 </div>
             </div>
-            <button id="closeDrawer" type="button"
-                class="text-lg leading-none text-gray-500 hover:text-red-400 cursor-pointer"
-                aria-label="Close drawer">
-                ✖
-            </button>
+            <div class="flex items-center gap-3">
+
+                <!-- Transfer Table Button -->
+                <button id="transferTableBtn"
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-lg
+                           border border-orange-500/30
+                           bg-orange-500/10
+                           px-2 py-2
+                           text-xs font-semibold text-orange-400
+                           transition-all duration-200
+                           hover:bg-orange-500 hover:text-white
+                           cursor-pointer">
+
+                    <i class="fas fa-right-left text-[10px]" aria-hidden="true"></i>
+
+                    <span>{{ auth()->user()->role === 'waiter' ? 'Transfer' : 'Assign waiter' }}</span>
+                </button>
+
+                 <button id="closeDrawer" type="button"
+                     class="text-lg leading-none text-gray-500 hover:text-red-400 cursor-pointer"
+                     aria-label="Close drawer">
+                     ✖
+                </button>
+            </div>
         </div>
 
         <div class="mt-3">
@@ -79,8 +99,12 @@
             Add Item
         </button>
         <button id="drawerGenerateBillBtn" type="button"
-            class="block w-full text-center border border-orange-500 text-orange-400 font-semibold py-2.5 rounded-lg transition hover:bg-orange-500/10 cursor-pointer">
-            Generate Bill
+            class="block w-full text-center border border-orange-500 text-orange-400 bg-transparent font-semibold py-2.5 rounded-lg transition cursor-pointer opacity-60">
+            @if (auth()->user()->role === 'waiter')
+                <i class="fas fa-print mr-1.5"></i> Print Estimate
+            @else
+                Generate Bill
+            @endif
         </button>
     </div>
 </div>
@@ -216,6 +240,11 @@
                         window.registerIncomingOrder(tableNum);
                     }
 
+                    if (typeof window.refreshWaiterTableCard === 'function') {
+                        window.refreshWaiterTableCard(tableNum, card?.dataset.branchId).catch(error =>
+                            console.warn('Live waiter card refresh failed', error));
+                    }
+
                     // 3. 🔥 THE TRIGGER: Agar wahi table open hai, toh fetch karo
                     // Ya phir hamesha fetch karo taaki background state update rahe
                     if (isCurrentTableOpen) {
@@ -254,13 +283,6 @@
                         card.classList.add('ring-2', 'ring-orange-500');
                         card.classList.add('request-bill-active');
                         card.classList.remove('waiter-call-active');
-
-                        const statusPill = card.querySelector('.table-status-pill');
-                        if (statusPill) {
-                            statusPill.className =
-                                'table-status-pill text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400';
-                            statusPill.textContent = 'Request bill';
-                        }
                     }
 
                     if (typeof window.registerBillRequest === 'function') {
@@ -279,6 +301,7 @@
                     if (typeof window.markTableAsRequestBill === 'function') {
                         window.markTableAsRequestBill(tableNum);
                     }
+                    window.markTableAsBillRequested?.(tableNum);
 
                     if (window.currentOpenTable === tableNum && typeof window.refreshFromServer ===
                         'function') {
@@ -306,8 +329,7 @@
                     }
 
                     if (isReadyEvent) {
-                        playSound(kitchenReadySound);
-                        emitTableToast('success', `${formatTableToastLabel(tableNum)}: Kitchen ready`);
+                        // The KOT-level pickup alert handles waiter sound/toast after the full batch is ready.
                     }
 
                     if (isServedEvent) {
@@ -322,11 +344,37 @@
         }
 
         const billingModal = document.getElementById('billingPosModal');
+        const isWaiterPanel = @json(auth()->user()->role === 'waiter');
         const billingModalPanel = document.getElementById('billingPosPanel');
         const billingModalCloseBtn = document.getElementById('billingPosCloseBtn');
         const drawerGenerateBillBtn = document.getElementById('drawerGenerateBillBtn');
+        const transferTableBtn = document.getElementById('transferTableBtn');
         const billingModalClosers = document.querySelectorAll('[data-billing-modal-close]');
         const billingOrdersBaseUrl = @json('/admin/get-table-orders');
+        const billingDraftsBaseUrl = @json(url('/admin/billing/drafts'));
+        const drawerGenerateBillEnabledClasses = [
+            'opacity-100',
+        ];
+        const drawerGenerateBillDisabledClasses = [
+            'opacity-60',
+        ];
+
+        if (transferTableBtn) {
+            transferTableBtn.addEventListener('click', () => {
+                const tableNumber = String(window.currentOpenTable || '').trim();
+                const tableId = window.currentOpenTableId || null;
+
+                if (!tableId && !tableNumber) return;
+
+                window.dispatchEvent(new CustomEvent('open-transfer-modal', {
+                    detail: {
+                        tableId,
+                        tableNumber,
+                        currentWaiterName: currentUserName,
+                    },
+                }));
+            });
+        }
 
         const formatMoney = (value, fractionDigits = 2) => {
             const number = Number(value ?? 0);
@@ -419,12 +467,106 @@
             if (el) el.textContent = value;
         };
 
+        const setGenerateBillButtonState = (enabled) => {
+            if (!drawerGenerateBillBtn) return;
+
+            const isEnabled = Boolean(enabled);
+            drawerGenerateBillBtn.classList.remove(
+                ...drawerGenerateBillEnabledClasses,
+                ...drawerGenerateBillDisabledClasses
+            );
+            drawerGenerateBillBtn.classList.add(
+                ...(isEnabled ? drawerGenerateBillEnabledClasses : drawerGenerateBillDisabledClasses)
+            );
+        };
+
+        window.setDrawerGenerateBillButtonState = setGenerateBillButtonState;
+        window.currentBillingDraftPayload = window.currentBillingDraftPayload || null;
+        window.currentBillingDraftTableId = window.currentBillingDraftTableId || null;
+        const hasMatchingBillingDraft = () => {
+            const currentTableId = String(window.currentOpenTableId || '').trim();
+
+            return Boolean(
+                currentTableId &&
+                window.currentBillingDraftPayload &&
+                String(window.currentBillingDraftTableId || '').trim() === currentTableId
+            );
+        };
+
+        setGenerateBillButtonState(Boolean(window.currentOpenTable || hasMatchingBillingDraft()));
+
+        const syncGenerateBillButtonState = () => {
+            const hasTableContext = Boolean(
+                String(window.currentOpenTable || '').trim() || String(window.currentOpenTableId || '').trim()
+            );
+            const hasDraft = hasMatchingBillingDraft();
+            setGenerateBillButtonState(hasTableContext || hasDraft);
+        };
+
+        const setCurrentBillingDraft = (draft = null, tableId = window.currentOpenTableId) => {
+            const normalizedTableId = String(tableId || '').trim();
+            window.currentBillingDraftPayload = draft;
+            window.currentBillingDraftTableId = draft ? normalizedTableId : null;
+            syncGenerateBillButtonState();
+            return draft;
+        };
+
+        const fetchCurrentBillingDraft = async (force = false) => {
+            const currentTableNumber = String(window.currentOpenTable || '').trim();
+            let tableId = String(window.currentOpenTableId || '').trim();
+
+            if (!tableId && currentTableNumber) {
+                const matchingCard = Array.from(document.querySelectorAll('.table-card')).find((card) => {
+                    return String(card?.dataset?.tableNumber || '').trim() === currentTableNumber;
+                });
+
+                tableId = String(matchingCard?.dataset?.id || '').trim();
+            }
+
+            if (!tableId) {
+                setCurrentBillingDraft(null);
+                return null;
+            }
+
+            if (!force && window.currentBillingDraftPayload && String(window.currentBillingDraftTableId || '') === tableId) {
+                syncGenerateBillButtonState();
+                return window.currentBillingDraftPayload;
+            }
+
+            try {
+                const response = await fetch(`${billingDraftsBaseUrl}/${encodeURIComponent(tableId)}`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                });
+
+                if (!response.ok) {
+                    setCurrentBillingDraft(null, tableId);
+                    return null;
+                }
+
+                const result = await response.json();
+                const draft = result?.data?.payload || null;
+                setCurrentBillingDraft(draft, tableId);
+                return draft;
+            } catch (error) {
+                console.warn('Billing draft load failed', error);
+                syncGenerateBillButtonState();
+                return null;
+            }
+        };
+
+        window.refreshBillingDraftForCurrentTable = async (force = false) => {
+            return fetchCurrentBillingDraft(force);
+        };
+
         const setValue = (id, value) => {
             const el = document.getElementById(id);
             if (el) el.value = value;
         };
 
-        const renderBillingModal = (order) => {
+        const renderBillingModal = (order, options = {}) => {
             const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({
                 '&': '&amp;',
                 '<': '&lt;',
@@ -434,6 +576,11 @@
             } [char]));
 
             const cleanAddonLabel = (value) => String(value ?? '').replace(/^[↳↲]+\s*/u, '').trim();
+
+            window.billingCurrentOrderPayload = {
+                ...(order || {}),
+                items: Array.isArray(order?.items) ? order.items : [],
+            };
 
             const normalizeBillingAddon = (addon = {}) => {
                 const quantity = Math.max(Number(addon?.quantity ?? 1), 1);
@@ -615,6 +762,10 @@
             };
 
             const items = (Array.isArray(order?.items) ? order.items : []).map(normalizeBillingItem);
+            const isDraftRestore = Boolean(options?.restoreDraft);
+            const restoreSource = isDraftRestore && order?.billing_state && typeof order.billing_state === 'object'
+                ? { ...order, ...order.billing_state }
+                : order;
             const totals = items.reduce((carry, item) => {
                 carry.totalQty += Number(item.qty ?? 0) + (item.isRejected ? 0 : (item.addons || [])
                     .reduce((addonSum, addon) => addonSum + Number(addon.quantity ?? 0), 0));
@@ -633,7 +784,11 @@
             const itemBaseTotal = totals.itemBaseTotal;
             const itemDiscountTotal = totals.itemDiscountTotal;
             const subtotalAfterItemDiscount = Math.max(itemBaseTotal - itemDiscountTotal, 0);
-            const overallDiscountAmount = Number(order?.discount_amount ?? 0);
+            const overallDiscountAmount = Number(
+                isDraftRestore ?
+                (restoreSource?.overall_discount_amount ?? restoreSource?.discount_amount ?? 0) :
+                (order?.discount_amount ?? 0)
+            );
             const taxConfig = resolveBillingTaxConfig(order?.table_number || window.currentOpenTable || '');
             const taxSetting = String(taxConfig.setting || 'exclusive').toLowerCase() === 'inclusive' ?
                 'inclusive' :
@@ -851,8 +1006,15 @@
                 `;
             }
 
+            const billingTableNumber = String(
+                restoreSource?.table_number ||
+                order?.table_number ||
+                window.currentOpenTable ||
+                ''
+            ).trim();
+
             setText('billingInvoiceNo', '##');
-            setText('billingDineInTable', order?.table_number ? `Table ${order.table_number}` : 'Table 1');
+            setText('billingDineInTable', billingTableNumber ? `Table ${billingTableNumber}` : 'Table N/A');
             setText('billingInvoiceDate', formatDateTime(order?.created_at));
             setText('billingCustomerName', 'Cash Customer');
             const orderedAtSource = order?.ordered_at_iso || order?.ordered_at || '';
@@ -894,34 +1056,96 @@
             window.dispatchEvent(new CustomEvent('billing-estimate-invoice-updated', {
                 detail: invoiceSnapshot,
             }));
-            window.requestBillingEstimateInvoiceSync?.();
 
-            if (typeof window.updateBillingDiscountMode === 'function') {
-                try {
-                    window.updateBillingDiscountMode(document.querySelector('[data-pos-discount-root]')
-                        ?.dataset?.discountMode || 'amount');
-                } catch (error) {
-                    console.warn('Billing discount mode sync failed', error);
+            const paymentStatus = String(order?.payment_status || 'pending').toLowerCase();
+            const restorePaymentMode = String(restoreSource?.payment_mode || '').toLowerCase();
+            const paymentMode = isDraftRestore && ['paid', 'unpaid', 'partial'].includes(restorePaymentMode)
+                ? restorePaymentMode
+                : 'paid';
+            const paidAmount = Number(restoreSource?.paid_amount ?? 0);
+            const tenderAmount = Number(restoreSource?.tender_amount ?? (paymentMode === 'paid' ? grandTotal :
+                paymentMode === 'partial' ? paidAmount : 0));
+            const changeAmount = Number(restoreSource?.change_amount ?? Math.max(tenderAmount - grandTotal, 0));
+            const restoreMultiplePaymentEnabled = Boolean(restoreSource?.multiple_payment_enabled);
+            const restoreDiscountMode = String(restoreSource?.discount_mode || '').toLowerCase();
+            const restoreOverallDiscountAmount = Number(
+                restoreSource?.overall_discount_amount ??
+                restoreSource?.discount_amount ??
+                0
+            );
+            const restoreOverallDiscountPercent = Number(
+                restoreSource?.overall_discount_percent ??
+                (itemBaseTotal > 0 ? (restoreOverallDiscountAmount / itemBaseTotal) * 100 : 0)
+            );
+            window.billingGrandTotalAmount = grandTotal;
+            window.billingPaymentMode = paymentMode;
+            window.billingPaymentMethod = String(restoreSource?.payment_method || '').trim();
+            window.billingTenderAmountValue = tenderAmount;
+            window.billingChangeAmountValue = changeAmount;
+            window.billingOverallDiscountAmount = isDraftRestore ? restoreOverallDiscountAmount : overallDiscountAmount;
+            window.billingDiscountSource = isDraftRestore ? (restoreDiscountMode || 'amount') : (window.billingDiscountSource || 'amount');
+
+            if (isDraftRestore) {
+                const overallDiscountAmountInput = document.getElementById('billingLeftOverallDiscount');
+                const overallDiscountPercentInput = document.getElementById('billingLeftDiscountAmount');
+
+                if (overallDiscountAmountInput) {
+                    overallDiscountAmountInput.value = formatMoney(restoreOverallDiscountAmount);
+                }
+                if (overallDiscountPercentInput) {
+                    overallDiscountPercentInput.value = formatMoney(restoreOverallDiscountPercent);
+                }
+
+                window.billingInvoiceRemarks = String(restoreSource?.notes_snapshot || '').trim();
+                const billingInvoiceRemarksInput = document.getElementById('billingInvoiceRemarks');
+                if (billingInvoiceRemarksInput) {
+                    billingInvoiceRemarksInput.value = window.billingInvoiceRemarks;
                 }
             }
 
-            const paymentStatus = String(order?.payment_status || 'pending').toLowerCase();
-            const paymentMode = paymentStatus === 'paid' ? 'paid' : paymentStatus === 'partial' ?
-                'partial' :
-                'unpaid';
-            const paidAmount = Number(order?.paid_amount ?? 0);
-            window.billingGrandTotalAmount = grandTotal;
+            setValue('billingTenderAmount', formatMoney(isDraftRestore ? tenderAmount : grandTotal));
+            setText('billingChangeAmount', `-${formatMoney(isDraftRestore ? changeAmount : 0)}`);
 
             if (typeof window.updateBillingPaymentMode === 'function') {
-                window.updateBillingPaymentMode('paid', {
+                window.updateBillingPaymentMode(paymentMode, {
                     grandTotal,
                     resetPartial: false,
                 });
+                if (isDraftRestore && typeof window.updateBillingPaymentMethod === 'function') {
+                    window.updateBillingPaymentMethod(String(restoreSource?.payment_method || ''), {
+                        silent: true,
+                    });
+                }
+                if (isDraftRestore && typeof window.updateBillingMultiplePayment === 'function') {
+                    window.updateBillingMultiplePayment(restoreMultiplePaymentEnabled, {
+                        silent: true,
+                    });
+                }
             } else {
-                setValue('billingTenderAmount', formatMoney(grandTotal));
-                setText('billingChangeAmount', '-0.00');
-                setText('billingPaymentMode', 'Unpaid / Credit');
+                setText('billingPaymentMode', isDraftRestore && paymentMode === 'paid'
+                    ? 'Paid'
+                    : 'Unpaid / Credit');
                 setText('billingPaymentModeAmount', `(Rs ${formatMoney(grandTotal, 2)})`);
+            }
+            if (isDraftRestore) {
+                if (restoreDiscountMode && typeof window.updateBillingDiscountMode === 'function') {
+                    try {
+                        window.updateBillingDiscountMode(restoreDiscountMode);
+                    } catch (error) {
+                        console.warn('Billing discount restore sync failed', error);
+                    }
+                }
+                window.requestBillingEstimateInvoiceSync?.();
+            } else {
+                window.requestBillingEstimateInvoiceSync?.();
+                if (typeof window.updateBillingDiscountMode === 'function') {
+                    try {
+                        window.updateBillingDiscountMode(document.querySelector('[data-pos-discount-root]')
+                            ?.dataset?.discountMode || 'amount');
+                    } catch (error) {
+                        console.warn('Billing discount mode sync failed', error);
+                    }
+                }
             }
             setText('billingKotNo',
                 `${order?.order_number || 'N/A'}${order?.order_by_label ? ` (by ${order.order_by_label})` : ''}`
@@ -933,31 +1157,65 @@
 
         const loadBillingModalData = async () => {
             const tableNumber = String(window.currentOpenTable || '').trim();
-            if (!tableNumber) return;
+            if (!tableNumber) return false;
 
             try {
+                const draft = await fetchCurrentBillingDraft(true);
+                if (draft) {
+                    const restoreDraft = draft?.billing_state && typeof draft.billing_state === 'object'
+                        ? { ...draft, ...draft.billing_state }
+                        : draft;
+                    renderBillingModal(restoreDraft, { restoreDraft: true });
+                    return true;
+                }
+
+                const branchId = Number(window.currentOpenTableBranchId || 0);
+                const branchQuery = branchId > 0 ? `?branch_id=${encodeURIComponent(branchId)}` : '';
                 const response = await fetch(
-                    `${billingOrdersBaseUrl}/${encodeURIComponent(tableNumber)}`, {
+                    `${billingOrdersBaseUrl}/${encodeURIComponent(tableNumber)}${branchQuery}`, {
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
                         },
                     });
 
-                if (!response.ok) return;
+                if (!response.ok) return false;
 
                 const orders = await response.json();
                 const order = Array.isArray(orders) ? orders[0] : orders;
-                if (!order) return;
+                if (!order) {
+                    if (typeof window.markTableAsAvailable === 'function') {
+                        window.markTableAsAvailable(tableNumber);
+                    }
+                    window.currentOpenTableOrders = [];
+                    syncGenerateBillButtonState();
+                    return false;
+                }
 
                 renderBillingModal(order);
+                return true;
             } catch (error) {
                 console.warn('Billing modal order load failed', error);
+                return false;
             }
         };
+        window.prepareTableBillingEstimate = loadBillingModalData;
 
-        const openBillingModal = () => {
-            if (!billingModal || !billingModalPanel) return;
+        const openBillingModal = async () => {
+            if (!billingModal || !billingModalPanel) return false;
+            const loaded = await loadBillingModalData();
+            if (!loaded) {
+                if (typeof window.showToast === 'function') {
+                    window.showToast({
+                        type: 'error',
+                        message: 'No running order found for this table.',
+                        duration: 3000,
+                    });
+                }
+                closeBillingModal();
+                return false;
+            }
+
             billingModal.classList.remove('hidden');
             billingModalCloseBtn?.classList.remove('opacity-0', 'pointer-events-none', 'scale-90');
             document.body.classList.add('overflow-hidden');
@@ -965,8 +1223,9 @@
                 billingModalPanel.classList.remove('translate-x-full');
                 billingModalPanel.classList.add('translate-x-0');
             });
-            loadBillingModalData();
+            return true;
         };
+        window.openTableBillingModal = openBillingModal;
 
         const closeBillingModal = () => {
             if (!billingModal || !billingModalPanel || billingModal.classList.contains('hidden')) return;
@@ -976,6 +1235,7 @@
             document.body.classList.remove('overflow-hidden');
             window.billingDiscountSource = undefined;
         };
+        window.closeTableBillingModal = closeBillingModal;
 
         if (billingModalPanel) {
             billingModalPanel.addEventListener('transitionend', () => {
@@ -986,7 +1246,19 @@
         }
 
         if (drawerGenerateBillBtn) {
-            drawerGenerateBillBtn.addEventListener('click', openBillingModal);
+            drawerGenerateBillBtn.addEventListener('click', () => {
+                if (!isWaiterPanel) {
+                    openBillingModal();
+                    return;
+                }
+
+                const currentCard = document.querySelector(
+                    `.table-card[data-table-number="${CSS.escape(String(window.currentOpenTable || ''))}"]`);
+                const printEstimateButton = currentCard?.querySelector('[data-print-bill-estimate]');
+                if (printEstimateButton) {
+                    printEstimateButton.click();
+                }
+            });
         }
 
         billingModalClosers.forEach((closer) => {

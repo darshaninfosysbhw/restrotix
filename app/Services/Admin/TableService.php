@@ -86,11 +86,18 @@ class TableService
         // 2. Update the Table
         $table = Table::where('tenant_id', $tenantId)->findOrFail($id);
 
-        return $table->update([
+        $updates = [
             'branch_id'    => $data['branch_id'],
             'table_number' => $data['table_number'],
             'capacity'     => $data['capacity'],
             'status'       => $data['status'],
-        ]);
+        ];
+
+        if ($data['status'] !== 'occupied') {
+            $updates['is_calling_waiter'] = false;
+            $updates['is_bill_requested'] = false;
+        }
+
+        return $table->update($updates);
     }
 }

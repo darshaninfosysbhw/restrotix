@@ -1,4 +1,5 @@
-<div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col space-y-2 w-96 max-w-[92vw]"></div>
+<div id="toastContainer" class="fixed top-5 right-5 z-[1000] flex flex-col space-y-2 w-96 max-w-[92vw]"></div>
+
 
 <script>
     // 1. Function ko seedhe window par assign karein, bina kisi wrapper ke

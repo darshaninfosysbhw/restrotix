@@ -18,7 +18,16 @@ class Table extends Model
         'qr_token',
         'qr_code_path',
         'status',
+        'is_calling_waiter',
+        'is_bill_requested',
         'is_active',
+    ];
+    
+     protected $casts = [
+        'capacity' => 'integer',
+        'is_calling_waiter' => 'boolean',
+        'is_bill_requested' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     /**
@@ -62,6 +71,12 @@ class Table extends Model
     public function accessSessions()
     {
         return $this->hasMany(TableAccessSession::class, 'table_id');
+    }
+    
+    
+    public function qrScans()
+    {
+        return $this->hasMany(TableQrScan::class, 'table_id');
     }
 
     /**

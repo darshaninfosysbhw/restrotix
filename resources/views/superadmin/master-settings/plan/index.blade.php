@@ -348,7 +348,7 @@
                                                                 <input type="number" min="0" step="0.01"
                                                                     name="prices[{{ $currency->id }}][monthly]"
                                                                     data-price-monthly="{{ $currency->id }}"
-                                                                    data-plan-price-secondary="1" required
+                                                                    data-plan-price-secondary="1"
                                                                     placeholder="0.00"
                                                                     class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
                                                             </div>
@@ -358,7 +358,7 @@
                                                                 <input type="number" min="0" step="0.01"
                                                                     name="prices[{{ $currency->id }}][yearly]"
                                                                     data-price-yearly="{{ $currency->id }}"
-                                                                    data-plan-price-secondary="1" required
+                                                                    data-plan-price-secondary="1"
                                                                     placeholder="0.00"
                                                                     class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
                                                             </div>

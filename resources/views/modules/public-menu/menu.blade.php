@@ -346,9 +346,11 @@
                         </a>
                     @endif
 
-                    <div class="sticky top-0 z-15 bg-gray-900 lg:hidden flex gap-2 overflow-x-auto no-scrollbar py-2">
+                      <div id="mobileCategoryTabs"
+                        class="sticky top-0 z-15 bg-gray-900 lg:hidden flex gap-2 overflow-x-auto no-scrollbar py-2">
                         @foreach ($categoryList as $category)
                             <a href="{{ request()->fullUrlWithQuery(['category' => $category['id']]) }}"
+                                data-category-id="{{ $category['id'] }}"
                                 class="flex-shrink-0 px-5 py-2.5 rounded-full text-xs uppercase {{ $activeCategory && $activeCategory['id'] === $category['id'] ? 'bg-orange-600 font-bold' : 'bg-gray-800 border border-gray-700 text-gray-400 font-bold' }}">
                                 {{ $category['name'] }}
                             </a>
@@ -954,6 +956,7 @@
 
     <script>
         window.allItems = @json($searchItems);
+        window.selectedMenuCategoryId = @json((int) ($activeCategory['id'] ?? 0));
         window.currentTableAccessSessionToken = @json($tableSessionToken);
         window.tableAccessSession = @json($tableAccessSessionPayload);
         window.tableGeofencePolicy = {
@@ -970,6 +973,28 @@
             error: null,
             promise: null,
         };
+        
+        
+         window.scrollActiveMenuCategoryIntoView = function() {
+            const tabs = document.getElementById('mobileCategoryTabs');
+            if (!tabs || !window.selectedMenuCategoryId) return;
+
+            const activeTab = tabs.querySelector(`[data-category-id="${window.selectedMenuCategoryId}"]`);
+            if (!activeTab) return;
+
+            activeTab.scrollIntoView({
+                behavior: 'auto',
+                block: 'nearest',
+                inline: 'center'
+            });
+        };
+
+        window.addEventListener('load', () => {
+            window.requestAnimationFrame(() => {
+                window.scrollActiveMenuCategoryIntoView();
+            });
+        });
+
 
         window.ensureTableGeoLocation = function() {
             if (!window.tableGeofencePolicy.enabled) {

@@ -5,6 +5,8 @@ namespace App\Services\Admin;
 use App\Models\Branch;
 use App\Models\OrderInvoice;
 use App\Models\OrderItem;
+use App\Models\Table;
+use App\Models\TableQrScan;
 use App\Models\User;
 
 class DashboardService
@@ -12,11 +14,12 @@ class DashboardService
     public function buildDashboardPayload(int $tenantId, string $currencySymbol): array
     {
         $dashboardMetrics = $this->buildDashboardMetrics($tenantId, $currencySymbol);
+        $qrScanStats = $this->buildQrScanStats($tenantId);
         $topBranches = $this->buildTopBranches($tenantId, $currencySymbol);
         $productSales = $this->buildProductSalesInsights($tenantId, $currencySymbol);
 
         return array_merge(
-            compact('dashboardMetrics', 'topBranches'),
+            compact('dashboardMetrics', 'qrScanStats', 'topBranches'),
             $productSales
         );
     }
@@ -106,6 +109,57 @@ class DashboardService
                 'total' => number_format($totalStaff),
                 'on_leave' => number_format($onLeaveStaff),
             ],
+        ];
+    }
+    
+     private function buildQrScanStats(int $tenantId): array
+    {
+        $now = now();
+        $todayStart = $now->copy()->startOfDay();
+        $todayEnd = $now->copy()->endOfDay();
+
+        $baseQuery = TableQrScan::query()
+            ->where('tenant_id', $tenantId);
+
+        $uniqueSessionCountQuery = function ($query) {
+            return $query->whereNotNull('table_access_session_id');
+        };
+
+        $totalScans = (int) $uniqueSessionCountQuery(clone $baseQuery)
+            ->distinct()
+            ->count('table_access_session_id');
+        $todayScans = (int) (clone $baseQuery)
+            ->whereBetween('created_at', [$todayStart, $todayEnd])
+            ->whereNotNull('table_access_session_id')
+            ->distinct()
+            ->count('table_access_session_id');
+        $uniqueTables = (int) (clone $baseQuery)->distinct()->count('table_id');
+
+        $topScanRow = (clone $baseQuery)
+            ->whereNotNull('table_access_session_id')
+            ->selectRaw('table_id, COUNT(DISTINCT table_access_session_id) as total_scans')
+            ->groupBy('table_id')
+            ->orderByDesc('total_scans')
+            ->first();
+
+        $topTableLabel = 'N/A';
+        $topTableScans = 0;
+
+        if ($topScanRow) {
+            $tableNumber = Table::query()
+                ->whereKey((int) $topScanRow->table_id)
+                ->value('table_number');
+
+            $topTableLabel = $tableNumber ? 'Table ' . $tableNumber : 'Table #' . (int) $topScanRow->table_id;
+            $topTableScans = (int) ($topScanRow->total_scans ?? 0);
+        }
+
+        return [
+            'total_scans' => number_format($totalScans),
+            'today_scans' => number_format($todayScans),
+            'unique_tables' => number_format($uniqueTables),
+            'top_table' => $topTableLabel,
+            'top_table_scans' => number_format($topTableScans),
         ];
     }
 

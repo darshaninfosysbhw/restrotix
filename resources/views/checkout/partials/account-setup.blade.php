@@ -16,7 +16,7 @@
         <div class="space-y-2">
             <label class="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">Phone
                 Number <span class="text-red-500">*</span></label>
-            <input type="tel" placeholder="+91 00000 00000"
+            <input type="tel" placeholder="+977 00000 00000"
                 class="w-full px-4 py-3 rounded-lg input-box outline-none font-medium" x-model="formData.phone"
                 required>
         </div>

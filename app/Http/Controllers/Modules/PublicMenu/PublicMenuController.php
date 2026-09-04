@@ -10,10 +10,12 @@ use App\Models\Branch;
 use App\Models\Order;
 use App\Models\TableAccessSession;
 use App\Models\Table;
+use App\Models\TableServiceRequest;
 use App\Models\Tenant;
 use App\Services\Admin\MenuManagement\CategoryService;
 use App\Services\Admin\MenuManagement\ItemService;
 use App\Services\PublicMenu\TableAccessSessionService;
+use App\Services\PublicMenu\TableQrScanService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -23,15 +25,18 @@ class PublicMenuController extends Controller
     protected $categoryService;
     protected $itemService;
     protected $tableAccessSessionService;
+    protected $tableQrScanService;
 
     public function __construct(
         CategoryService $categoryService,
         ItemService $itemService,
-        TableAccessSessionService $tableAccessSessionService
+        TableAccessSessionService $tableAccessSessionService,
+        TableQrScanService $tableQrScanService
     ) {
         $this->categoryService = $categoryService;
         $this->itemService = $itemService;
         $this->tableAccessSessionService = $tableAccessSessionService;
+        $this->tableQrScanService = $tableQrScanService;
     }
 
     public function show(Request $request, $tenant_slug, $branch_id = null)
@@ -53,6 +58,7 @@ class PublicMenuController extends Controller
         $tenant = Tenant::query()->findOrFail($table->tenant_id);
         $tableNumber = (string) $table->table_number;
         $tableAccessSession = $this->tableAccessSessionService->bootstrapFromScan($table, $request);
+        $this->tableQrScanService->recordScan($table, $request, $tableAccessSession);
 
         return $this->renderPreview(
             $request,
@@ -113,7 +119,15 @@ class PublicMenuController extends Controller
             ], 404);
         }
 
-        $table->update(['status' => 'calling_waiter']);
+        $table->update(['is_calling_waiter' => true]);
+
+        $serviceRequest = TableServiceRequest::create([
+            'tenant_id' => (int) $table->tenant_id,
+            'branch_id' => (int) $table->branch_id,
+            'table_id' => (int) $table->id,
+            'type' => 'call_waiter',
+            'status' => 'pending',
+        ]);
 
         broadcast(new WaiterCalled([
             'table_id' => (int) $table->id,
@@ -126,6 +140,7 @@ class PublicMenuController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Waiter has been called.',
+            'service_request_id' => $serviceRequest->id,
         ]);
     }
 
@@ -163,7 +178,15 @@ class PublicMenuController extends Controller
             ], 404);
         }
 
-        $table->update(['status' => 'request_bill']);
+        $table->update(['is_bill_requested' => true]);
+
+        $serviceRequest = TableServiceRequest::create([
+            'tenant_id' => (int) $table->tenant_id,
+            'branch_id' => (int) $table->branch_id,
+            'table_id' => (int) $table->id,
+            'type' => 'bill_request',
+            'status' => 'pending',
+        ]);
 
         broadcast(new BillRequested([
             'table_id' => (int) $table->id,
@@ -176,6 +199,7 @@ class PublicMenuController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Bill request has been sent.',
+            'service_request_id' => $serviceRequest->id,
         ]);
     }
 
@@ -186,8 +210,7 @@ class PublicMenuController extends Controller
         string $tableNumber,
         ?int $tableId = null,
         ?TableAccessSession $tableAccessSession = null
-    )
-    {
+    ) {
         $tenantId = (int) $tenant->id;
 
         if (!$tableId && $tableNumber !== 'N/A') {

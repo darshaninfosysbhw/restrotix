@@ -38,6 +38,11 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+    
+     public function kitchenPickupAlerts()
+    {
+        return $this->hasMany(KitchenPickupAlert::class);
+    }
 
     public function creator()
     {

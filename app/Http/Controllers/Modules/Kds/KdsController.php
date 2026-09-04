@@ -4,16 +4,17 @@ namespace App\Http\Controllers\Modules\Kds;
 
 use App\Events\KitchenStatusUpdated;
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Services\KitchenPickupAlertService;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class KdsController extends Controller
 {
@@ -94,6 +95,7 @@ class KdsController extends Controller
 
             $order = Order::find($item->order_id);
             if ($order) {
+                app(KitchenPickupAlertService::class)->syncBatch($order, (int) ($item->kot_number ?? 0));
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => (int) $order->id,
                     'table_number' => (string) ($order->table_number ?? ''),
@@ -104,17 +106,18 @@ class KdsController extends Controller
                     'item_name' => (string) $item->item_name,
                     'rejection_reason' => (string) ($item->rejection_reason ?? $request->reason ?? ''),
                     'kot_number' => (int) ($item->kot_number ?? 0),
-                    'batch_key' => ((int) $order->id) . ':' . ((int) ($item->kot_number ?? 0)),
+                    'batch_key' => ((int) $order->id).':'.((int) ($item->kot_number ?? 0)),
                 ]))->toOthers();
             }
 
             return response()->json([
                 'success' => true,
                 'order_status' => $order->kitchen_status,
-                'message' => "Item marked as {$status}"
+                'message' => "Item marked as {$status}",
             ]);
         } catch (\Exception $e) {
             DB::rollBack();
+
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
@@ -146,12 +149,12 @@ class KdsController extends Controller
         DB::transaction(function () use ($order, $targetItems, $itemStatus) {
             foreach ($targetItems->whereNotIn('status', ['rejected']) as $item) {
                 $itemUpdates = ['status' => $itemStatus];
-                if ($itemStatus === 'ready' && !$item->ready_at) {
+                if ($itemStatus === 'ready' && ! $item->ready_at) {
                     $itemUpdates['ready_at'] = now();
                     $startTime = $item->started_at ?? $item->created_at;
                     $itemUpdates['preparation_time'] = Carbon::parse($startTime)->diffInMinutes(now());
                 }
-                if ($itemStatus === 'preparing' && !$item->started_at) {
+                if ($itemStatus === 'preparing' && ! $item->started_at) {
                     $itemUpdates['started_at'] = now();
                 }
                 $item->update($itemUpdates);
@@ -162,6 +165,11 @@ class KdsController extends Controller
 
         $order->refresh();
         $batchKotNumber = $requestedKotNumber ?: (int) ($targetItems->first()?->kot_number ?? 0);
+        if ($requestedKotNumber) {
+            app(KitchenPickupAlertService::class)->syncBatch($order, $batchKotNumber);
+        } else {
+            app(KitchenPickupAlertService::class)->syncOrder($order);
+        }
         broadcast(new KitchenStatusUpdated([
             'order_id' => (int) $order->id,
             'table_number' => (string) ($order->table_number ?? ''),
@@ -169,7 +177,7 @@ class KdsController extends Controller
             'kitchen_status' => (string) ($order->kitchen_status ?? 'pending'),
             'item_status' => $itemStatus,
             'kot_number' => $batchKotNumber,
-            'batch_key' => $batchKotNumber > 0 ? ((int) $order->id) . ':' . $batchKotNumber : null,
+            'batch_key' => $batchKotNumber > 0 ? ((int) $order->id).':'.$batchKotNumber : null,
         ]))->toOthers();
 
         return $request->expectsJson() ? response()->json(['success' => true]) : back();
@@ -198,7 +206,7 @@ class KdsController extends Controller
                         $item->update([
                             'status' => 'ready',
                             'ready_at' => now(),
-                            'preparation_time' => Carbon::parse($startTime)->diffInMinutes(now())
+                            'preparation_time' => Carbon::parse($startTime)->diffInMinutes(now()),
                         ]);
                     }
                 }
@@ -213,12 +221,16 @@ class KdsController extends Controller
         });
 
         foreach ($kitchenBroadcasts as $payload) {
+            $readyOrder = Order::with('items')->find($payload['order_id']);
+            if ($readyOrder) {
+                app(KitchenPickupAlertService::class)->syncOrder($readyOrder);
+            }
             broadcast(new KitchenStatusUpdated($payload))->toOthers();
         }
 
         return $request->expectsJson()
-            ? response()->json(['success' => true, 'message' => "All ready with time calculation"])
-            : back()->with('success', "Orders updated.");
+            ? response()->json(['success' => true, 'message' => 'All ready with time calculation'])
+            : back()->with('success', 'Orders updated.');
     }
 
     private function mapOrderForCard(Order $order): array
@@ -230,10 +242,10 @@ class KdsController extends Controller
 
         $kitchenStatus = (string) $order->kitchen_status ?: 'pending';
         $visual = $this->getStatusVisual($kitchenStatus);
-        $hasRejectedItems = $order->items->contains(fn($item) => $item->status === 'rejected');
-        $hasStartableItems = $order->items->contains(fn($item) => in_array($item->status, ['new', 'pending']));
-        $hasUnfinishedItems = $order->items->contains(fn($item) => in_array($item->status, ['new', 'pending', 'preparing']));
-        $isFinalized = !$hasUnfinishedItems;
+        $hasRejectedItems = $order->items->contains(fn ($item) => $item->status === 'rejected');
+        $hasStartableItems = $order->items->contains(fn ($item) => in_array($item->status, ['new', 'pending']));
+        $hasUnfinishedItems = $order->items->contains(fn ($item) => in_array($item->status, ['new', 'pending', 'preparing']));
+        $isFinalized = ! $hasUnfinishedItems;
 
         // 🌟 FINAL ENTERPRISE CONSOLIDATION ENGINE: Group by item id + status + normalized notes + addons
         $consolidatedItems = $order->items->groupBy(function ($item) {
@@ -241,6 +253,7 @@ class KdsController extends Controller
             $addonsKey = $item->orderItemAddons
                 ->map(function ($addon) {
                     $addonPrice = $this->resolveAddonPrice($addon);
+
                     return implode('-', [
                         (int) ($addon->menu_item_addon_id ?? 0),
                         trim((string) ($addon->addon_name ?? $addon->masterAddon?->name ?? '')),
@@ -261,11 +274,12 @@ class KdsController extends Controller
         })->map(function ($group) {
             $first = $group->first();
 
-            $isCompleted = $group->every(fn($item) => in_array($item->status, ['ready', 'served', 'rejected']));
+            $isCompleted = $group->every(fn ($item) => in_array($item->status, ['ready', 'served', 'rejected']));
 
             $addons = $group->flatMap(function ($item) {
                 return $item->orderItemAddons->map(function ($addon) {
                     $addonPrice = $this->resolveAddonPrice($addon);
+
                     return [
                         'id' => (int) $addon->menu_item_addon_id,
                         'addon_name' => (string) ($addon->addon_name ?? $addon->masterAddon?->name ?? ''),
@@ -281,6 +295,7 @@ class KdsController extends Controller
                 ]);
             })->map(function ($addonGroup) {
                 $firstAddon = $addonGroup->first();
+
                 return [
                     'id' => $firstAddon['id'],
                     'addon_name' => $firstAddon['addon_name'],
@@ -299,7 +314,7 @@ class KdsController extends Controller
                 'addons' => $addons,
                 'rejection_reason' => $first->rejection_reason,
                 'kitchen_type' => $first->kitchen_type,
-                'ids_group' => $group->pluck('id')->all()
+                'ids_group' => $group->pluck('id')->all(),
             ];
         })->values()->all();
 
@@ -311,7 +326,7 @@ class KdsController extends Controller
             'created_at_iso' => $order->created_at->toIso8601String(),
             'timer_text' => sprintf('%02d:%02dm', intdiv($minutes, 60), $minutes % 60),
             'kot_number' => $kotNumber,
-            'kot_label' => $kotNumber ? 'KOT: ' . $kotNumber : null,
+            'kot_label' => $kotNumber ? 'KOT: '.$kotNumber : null,
             'is_urgent' => $isUrgent,
             'is_delayed' => $isDelayed,
             'status' => $kitchenStatus,
@@ -356,6 +371,7 @@ class KdsController extends Controller
         }
 
         $masterPrice = (float) ($addon->masterAddon?->price ?? 0);
+
         return $masterPrice > 0 ? $masterPrice : 0;
     }
 
@@ -366,7 +382,7 @@ class KdsController extends Controller
                 'next_status' => 'preparing',
                 'label' => 'START ALL',
                 'button_class' => 'border border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white',
-                'disabled' => !$hasStartableItems,
+                'disabled' => ! $hasStartableItems,
             ];
         }
         if ($isFinalized || $status === 'served') {
@@ -385,6 +401,7 @@ class KdsController extends Controller
                 'disabled' => false,
             ];
         }
+
         return null;
     }
 
@@ -429,12 +446,13 @@ class KdsController extends Controller
             return $order->items
                 ->groupBy(function ($item) {
                     $kotNumber = (int) ($item->kot_number ?? 0);
+
                     return $kotNumber > 0 ? $kotNumber : 1;
                 })
                 ->map(function (Collection $items, $kotNumber) use ($order) {
                     return $this->mapBatchForCard($order, (int) $kotNumber, $items->values());
                 });
-        })->filter(fn ($card) => !empty($card))->values();
+        })->filter(fn ($card) => ! empty($card))->values();
     }
 
     private function mapBatchForCard(Order $order, int $kotNumber, Collection $items): array
@@ -450,7 +468,7 @@ class KdsController extends Controller
         $hasRejectedItems = $items->contains(fn ($item) => $item->status === 'rejected');
         $hasStartableItems = $items->contains(fn ($item) => in_array($item->status, ['new', 'pending'], true));
         $hasUnfinishedItems = $items->contains(fn ($item) => in_array($item->status, ['new', 'pending', 'preparing'], true));
-        $isFinalized = !$hasUnfinishedItems;
+        $isFinalized = ! $hasUnfinishedItems;
 
         $minutes = $batchCreatedAt instanceof \Carbon\CarbonInterface
             ? (int) $batchCreatedAt->diffInMinutes(now())
@@ -468,7 +486,7 @@ class KdsController extends Controller
 
         return [
             'id' => (int) $order->id,
-            'batch_key' => ((int) $order->id) . ':' . $kotNumber,
+            'batch_key' => ((int) $order->id).':'.$kotNumber,
             'order_number' => $order->order_number,
             'table_number' => $order->table_number,
             'order_type' => strtoupper(str_replace('_', ' ', (string) $order->order_type)),
@@ -477,7 +495,7 @@ class KdsController extends Controller
                 : now()->toIso8601String(),
             'timer_text' => sprintf('%02d:%02dm', intdiv($minutes, 60), $minutes % 60),
             'kot_number' => $kotNumber,
-            'kot_label' => $kotNumber ? 'KOT: ' . $kotNumber : null,
+            'kot_label' => $kotNumber ? 'KOT: '.$kotNumber : null,
             'is_urgent' => $isUrgent,
             'is_delayed' => $isDelayed,
             'status' => $batchStatus,
@@ -501,6 +519,7 @@ class KdsController extends Controller
             $addonsKey = $item->orderItemAddons
                 ->map(function ($addon) {
                     $addonPrice = $this->resolveAddonPrice($addon);
+
                     return implode('-', [
                         (int) ($addon->menu_item_addon_id ?? 0),
                         trim((string) ($addon->addon_name ?? $addon->masterAddon?->name ?? '')),
@@ -526,6 +545,7 @@ class KdsController extends Controller
             $addons = $group->flatMap(function ($item) {
                 return $item->orderItemAddons->map(function ($addon) {
                     $addonPrice = $this->resolveAddonPrice($addon);
+
                     return [
                         'id' => (int) $addon->menu_item_addon_id,
                         'addon_name' => (string) ($addon->addon_name ?? $addon->masterAddon?->name ?? ''),
@@ -541,6 +561,7 @@ class KdsController extends Controller
                 ]);
             })->map(function ($addonGroup) {
                 $firstAddon = $addonGroup->first();
+
                 return [
                     'id' => $firstAddon['id'],
                     'addon_name' => $firstAddon['addon_name'],
@@ -559,7 +580,7 @@ class KdsController extends Controller
                 'addons' => $addons,
                 'rejection_reason' => $first->rejection_reason,
                 'kitchen_type' => $first->kitchen_type,
-                'ids_group' => $group->pluck('id')->all()
+                'ids_group' => $group->pluck('id')->all(),
             ];
         })->values()->all();
     }
@@ -598,11 +619,11 @@ class KdsController extends Controller
             return;
         }
 
-        if ($actionableItems->every(fn($i) => in_array($i->status, ['ready', 'served'], true))) {
+        if ($actionableItems->every(fn ($i) => in_array($i->status, ['ready', 'served'], true))) {
             $order->kitchen_status = 'served';
-        } elseif ($actionableItems->contains(fn($i) => $i->status === 'preparing')) {
+        } elseif ($actionableItems->contains(fn ($i) => $i->status === 'preparing')) {
             $order->kitchen_status = 'preparing';
-        } elseif ($actionableItems->contains(fn($i) => in_array($i->status, ['new', 'pending']))) {
+        } elseif ($actionableItems->contains(fn ($i) => in_array($i->status, ['new', 'pending']))) {
             $order->kitchen_status = 'pending';
         } else {
             return;

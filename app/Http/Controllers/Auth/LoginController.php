@@ -65,7 +65,7 @@ class LoginController extends Controller
 
             // Waiter ke liye direct Table Management ka raasta
             if ($role === 'waiter') {
-                return redirect()->intended(route('admin.waiter.index'));
+                return redirect()->intended(route('waiter.tables.index'));
             }
 
             // Baaki saare managers (Admin, Sales, Accounts, etc.) ke liye Dashboard
