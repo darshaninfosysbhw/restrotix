@@ -9,14 +9,18 @@
     <title>Waiter Pannel | Restrotix</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 </head>
 
 <body class="light-theme text-gray-200 bg-gray-900">
     @include('core.layouts.includes.theme-bootstrap')
-    @include('core.layouts.includes.sidebar-waiter')
-    @include('core.layouts.includes.header-waiter')
+    @if (request()->routeIs('order.index'))
+        <main class="flex h-screen flex-1 flex-col overflow-hidden">
+    @else
+        @include('core.layouts.includes.header-waiter')
+    @endif
     @yield('content')
     <x-toast-manager />
     </main>
@@ -24,3 +28,4 @@
 </body>
 
 </html>
+ 

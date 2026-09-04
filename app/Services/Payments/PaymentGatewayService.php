@@ -585,6 +585,8 @@ class PaymentGatewayService
             if ($table) {
                 $table->update([
                     'status' => 'available',
+                    'is_calling_waiter' => false,
+                    'is_bill_requested' => false,
                 ]);
             }
         });

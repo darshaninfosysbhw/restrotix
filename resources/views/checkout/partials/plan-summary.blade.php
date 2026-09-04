@@ -44,7 +44,7 @@
 
         <div class="pt-8 border-t border-white/5 flex items-end justify-between">
             <div>
-                <span class="text-5xl font-black text-black" x-text="symbol + ' ' + price"></span>
+                <span class="text-xl md:text-5xl sm:text-3xl font-black text-black" x-text="symbol + ' ' + price"></span>
                 <span class="text-gray-500 text-sm ml-1" x-text="billingCycle === 'yearly' ? '/ year' : '/ month'"></span>
             </div>
             <div class="text-right">

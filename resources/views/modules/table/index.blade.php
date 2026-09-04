@@ -271,8 +271,6 @@
                             <option value="available">Available</option>
                             <option value="reserved">Reserved</option>
                             <option value="occupied">Occupied</option>
-                            <option value="calling_waiter">Calling Waiter</option>
-                            <option value="request_bill">Request Bill</option>
                             <option value="out_of_service">Out Of Service</option>
                         </select>
                     </div>

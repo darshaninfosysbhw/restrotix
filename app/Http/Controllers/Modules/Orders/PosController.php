@@ -312,7 +312,7 @@ class PosController extends Controller
             ->when($branchId, function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId);
             })
-            ->select(['id', 'table_number', 'capacity', 'status'])
+            ->select(['id', 'table_number', 'capacity', 'status', 'is_calling_waiter', 'is_bill_requested'])
             ->orderBy('table_number')
             ->get()
             ->map(function (Table $table) use ($selectedTableId, $selectedTableNumber) {
@@ -325,6 +325,8 @@ class PosController extends Controller
                     'status' => $status,
                     'status_label' => $this->formatTableStatusLabel($status),
                     'status_badge_class' => $this->formatTableStatusBadgeClass($status),
+                    'is_calling_waiter' => (bool) $table->is_calling_waiter,
+                    'is_bill_requested' => (bool) $table->is_bill_requested,
                     'is_current' => $selectedTableId
                         ? (int) $table->id === $selectedTableId
                         : ($selectedTableNumber !== '' && (string) $table->table_number === $selectedTableNumber),
@@ -343,8 +345,6 @@ class PosController extends Controller
             'available',
             'occupied',
             'reserved',
-            'calling_waiter',
-            'request_bill',
             'out_of_service',
         ], true) ? $status : 'available';
     }
@@ -352,8 +352,6 @@ class PosController extends Controller
     private function formatTableStatusLabel(string $status): string
     {
         return match ($status) {
-            'calling_waiter' => 'Calling waiter',
-            'request_bill' => 'Bill requested',
             'out_of_service' => 'Out of service',
             default => ucfirst(str_replace('_', ' ', $status)),
         };
@@ -365,8 +363,6 @@ class PosController extends Controller
             'available' => 'border-emerald-400/40 bg-emerald-500/10 text-emerald-300',
             'occupied' => 'border-red-400/40 bg-red-500/10 text-red-300',
             'reserved' => 'border-yellow-400/40 bg-yellow-500/10 text-yellow-300',
-            'calling_waiter' => 'border-sky-400/40 bg-sky-500/10 text-sky-300',
-            'request_bill' => 'border-orange-400/40 bg-orange-500/10 text-orange-300',
             'out_of_service' => 'border-gray-500/50 bg-gray-500/10 text-gray-300',
             default => 'border-gray-500/50 bg-gray-500/10 text-gray-300',
         };

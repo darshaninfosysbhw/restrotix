@@ -37,11 +37,31 @@
                     </p>
                 </div>
             </div>
-            <button id="closeDrawer" type="button"
-                class="text-lg leading-none text-gray-500 hover:text-red-400 cursor-pointer"
-                aria-label="Close drawer">
-                ✖
-            </button>
+            <div class="flex items-center gap-3">
+
+                <!-- Transfer Table Button -->
+                <button id="transferTableBtn"
+                    type="button"
+                    class="inline-flex items-center gap-2 rounded-lg
+                           border border-orange-500/30
+                           bg-orange-500/10
+                           px-2 py-2
+                           text-xs font-semibold text-orange-400
+                           transition-all duration-200
+                           hover:bg-orange-500 hover:text-white
+                           cursor-pointer">
+
+                    <i class="fas fa-right-left text-[10px]" aria-hidden="true"></i>
+
+                    <span>{{ auth()->user()->role === 'waiter' ? 'Transfer' : 'Assign waiter' }}</span>
+                </button>
+
+                 <button id="closeDrawer" type="button"
+                     class="text-lg leading-none text-gray-500 hover:text-red-400 cursor-pointer"
+                     aria-label="Close drawer">
+                     ✖
+                </button>
+            </div>
         </div>
 
         <div class="mt-3">
@@ -80,7 +100,11 @@
         </button>
         <button id="drawerGenerateBillBtn" type="button"
             class="block w-full text-center border border-orange-500 text-orange-400 bg-transparent font-semibold py-2.5 rounded-lg transition cursor-pointer opacity-60">
-            Generate Bill
+            @if (auth()->user()->role === 'waiter')
+                <i class="fas fa-print mr-1.5"></i> Print Estimate
+            @else
+                Generate Bill
+            @endif
         </button>
     </div>
 </div>
@@ -216,6 +240,11 @@
                         window.registerIncomingOrder(tableNum);
                     }
 
+                    if (typeof window.refreshWaiterTableCard === 'function') {
+                        window.refreshWaiterTableCard(tableNum, card?.dataset.branchId).catch(error =>
+                            console.warn('Live waiter card refresh failed', error));
+                    }
+
                     // 3. 🔥 THE TRIGGER: Agar wahi table open hai, toh fetch karo
                     // Ya phir hamesha fetch karo taaki background state update rahe
                     if (isCurrentTableOpen) {
@@ -254,13 +283,6 @@
                         card.classList.add('ring-2', 'ring-orange-500');
                         card.classList.add('request-bill-active');
                         card.classList.remove('waiter-call-active');
-
-                        const statusPill = card.querySelector('.table-status-pill');
-                        if (statusPill) {
-                            statusPill.className =
-                                'table-status-pill text-xs px-2 py-1 rounded-full bg-orange-500/20 text-orange-400';
-                            statusPill.textContent = 'Request bill';
-                        }
                     }
 
                     if (typeof window.registerBillRequest === 'function') {
@@ -279,6 +301,7 @@
                     if (typeof window.markTableAsRequestBill === 'function') {
                         window.markTableAsRequestBill(tableNum);
                     }
+                    window.markTableAsBillRequested?.(tableNum);
 
                     if (window.currentOpenTable === tableNum && typeof window.refreshFromServer ===
                         'function') {
@@ -306,8 +329,7 @@
                     }
 
                     if (isReadyEvent) {
-                        playSound(kitchenReadySound);
-                        emitTableToast('success', `${formatTableToastLabel(tableNum)}: Kitchen ready`);
+                        // The KOT-level pickup alert handles waiter sound/toast after the full batch is ready.
                     }
 
                     if (isServedEvent) {
@@ -322,9 +344,11 @@
         }
 
         const billingModal = document.getElementById('billingPosModal');
+        const isWaiterPanel = @json(auth()->user()->role === 'waiter');
         const billingModalPanel = document.getElementById('billingPosPanel');
         const billingModalCloseBtn = document.getElementById('billingPosCloseBtn');
         const drawerGenerateBillBtn = document.getElementById('drawerGenerateBillBtn');
+        const transferTableBtn = document.getElementById('transferTableBtn');
         const billingModalClosers = document.querySelectorAll('[data-billing-modal-close]');
         const billingOrdersBaseUrl = @json('/admin/get-table-orders');
         const billingDraftsBaseUrl = @json(url('/admin/billing/drafts'));
@@ -334,6 +358,23 @@
         const drawerGenerateBillDisabledClasses = [
             'opacity-60',
         ];
+
+        if (transferTableBtn) {
+            transferTableBtn.addEventListener('click', () => {
+                const tableNumber = String(window.currentOpenTable || '').trim();
+                const tableId = window.currentOpenTableId || null;
+
+                if (!tableId && !tableNumber) return;
+
+                window.dispatchEvent(new CustomEvent('open-transfer-modal', {
+                    detail: {
+                        tableId,
+                        tableNumber,
+                        currentWaiterName: currentUserName,
+                    },
+                }));
+            });
+        }
 
         const formatMoney = (value, fractionDigits = 2) => {
             const number = Number(value ?? 0);
@@ -1128,8 +1169,10 @@
                     return true;
                 }
 
+                const branchId = Number(window.currentOpenTableBranchId || 0);
+                const branchQuery = branchId > 0 ? `?branch_id=${encodeURIComponent(branchId)}` : '';
                 const response = await fetch(
-                    `${billingOrdersBaseUrl}/${encodeURIComponent(tableNumber)}`, {
+                    `${billingOrdersBaseUrl}/${encodeURIComponent(tableNumber)}${branchQuery}`, {
                         headers: {
                             'Accept': 'application/json',
                             'X-Requested-With': 'XMLHttpRequest',
@@ -1156,9 +1199,10 @@
                 return false;
             }
         };
+        window.prepareTableBillingEstimate = loadBillingModalData;
 
         const openBillingModal = async () => {
-            if (!billingModal || !billingModalPanel) return;
+            if (!billingModal || !billingModalPanel) return false;
             const loaded = await loadBillingModalData();
             if (!loaded) {
                 if (typeof window.showToast === 'function') {
@@ -1169,7 +1213,7 @@
                     });
                 }
                 closeBillingModal();
-                return;
+                return false;
             }
 
             billingModal.classList.remove('hidden');
@@ -1179,7 +1223,9 @@
                 billingModalPanel.classList.remove('translate-x-full');
                 billingModalPanel.classList.add('translate-x-0');
             });
+            return true;
         };
+        window.openTableBillingModal = openBillingModal;
 
         const closeBillingModal = () => {
             if (!billingModal || !billingModalPanel || billingModal.classList.contains('hidden')) return;
@@ -1189,6 +1235,7 @@
             document.body.classList.remove('overflow-hidden');
             window.billingDiscountSource = undefined;
         };
+        window.closeTableBillingModal = closeBillingModal;
 
         if (billingModalPanel) {
             billingModalPanel.addEventListener('transitionend', () => {
@@ -1199,7 +1246,19 @@
         }
 
         if (drawerGenerateBillBtn) {
-            drawerGenerateBillBtn.addEventListener('click', openBillingModal);
+            drawerGenerateBillBtn.addEventListener('click', () => {
+                if (!isWaiterPanel) {
+                    openBillingModal();
+                    return;
+                }
+
+                const currentCard = document.querySelector(
+                    `.table-card[data-table-number="${CSS.escape(String(window.currentOpenTable || ''))}"]`);
+                const printEstimateButton = currentCard?.querySelector('[data-print-bill-estimate]');
+                if (printEstimateButton) {
+                    printEstimateButton.click();
+                }
+            });
         }
 
         billingModalClosers.forEach((closer) => {

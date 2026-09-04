@@ -1057,7 +1057,7 @@
                 };
             };
 
-            const openEstimatePdf = (payload, outputMode = 'download') => {
+            const openEstimatePdf = (payload, outputMode = 'download', targetWindowName = '') => {
                 const form = document.createElement('form');
                 form.method = 'POST';
                 form.action = estimatePdfUrl;
@@ -1075,6 +1075,9 @@
                     }
                     form.target = downloadFrame.name;
                 } else {
+                    if (targetWindowName) {
+                        form.target = targetWindowName;
+                    } else {
                     const printFrameId = 'billingEstimatePrintFrame';
                     let printFrame = document.getElementById(printFrameId);
                     if (!printFrame) {
@@ -1097,6 +1100,7 @@
                     };
 
                     form.target = printFrame.name;
+                    }
                 }
 
                 const appendField = (name, value) => {
@@ -1547,7 +1551,7 @@
                         window.currentBillingDraftTableId = null;
                         window.requestBillingEstimateInvoiceSync?.();
                         if (window.currentOpenTable && typeof window.markTableAsAvailable === 'function') {
-                            window.markTableAsAvailable(window.currentOpenTable);
+                            window.markTableAsAvailable(window.currentOpenTable, true);
                         }
                         closeBillingModal();
                         if (window.currentOpenTable && typeof window.refreshFromServer === 'function') {
@@ -1584,7 +1588,7 @@
                         window.currentBillingDraftTableId = null;
                         window.requestBillingEstimateInvoiceSync?.();
                         if (window.currentOpenTable && typeof window.markTableAsAvailable === 'function') {
-                            window.markTableAsAvailable(window.currentOpenTable);
+                            window.markTableAsAvailable(window.currentOpenTable, true);
                         }
                         if (result?.print_url) {
                             printPdfInHiddenFrame(result.print_url);
@@ -1621,12 +1625,17 @@
             if (estimatePrintBtn) {
                 estimatePrintBtn.addEventListener('click', () => {
                     try {
-                        openEstimatePdf(buildEstimatePdfPayload(), 'print');
+                        window.printCurrentBillingEstimate();
                     } catch (error) {
                         console.error(error);
                         alert(error.message || 'Unable to generate estimate PDF.');
                     }
                 });
             }
+
+            window.printCurrentBillingEstimate = (targetWindowName = '') => {
+                openEstimatePdf(buildEstimatePdfPayload(), 'print', targetWindowName);
+                return true;
+            };
         });
     </script>

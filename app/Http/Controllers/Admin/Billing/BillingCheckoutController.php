@@ -9,6 +9,8 @@ use App\Models\OrderItem;
 use App\Models\OrderItemAddon;
 use App\Models\OrderPayment;
 use App\Models\Table;
+use App\Models\TableServiceRequest;
+use App\Events\TableTransferRequestUpdated;
 use App\Support\InvoiceNumberGenerator;
 use App\Services\Admin\Billing\BillingDraftService;
 use App\Services\PublicMenu\TableAccessSessionService;
@@ -324,9 +326,39 @@ class BillingCheckoutController extends Controller
             ]);
 
             if ($order->table_id) {
+                $tableTransfers = TableServiceRequest::query()
+                    ->where('table_id', $order->table_id)
+                    ->where('type', 'table_transfer')
+                    ->whereIn('status', ['pending', 'accepted'])
+                    ->with(['table', 'handledByWaiter', 'targetWaiter'])
+                    ->get();
+
+                foreach ($tableTransfers as $tableTransfer) {
+                    $tableTransfer->update([
+                        'status' => 'cancelled',
+                        'completed_at' => now(),
+                    ]);
+                    broadcast(new TableTransferRequestUpdated([
+                        'id' => $tableTransfer->id,
+                        'branch_id' => $tableTransfer->branch_id,
+                        'table_id' => $tableTransfer->table_id,
+                        'table_number' => $tableTransfer->table?->table_number,
+                        'from_waiter' => $tableTransfer->handledByWaiter?->name ?? 'Unknown waiter',
+                        'handled_by_waiter_id' => $tableTransfer->handled_by_waiter_id,
+                        'target_waiter_id' => $tableTransfer->target_waiter_id,
+                        'target_waiter' => $tableTransfer->targetWaiter?->name,
+                        'notes' => $tableTransfer->notes,
+                        'status' => 'cancelled',
+                    ]));
+                }
+
                 Table::query()
                     ->whereKey($order->table_id)
-                    ->update(['status' => 'available']);
+                    ->update([
+                        'status' => 'available',
+                        'is_calling_waiter' => false,
+                        'is_bill_requested' => false,
+                    ]);
 
                 $releasedTable = $table instanceof Table
                     ? $table
@@ -431,12 +463,18 @@ class BillingCheckoutController extends Controller
 
         $table = null;
         if (!empty($validated['table_id'])) {
-            $table = Table::query()->with('branch.tenant')->find((int) $validated['table_id']);
+            $table = Table::query()
+                ->with('branch.tenant')
+                ->where('tenant_id', (int) $user->tenant_id)
+                ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
+                ->find((int) $validated['table_id']);
         }
 
         if (!$table && !empty($validated['qr_token'])) {
             $table = Table::query()
                 ->with('branch.tenant')
+                ->where('tenant_id', (int) $user->tenant_id)
+                ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
                 ->where('qr_token', (string) $validated['qr_token'])
                 ->first();
         }
@@ -445,9 +483,12 @@ class BillingCheckoutController extends Controller
             $table = Table::query()
                 ->with('branch.tenant')
                 ->where('tenant_id', (int) $user->tenant_id)
+                ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
                 ->where('table_number', (string) $validated['table_number'])
                 ->first();
         }
+
+        abort_unless($table, 404, 'Table not found.');
 
         $itemsPayload = collect(json_decode((string) $validated['items_json'], true) ?: [])
             ->map(fn(array $item) => $this->normalizeBillingItem($item))

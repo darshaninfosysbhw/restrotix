@@ -94,8 +94,6 @@
                             <option value="available">Available</option>
                             <option value="reserved">Reserved</option>
                             <option value="occupied">Occupied</option>
-                            <option value="calling_waiter">Calling Waiter</option>
-                            <option value="request_bill">Request Bill</option>
                             <option value="out_of_service">Out Of Service</option>
                         </select>
                     </div>
@@ -118,6 +116,10 @@
 @endif
 
 @include('core.components.table.table-drawer')
+@include('core.components.table.partials.transfer-table-modal', [
+    'activeWaiters' => $activeWaiters ?? [],
+    'isManager' => $isAdmin ?? false,
+])
 
 <div id="qrModal" class="fixed inset-0 z-[130] hidden">
 
@@ -1120,7 +1122,12 @@
 
         async function serveDrawerItem(itemId) {
             try {
-                await postDrawerItemAction(`/admin/order-items/${itemId}/serve`);
+                const result = await postDrawerItemAction(`/admin/order-items/${itemId}/serve`);
+                if (result.pickup_alert) {
+                    window.dispatchEvent(new CustomEvent('kitchen-pickup-alert-resolved', {
+                        detail: result.pickup_alert,
+                    }));
+                }
                 await refreshCurrentTableDrawer();
             } catch (error) {
                 alert(error.message || 'Unable to mark item as served');
@@ -1592,6 +1599,13 @@
         function printKotPdfInHiddenFrame(pdfUrl, context = {}) {
             if (!pdfUrl) return;
 
+            const useMobilePdfViewer = window.matchMedia('(max-width: 767px)').matches ||
+                window.matchMedia('(pointer: coarse)').matches;
+            if (useMobilePdfViewer) {
+                window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+                return;
+            }
+
             const frameId = 'kot-print-frame';
             document.getElementById(frameId)?.remove();
 
@@ -1734,20 +1748,54 @@
             });
         }
 
+        function syncTableStatsFromCards() {
+            const counts = {
+                available: 0,
+                reserved: 0,
+                occupied: 0,
+                calling_waiter: 0,
+                request_bill: 0
+            };
+
+            document.querySelectorAll('.table-card').forEach((card) => {
+                const status = String(card.dataset.status || '').toLowerCase();
+                if (Object.prototype.hasOwnProperty.call(counts, status)) counts[status]++;
+                if (card.dataset.isCallingWaiter === '1') counts.calling_waiter++;
+                if (card.dataset.isBillRequested === '1') counts.request_bill++;
+            });
+
+            Object.entries(counts).forEach(([status, count]) => {
+                const element = document.querySelector(`[data-table-stat="${status}"]`);
+                if (element) element.textContent = String(count);
+            });
+        }
+        window.syncTableStatsFromCards = syncTableStatsFromCards;
+
         window.markTableAsCallingWaiter = function(tableNum) {
             const normalizedTableNum = normalizeTableNum(tableNum);
             const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
             if (!card) return;
 
-            const statusPill = card.querySelector('.table-status-pill');
-            if (!statusPill) return;
-
-            statusPill.className =
-                'table-status-pill text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-400';
-            statusPill.textContent = 'Calling waiter';
+            card.dataset.isCallingWaiter = '1';
+            const waiterBell = card.querySelector('.waiter-call-bell');
+            if (waiterBell) waiterBell.style.display = 'flex';
+            window.updateWaiterTableCard?.(normalizedTableNum, JSON.parse(card.dataset.orders || '[]'),
+                card.dataset.status, { is_calling_waiter: true });
         };
 
-        window.markTableAsAvailable = function(tableNum) {
+        window.markTableAsBillRequested = function(tableNum) {
+            const normalizedTableNum = normalizeTableNum(tableNum);
+            const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            if (!card) return;
+
+            card.dataset.isBillRequested = '1';
+            const billBell = card.querySelector('.bill-request-bell');
+            if (billBell) billBell.style.display = 'flex';
+            window.updateWaiterTableCard?.(normalizedTableNum, JSON.parse(card.dataset.orders || '[]'),
+                card.dataset.status, { is_bill_requested: true });
+        };
+
+        window.markTableAsAvailable = function(tableNum, clearSignals = false) {
             const normalizedTableNum = normalizeTableNum(tableNum);
             const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
             if (!card) return;
@@ -1756,6 +1804,14 @@
             if (!statusPill) return;
 
             card.dataset.status = 'available';
+            if (clearSignals) {
+                card.dataset.isCallingWaiter = '0';
+                card.dataset.isBillRequested = '0';
+                const waiterBell = card.querySelector('.waiter-call-bell');
+                const billBell = card.querySelector('.bill-request-bell');
+                if (waiterBell) waiterBell.style.display = 'none';
+                if (billBell) billBell.style.display = 'none';
+            }
             card.classList.remove('request-bill-active', 'waiter-call-active', 'kitchen-ready-active');
             const kitchenBadge = card.querySelector('.kitchen-status-badge');
             if (kitchenBadge) {
@@ -1766,6 +1822,11 @@
             statusPill.className =
                 'table-status-pill text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400';
             statusPill.textContent = 'Available';
+            window.updateWaiterTableCard?.(normalizedTableNum, [], 'available', clearSignals ? {
+                is_calling_waiter: false,
+                is_bill_requested: false
+            } : {});
+            syncTableStatsFromCards();
         };
 
         function setKitchenStatusBadge(tableNum, className, label) {
@@ -1792,11 +1853,24 @@
         window.markTableAsOccupied = function(tableNum) {
             const normalizedTableNum = normalizeTableNum(tableNum);
             const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            if (!card) return;
+
+            card.dataset.status = 'occupied';
+            card.classList.remove('request-bill-active', 'waiter-call-active', 'kitchen-ready-active');
+
+            const statusPill = card.querySelector('.table-status-pill');
+            if (statusPill) {
+                statusPill.className =
+                    'table-status-pill text-xs px-2 py-1 rounded-full bg-red-500/20 text-red-400';
+                statusPill.textContent = 'Occupied';
+            }
+
             const kitchenBadge = card?.querySelector('.kitchen-status-badge');
             if (kitchenBadge) {
                 kitchenBadge.classList.add('hidden');
             }
             clearKitchenReadyState(tableNum);
+            syncTableStatsFromCards();
         };
 
         window.markTableAsKitchenPreparing = function(tableNum) {
@@ -2078,12 +2152,14 @@
                                         <i class="fas fa-check w-3.5"></i>
                                         <span>Served</span>
                                     </button>
-                                    <button type="button" data-item-action="cancelled" data-item-id="${item.id}"
-                                        ${actionLocked ? 'disabled aria-disabled="true"' : ''}
-                                        class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition ${actionLocked ? 'cursor-not-allowed bg-gray-50 text-gray-400 opacity-50' : 'text-red-600 hover:bg-red-50'}">
-                                        <i class="fas fa-ban w-3.5"></i>
-                                        <span>Cancelled</span>
-                                    </button>
+                                    @if (in_array(auth()->user()->role, ['admin', 'manager'], true))
+                                        <button type="button" data-item-action="cancelled" data-item-id="${item.id}"
+                                            ${actionLocked ? 'disabled aria-disabled="true"' : ''}
+                                            class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-xs font-semibold transition ${actionLocked ? 'cursor-not-allowed bg-gray-50 text-gray-400 opacity-50' : 'text-red-600 hover:bg-red-50'}">
+                                            <i class="fas fa-ban w-3.5"></i>
+                                            <span>Cancelled</span>
+                                        </button>
+                                    @endif
                                 </div>
                             </div>
                      </div>`;
@@ -2273,7 +2349,7 @@
         // Table Card Click
         document.querySelectorAll('.table-card').forEach(card => {
             card.addEventListener('click', (e) => {
-                if (e.target.closest('button') || e.target.closest('img')) return;
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('img')) return;
 
                 const tableNum = card.dataset.tableNumber;
                 window.currentOpenTable = tableNum;
