@@ -7,11 +7,12 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Restrotix - Restaurant Software</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
- <style>
+    <style>
         html {
     scroll-behavior: smooth;
 }
     </style>
+
 </head>
 
 <body class="text-gray-800">

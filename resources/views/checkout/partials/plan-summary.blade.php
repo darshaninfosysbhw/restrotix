@@ -44,12 +44,12 @@
 
         <div class="pt-8 border-t border-white/5 flex items-end justify-between">
             <div>
-                <span class="text-xl md:text-5xl sm:text-3xl font-black text-black" x-text="symbol + ' ' + price"></span>
+                <span class="text-xl sm:text-3xl md:text-5xl font-black text-black" x-text="symbol + ' ' + price"></span>
                 <span class="text-gray-500 text-sm ml-1" x-text="billingCycle === 'yearly' ? '/ year' : '/ month'"></span>
             </div>
             <div class="text-right">
-                <p class="text-[10px] font-bold text-green-500 uppercase tracking-widest mb-1">Trial Period</p>
-                <p class="text-sm font-bold text-black">{{ $planDetails->trial_days }} Days Free</p>
+                <p class="text-[8px] sm:text-[10px] font-bold text-green-500 uppercase tracking-widest mb-1">Trial Period</p>
+                <p class="text-[9px] sm:text-xs font-bold text-black">{{ $planDetails->trial_days }} Days Free</p>
             </div>
         </div>
     </div>

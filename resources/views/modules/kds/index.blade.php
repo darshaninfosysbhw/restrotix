@@ -74,7 +74,7 @@
 
             const currentBranchId = Number(pageRoot?.dataset?.branchId || 0);
 
-            const orderSound = new Audio(@json(asset('sounds/ForOrder.m4a')));
+            const orderSound = new Audio(@json(asset('sounds/forOrder.m4a')));
             const waiterCallSound = new Audio(@json(asset('sounds/forWaiter.m4a')));
             const kitchenReadySound = new Audio(@json(asset('sounds/forKitchen.m4a')));
             const audioStorageKey = currentBranchId > 0

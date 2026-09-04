@@ -346,7 +346,7 @@
                         </a>
                     @endif
 
-                    <div id="mobileCategoryTabs"
+                      <div id="mobileCategoryTabs"
                         class="sticky top-0 z-15 bg-gray-900 lg:hidden flex gap-2 overflow-x-auto no-scrollbar py-2">
                         @foreach ($categoryList as $category)
                             <a href="{{ request()->fullUrlWithQuery(['category' => $category['id']]) }}"
@@ -973,8 +973,9 @@
             error: null,
             promise: null,
         };
-
-        window.scrollActiveMenuCategoryIntoView = function() {
+        
+        
+         window.scrollActiveMenuCategoryIntoView = function() {
             const tabs = document.getElementById('mobileCategoryTabs');
             if (!tabs || !window.selectedMenuCategoryId) return;
 
@@ -993,6 +994,7 @@
                 window.scrollActiveMenuCategoryIntoView();
             });
         });
+
 
         window.ensureTableGeoLocation = function() {
             if (!window.tableGeofencePolicy.enabled) {

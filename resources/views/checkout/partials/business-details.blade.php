@@ -41,7 +41,6 @@
                 x-model="formData.country"
                 @change="formData.currency=(formData.country === 'Nepal' ? 'NPR' : 'INR' ); formData.timezone=(formData.country === 'Nepal' ? 'Asia/Kathmandu' : 'Asia/Kolkata' )">
                 <option value="Nepal">Nepal</option>
-                <option value="India">India</option>
             </select>
         </div>
 

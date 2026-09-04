@@ -4,7 +4,8 @@
         <div class="flex flex-col md:flex-row justify-between items-center">
             <div class="mb-6 md:mb-0">
                 <div class="flex items-center">
-                       <a href="{{ url('/') }}" class="mr-2 sm:mr-3 inline-flex items-center">
+                    
+                     <a href="{{ url('/') }}" class="mr-2 sm:mr-3 inline-flex items-center">
                     <img src="{{ asset('images/header-logo.png') }}" alt="Restrotix" class="h-8 w-auto sm:h-10">
                 </a>
                 </div>
@@ -29,7 +30,7 @@
         </div>
 
         <div class="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-gray-400 text-xs sm:text-sm">
-            <p>&copy; 2023 Restrotix Software. All rights reserved. | <a href="#"
+            <p>&copy; 2026 Restrotix All rights reserved. | <a href="#"
                     class="hover:text-white transition">Privacy Policy</a> | <a href="#"
                     class="hover:text-white transition">Terms of Service</a></p>
         </div>
