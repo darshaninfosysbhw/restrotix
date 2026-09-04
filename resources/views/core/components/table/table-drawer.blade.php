@@ -115,7 +115,7 @@
     document.addEventListener('DOMContentLoaded', () => {
         const currentBranchId = Number(@json((int) (auth()->user()->branch_id ?? 0)));
         const currentUserName = @json(auth()->user()->name ?? 'N/A');
-        const orderSound = new Audio(@json(asset('sounds/ForOrder.m4a')));
+        const orderSound = new Audio(@json(asset('sounds/fororder.m4a')));
         const waiterCallSound = new Audio(@json(asset('sounds/forWaiter.m4a')));
         const billRequestSound = new Audio(@json(asset('sounds/forBill.m4a')));
         const kitchenReadySound = new Audio(@json(asset('sounds/forKitchen.m4a')));
