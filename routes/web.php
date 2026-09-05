@@ -17,6 +17,7 @@ use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
 // ---ADMIN CONTROLLERS LINKS---
 use App\Http\Controllers\Modules\Kds\KdsController;
+use App\Http\Controllers\Modules\Kds\KitchenNotificationController;
 use App\Http\Controllers\Modules\MediaLibrary\MediaLibraryController;
 use App\Http\Controllers\Modules\MenuManagement\CategoryController;
 use App\Http\Controllers\Modules\MenuManagement\ItemController;
@@ -239,6 +240,10 @@ Route::middleware(['auth'])->group(function () {
         })->name('admin.waiter.index');
 
         Route::get('/kds', [KdsController::class, 'index'])->name('admin.kds.index');
+        Route::get('/kds/notifications', [KitchenNotificationController::class, 'index'])->name('admin.kds.notifications.index');
+        Route::get('/kds/notifications/history', [KitchenNotificationController::class, 'history'])->name('admin.kds.notifications.history');
+        Route::post('/kds/notifications/opened', [KitchenNotificationController::class, 'markOpened'])->name('admin.kds.notifications.opened');
+        Route::delete('/kds/notifications', [KitchenNotificationController::class, 'clear'])->name('admin.kds.notifications.clear');
         Route::post('/kds/update-status/{id}', [KdsController::class, 'updateStatus'])->name('admin.kds.update-status');
         Route::post('/kds/mark-all-ready', [KdsController::class, 'markAllReady'])->name('admin.kds.mark-all-ready');
         Route::post('/kds/item/{id}/status', [KdsController::class, 'updateItemStatus'])->name('admin.kds.item-status');

@@ -72,7 +72,7 @@
                             <p id="chefNotificationSubtitle" class="text-[11px] text-gray-400">No new notifications</p>
                         </div>
                         <button id="clearChefNotificationsBtn" type="button"
-                            class="text-[11px] font-semibold text-orange-400 hover:text-orange-300">Mark read</button>
+                            class="text-[11px] font-semibold text-orange-400 hover:text-orange-300">Clear all</button>
                     </div>
                     <div id="chefNotificationList" class="max-h-[65vh] overflow-y-auto"></div>
                     <div id="chefNotificationEmpty" class="px-5 py-8 text-center text-sm text-gray-400">
@@ -81,6 +81,10 @@
                     </div>
                 </div>
             </div>
+
+            <div id="chefNotificationOverlay"
+                class="hidden fixed inset-0 bg-black/20 backdrop-blur-[1px] z-[9990] transition-opacity"
+                aria-hidden="true"></div>
 
             <div class="relative border-l border-gray-700 pl-2 md:pl-4 flex items-center">
                 <div id="profileBtn" class="flex items-center space-x-3 cursor-pointer group">
@@ -158,12 +162,15 @@
             window.__chefNotificationsInitialized = true;
 
             const branchId = Number(@json((int) (auth()->user()->branch_id ?? 0)));
-            const currentUserId = Number(@json(auth()->id()));
-            const storageKey = `chef-notifications:${branchId}:${currentUserId}`;
             const soundStorageKey = branchId > 0 ? `kds_sound_enabled_v1:${branchId}` : 'kds_sound_enabled_v1';
+            const notificationUrl = @json(route('admin.kds.notifications.index'));
+            const notificationOpenedUrl = @json(route('admin.kds.notifications.opened'));
+            const notificationClearUrl = @json(route('admin.kds.notifications.clear'));
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
             const bell = document.getElementById('chefNotificationBell');
             const button = document.getElementById('chefNotificationBellBtn');
             const menu = document.getElementById('chefNotificationMenu');
+            const overlay = document.getElementById('chefNotificationOverlay');
             const list = document.getElementById('chefNotificationList');
             const empty = document.getElementById('chefNotificationEmpty');
             const count = document.getElementById('chefNotificationCount');
@@ -203,18 +210,28 @@
                 if (navigator.vibrate) navigator.vibrate([180, 90, 180]);
             };
 
-            try {
-                JSON.parse(localStorage.getItem(storageKey) || '[]').forEach(item => {
-                    if (item?.id) notifications.set(item.id, item);
-                });
-            } catch (error) {
-                console.warn('Unable to restore chef notifications:', error);
-            }
-
-            const persist = () => localStorage.setItem(
-                storageKey,
-                JSON.stringify([...notifications.values()].slice(0, 30))
-            );
+            const loadNotifications = async () => {
+                try {
+                    const response = await fetch(notificationUrl, {
+                        headers: { Accept: 'application/json' },
+                    });
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    notifications.clear();
+                    (data.notifications || []).forEach(item => notifications.set(item.id, {
+                        ...item,
+                        itemName: item.item_name,
+                        tableNumber: item.table_number,
+                        cancelledBy: item.cancelled_by,
+                        reason: item.reason,
+                        time: item.cancelled_at,
+                        read: Boolean(item.opened_at),
+                    }));
+                    render();
+                } catch (error) {
+                    console.warn('Unable to load chef notification history:', error);
+                }
+            };
 
             const render = () => {
                 const items = [...notifications.values()].sort((a, b) => new Date(b.time) - new Date(a.time));
@@ -243,27 +260,55 @@
                     </div>`).join('');
             };
 
-            const markAllRead = () => {
-                notifications.forEach(item => { item.read = true; });
-                persist();
-                render();
+            const markAllRead = async () => {
+                try {
+                    await fetch(notificationOpenedUrl, {
+                        method: 'POST',
+                        headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    });
+                    notifications.forEach(item => { item.read = true; });
+                    render();
+                } catch (error) {
+                    console.warn('Unable to mark chef notifications as opened:', error);
+                }
+            };
+
+            const clearAllNotifications = async () => {
+                try {
+                    await fetch(notificationClearUrl, {
+                        method: 'DELETE',
+                        headers: { Accept: 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                    });
+                    notifications.clear();
+                    render();
+                } catch (error) {
+                    console.warn('Unable to clear chef notifications:', error);
+                }
             };
 
             button?.addEventListener('click', () => {
                 const isOpen = !menu.classList.contains('hidden');
                 menu.classList.toggle('hidden', isOpen);
+                overlay?.classList.toggle('hidden', isOpen);
                 button.setAttribute('aria-expanded', String(!isOpen));
                 unlockNotificationSound();
                 if (!isOpen) markAllRead();
             });
-            clearButton?.addEventListener('click', markAllRead);
+            clearButton?.addEventListener('click', clearAllNotifications);
+            overlay?.addEventListener('click', () => {
+                menu.classList.add('hidden');
+                overlay.classList.add('hidden');
+                button?.setAttribute('aria-expanded', 'false');
+            });
             document.addEventListener('click', event => {
                 if (bell && !bell.contains(event.target)) {
                     menu.classList.add('hidden');
+                    overlay?.classList.add('hidden');
                     button?.setAttribute('aria-expanded', 'false');
                 }
             });
             render();
+            loadNotifications();
 
             if (!window.Echo || branchId <= 0) return;
             window.Echo.private(`orders.branch.${branchId}`).listen('KitchenStatusUpdated', event => {
@@ -271,17 +316,10 @@
                 if (String(payload.item_status || '').toLowerCase() !== 'rejected') return;
 
                 const notification = {
-                    id: `cancel:${payload.item_id || payload.order_id}:${payload.cancelled_at || Date.now()}`,
                     itemName: payload.item_name || 'Item',
-                    tableNumber: payload.table_number || '--',
                     cancelledBy: payload.cancelled_by || 'Waiter',
-                    reason: payload.rejection_reason || 'No reason provided',
-                    time: payload.cancelled_at || new Date().toISOString(),
-                    read: false,
                 };
-                notifications.set(notification.id, notification);
-                persist();
-                render();
+                loadNotifications();
                 playCancellationSound();
                 window.showToast?.({
                     type: 'warning',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Modules\Orders;
 
 use App\Http\Controllers\Controller;
 use App\Services\KitchenPickupAlertService;
+use App\Models\KitchenNotificationLog;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\OrderItem;
@@ -122,6 +123,18 @@ class OrderItemActionController extends Controller
 
             if ($order) {
                 $this->syncOrderStatus($order);
+
+                KitchenNotificationLog::create([
+                    'tenant_id' => $order->tenant_id,
+                    'branch_id' => $order->branch_id,
+                    'order_id' => $order->id,
+                    'order_item_id' => $item->id,
+                    'cancelled_by' => Auth::id(),
+                    'item_name' => (string) ($item->item_name ?? 'Item'),
+                    'table_number' => (string) ($order->table_number ?? ''),
+                    'reason' => $reason,
+                    'cancelled_at' => $item->rejected_at ?? now(),
+                ]);
 
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => (int) $order->id,
