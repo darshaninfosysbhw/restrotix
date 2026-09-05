@@ -55,10 +55,31 @@
                 <i id="theme-icon" class="fas fa-sun"></i>
             </button>
 
-            <div class="relative">
-                <i class="fas fa-bell text-gray-400 text-lg cursor-pointer hover:text-orange-500"></i>
-                <span
-                    class="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-[10px] rounded-full flex items-center justify-center border-2 border-gray-800">5</span>
+            <div id="chefNotificationBell" class="relative z-[9999]">
+                <button id="chefNotificationBellBtn" type="button"
+                    class="relative p-1 text-gray-400 hover:text-orange-500 transition-colors"
+                    aria-label="Chef notifications" aria-expanded="false">
+                    <i class="fas fa-bell text-lg"></i>
+                    <span id="chefNotificationCount"
+                        class="hidden absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-orange-500 text-white text-[10px] rounded-full items-center justify-center border-2 border-gray-800">0</span>
+                </button>
+
+                <div id="chefNotificationMenu"
+                    class="hidden fixed right-2 top-16 w-[calc(100vw-1rem)] max-w-sm sm:absolute sm:right-0 sm:top-full sm:mt-3 sm:w-96 bg-gray-800 border border-gray-700 rounded-xl shadow-2xl z-[99999] overflow-hidden">
+                    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-700">
+                        <div>
+                            <p class="text-sm font-bold text-white">Kitchen notifications</p>
+                            <p id="chefNotificationSubtitle" class="text-[11px] text-gray-400">No new notifications</p>
+                        </div>
+                        <button id="clearChefNotificationsBtn" type="button"
+                            class="text-[11px] font-semibold text-orange-400 hover:text-orange-300">Mark read</button>
+                    </div>
+                    <div id="chefNotificationList" class="max-h-[65vh] overflow-y-auto"></div>
+                    <div id="chefNotificationEmpty" class="px-5 py-8 text-center text-sm text-gray-400">
+                        <i class="fas fa-check-circle block mb-2 text-xl text-green-500"></i>
+                        No new notifications
+                    </div>
+                </div>
             </div>
 
             <div class="relative border-l border-gray-700 pl-2 md:pl-4 flex items-center">
@@ -130,3 +151,143 @@
             </div>
         </div>
     </header>
+
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.__chefNotificationsInitialized) return;
+            window.__chefNotificationsInitialized = true;
+
+            const branchId = Number(@json((int) (auth()->user()->branch_id ?? 0)));
+            const currentUserId = Number(@json(auth()->id()));
+            const storageKey = `chef-notifications:${branchId}:${currentUserId}`;
+            const soundStorageKey = branchId > 0 ? `kds_sound_enabled_v1:${branchId}` : 'kds_sound_enabled_v1';
+            const bell = document.getElementById('chefNotificationBell');
+            const button = document.getElementById('chefNotificationBellBtn');
+            const menu = document.getElementById('chefNotificationMenu');
+            const list = document.getElementById('chefNotificationList');
+            const empty = document.getElementById('chefNotificationEmpty');
+            const count = document.getElementById('chefNotificationCount');
+            const subtitle = document.getElementById('chefNotificationSubtitle');
+            const clearButton = document.getElementById('clearChefNotificationsBtn');
+            const cancellationSound = new Audio(@json(asset('Sounds/forNotification.mp3')));
+            const notifications = new Map();
+
+            cancellationSound.preload = 'auto';
+
+            const escapeHtml = (value) => String(value ?? '').replace(/[&<>\'"]/g, char => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#039;', '"': '&quot;'
+            })[char]);
+            const timeText = (value) => {
+                const date = new Date(value);
+                return Number.isNaN(date.getTime()) ? 'Just now' : date.toLocaleTimeString([], {
+                    hour: '2-digit', minute: '2-digit'
+                });
+            };
+            const soundEnabled = () => localStorage.getItem(soundStorageKey) === '1';
+            const unlockNotificationSound = () => {
+                cancellationSound.muted = true;
+                cancellationSound.currentTime = 0;
+                cancellationSound.play().then(() => {
+                    cancellationSound.pause();
+                    cancellationSound.currentTime = 0;
+                    cancellationSound.muted = false;
+                    localStorage.setItem(soundStorageKey, '1');
+                }).catch(() => {
+                    cancellationSound.muted = false;
+                });
+            };
+            const playCancellationSound = () => {
+                if (!soundEnabled()) return;
+                cancellationSound.currentTime = 0;
+                cancellationSound.play().catch(() => {});
+                if (navigator.vibrate) navigator.vibrate([180, 90, 180]);
+            };
+
+            try {
+                JSON.parse(localStorage.getItem(storageKey) || '[]').forEach(item => {
+                    if (item?.id) notifications.set(item.id, item);
+                });
+            } catch (error) {
+                console.warn('Unable to restore chef notifications:', error);
+            }
+
+            const persist = () => localStorage.setItem(
+                storageKey,
+                JSON.stringify([...notifications.values()].slice(0, 30))
+            );
+
+            const render = () => {
+                const items = [...notifications.values()].sort((a, b) => new Date(b.time) - new Date(a.time));
+                const unreadCount = items.filter(item => !item.read).length;
+                count.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+                count.classList.toggle('hidden', unreadCount === 0);
+                count.classList.toggle('flex', unreadCount > 0);
+                empty.classList.toggle('hidden', items.length > 0);
+                subtitle.textContent = unreadCount
+                    ? `${unreadCount} unread notification${unreadCount === 1 ? '' : 's'}`
+                    : 'All notifications read';
+                list.innerHTML = items.map(item => `
+                    <div class="px-4 py-3 border-b border-gray-700/70 last:border-0 ${item.read ? 'opacity-65' : 'bg-orange-500/5'}">
+                        <div class="flex items-start gap-3">
+                            <span class="mt-0.5 w-7 h-7 rounded-lg flex items-center justify-center ${item.read ? 'bg-gray-700 text-gray-400' : 'bg-red-500/15 text-red-400'}">
+                                <i class="fas fa-ban text-xs"></i>
+                            </span>
+                            <div class="min-w-0 flex-1">
+                                <p class="text-sm font-bold ${item.read ? 'text-gray-300' : 'text-white'}">Item cancelled by ${escapeHtml(item.cancelledBy || 'staff')}</p>
+                                <p class="mt-1 text-xs text-gray-300 truncate">${escapeHtml(item.itemName)} &bull; Table ${escapeHtml(item.tableNumber || '--')}</p>
+                                <p class="mt-1 text-[11px] text-gray-400">${escapeHtml(item.cancelledBy)} &bull; ${timeText(item.time)}</p>
+                                <p class="mt-1 text-[11px] text-red-300/80">Reason: ${escapeHtml(item.reason || 'No reason provided')}</p>
+                            </div>
+                            ${item.read ? '<span class="text-[10px] text-gray-500 uppercase font-bold">Read</span>' : '<span class="text-[10px] text-orange-400 uppercase font-bold">New</span>'}
+                        </div>
+                    </div>`).join('');
+            };
+
+            const markAllRead = () => {
+                notifications.forEach(item => { item.read = true; });
+                persist();
+                render();
+            };
+
+            button?.addEventListener('click', () => {
+                const isOpen = !menu.classList.contains('hidden');
+                menu.classList.toggle('hidden', isOpen);
+                button.setAttribute('aria-expanded', String(!isOpen));
+                unlockNotificationSound();
+                if (!isOpen) markAllRead();
+            });
+            clearButton?.addEventListener('click', markAllRead);
+            document.addEventListener('click', event => {
+                if (bell && !bell.contains(event.target)) {
+                    menu.classList.add('hidden');
+                    button?.setAttribute('aria-expanded', 'false');
+                }
+            });
+            render();
+
+            if (!window.Echo || branchId <= 0) return;
+            window.Echo.private(`orders.branch.${branchId}`).listen('KitchenStatusUpdated', event => {
+                const payload = event?.kitchenData || {};
+                if (String(payload.item_status || '').toLowerCase() !== 'rejected') return;
+
+                const notification = {
+                    id: `cancel:${payload.item_id || payload.order_id}:${payload.cancelled_at || Date.now()}`,
+                    itemName: payload.item_name || 'Item',
+                    tableNumber: payload.table_number || '--',
+                    cancelledBy: payload.cancelled_by || 'Waiter',
+                    reason: payload.rejection_reason || 'No reason provided',
+                    time: payload.cancelled_at || new Date().toISOString(),
+                    read: false,
+                };
+                notifications.set(notification.id, notification);
+                persist();
+                render();
+                playCancellationSound();
+                window.showToast?.({
+                    type: 'warning',
+                    message: `${notification.itemName} cancelled by ${notification.cancelledBy}.`,
+                    duration: 5000,
+                });
+            });
+        });
+    </script>

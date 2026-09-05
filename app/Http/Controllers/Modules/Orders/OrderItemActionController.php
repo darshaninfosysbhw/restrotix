@@ -130,7 +130,11 @@ class OrderItemActionController extends Controller
                     'kitchen_status' => (string) ($order->kitchen_status ?? 'pending'),
                     'item_status' => 'rejected',
                     'item_id' => (int) $item->id,
+                    'item_name' => (string) ($item->item_name ?? 'Item'),
                     'rejection_reason' => $reason,
+                    'cancelled_by' => (string) (Auth::user()?->name ?? 'Waiter'),
+                    'cancelled_by_role' => (string) (Auth::user()?->role ?? 'staff'),
+                    'cancelled_at' => optional($item->rejected_at)->toIso8601String(),
                 ]))->toOthers();
             }
         });

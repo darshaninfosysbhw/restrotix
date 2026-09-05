@@ -77,12 +77,14 @@
             const orderSound = new Audio(@json(asset('sounds/forOrder.m4a')));
             const waiterCallSound = new Audio(@json(asset('sounds/forWaiter.m4a')));
             const kitchenReadySound = new Audio(@json(asset('sounds/forKitchen.m4a')));
+            const notificationSound = new Audio(@json(asset('Sounds/forNotification.mp3')));
             const audioStorageKey = currentBranchId > 0
                 ? `kds_sound_enabled_v1:${currentBranchId}`
                 : 'kds_sound_enabled_v1';
             orderSound.preload = 'auto';
             waiterCallSound.preload = 'auto';
             kitchenReadySound.preload = 'auto';
+            notificationSound.preload = 'auto';
 
             let audioEnabled = localStorage.getItem(audioStorageKey) === '1';
 
@@ -116,6 +118,9 @@
                     await orderSound.play();
                     orderSound.pause();
                     orderSound.currentTime = 0;
+                    await notificationSound.play();
+                    notificationSound.pause();
+                    notificationSound.currentTime = 0;
                     audioEnabled = true;
                     localStorage.setItem(audioStorageKey, '1');
                     setAudioButtonState();
