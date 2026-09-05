@@ -4,11 +4,11 @@ namespace App\Events;
 
 use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Broadcasting\InteractsWithSockets;
-use Illuminate\Contracts\Broadcasting\ShouldBroadcast; // 1. Ye interface zaroori hai
+use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow; // 1. Ye interface zaroori hai
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class NewOrderReceived implements ShouldBroadcast // 2. Yahan implements add kiya
+class NewOrderReceived implements ShouldBroadcastNow // 2. Yahan implements add kiya
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
