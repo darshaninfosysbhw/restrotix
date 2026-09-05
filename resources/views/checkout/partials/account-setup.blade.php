@@ -48,7 +48,8 @@
             <label class="text-xs font-bold text-gray-700 uppercase tracking-wider ml-1">Verify
                 OTP</label>
             <div class="flex flex-col sm:flex-row gap-3">
-                <input type="text" placeholder="0 0 0 0 0 0" maxlength="6" inputmode="numeric" x-model="otpCode"
+                <input type="text" placeholder="0 0 0 0 0 0" maxlength="6" inputmode="numeric" autocomplete="one-time-code" x-model="otpCode"
+                    @paste.prevent="otpCode = $event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)"
                     @input="otpCode = otpCode.replace(/\D/g, '').slice(0, 6)"
                     class="flex-1 w-full px-4 py-3 rounded-lg input-box outline-none text-center tracking-[0.5em] font-black"
                     required>

@@ -1610,7 +1610,6 @@
             if (clearNotificationsBtn) {
                 clearNotificationsBtn.addEventListener('click', () => {
                     saveOrderNotifications([]);
-                    saveRejectedSeenIds([]);
                     renderOrderNotifications();
                     if (notificationPanel) {
                         notificationPanel.classList.add('hidden');

@@ -10,7 +10,6 @@
 
             <h1 class="text-sm md:text-xl font-semibold text-white truncate">
                 @if (auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
-                    <span class="hidden sm:inline">Multi-Branch Dashboard</span>
                     <span class="sm:hidden text-orange-500">Admin</span>
                 @else
                     {{ ucfirst(auth()->user()->role) }} Panel
@@ -85,18 +84,6 @@
                 </div>
             @endif
             <div class="flex items-center space-x-2 md:space-x-4 flex-shrink-0">
-                <div class="relative group">
-                    <div class="hidden lg:block relative">
-                        <i
-                            class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 text-sm font-light"></i>
-                        <input type="text" placeholder="Search..."
-                            class="bg-gray-700 border border-gray-600 rounded-lg pl-10 pr-4 py-2 text-sm text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-orange-500 w-40 xl:w-64 transition-all">
-                    </div>
-                    <button class="lg:hidden text-gray-400 p-2 hover:text-orange-500">
-                        <i class="fas fa-search"></i>
-                    </button>
-                </div>
-
                 <button id="theme-toggle"
                     class="hidden sm:block text-gray-400 hover:text-orange-500 text-lg transition-colors">
                     <i id="theme-icon" class="fas fa-sun"></i>
@@ -290,8 +277,17 @@
             const buttonRect = button.getBoundingClientRect();
             menu.style.position = 'fixed';
             menu.style.top = `${buttonRect.bottom + 12}px`;
-            menu.style.right = `${Math.max(window.innerWidth - buttonRect.right, 8)}px`;
-            menu.style.left = 'auto';
+            if (window.innerWidth < 640) {
+                menu.style.left = '8px';
+                menu.style.right = '8px';
+                menu.style.width = 'auto';
+                menu.style.maxWidth = 'none';
+            } else {
+                menu.style.width = '24rem';
+                menu.style.maxWidth = 'calc(100vw - 1rem)';
+                menu.style.right = `${Math.max(window.innerWidth - buttonRect.right, 8)}px`;
+                menu.style.left = 'auto';
+            }
             menu.style.zIndex = '2147483647';
         };
 

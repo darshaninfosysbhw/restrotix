@@ -113,9 +113,9 @@
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
                             Items</a>
 
-                        <a href="{{ route('menu.preview') }}"
+                        <!-- <a href="{{ route('menu.preview') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
-                            Preview</a>
+                            Preview</a> -->
                     </div>
                 </div>
             @endif
@@ -383,9 +383,9 @@
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
                             Items</a>
 
-                        <a href="{{ route('menu.preview') }}"
+                        <!-- <a href="{{ route('menu.preview') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
-                            Preview</a>
+                            Preview</a> -->
                     </div>
                 </div>
             @endif

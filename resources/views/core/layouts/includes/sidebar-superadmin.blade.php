@@ -38,7 +38,7 @@
                 <p class="px-3 py-1 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">Overview</p>
                 <a href="{{ route('superadmin.dashboard') }}"
                     class="sidebar-link {{ request()->routeIs('superadmin.dashboard') ? 'active' : '' }}">
-                    <i class="fas fa-tachometer-alt w-5"></i>Master Dashboard
+                    <i class="fas fa-tachometer-alt w-5"></i>Dashboard
                 </a>
             </div>
 
@@ -46,7 +46,7 @@
                 <p class="px-3 py-1 text-[11px] font-semibold tracking-[0.12em] uppercase text-slate-500">Operations</p>
                 <a href="{{ route('superadmin.tenants.index') }}"
                     class="sidebar-link {{ request()->routeIs('superadmin.tenants.*') ? 'active' : '' }}">
-                    <i class="fas fa-building w-5"></i>Tenant Governance
+                    <i class="fas fa-building w-5"></i>Restaurants List
                 </a>
                 {{-- <a href="#" class="sidebar-link"><i class="fas fa-server w-5"></i>Infrastructure</a> --}}
                 <a href="#" class="sidebar-link"><i class="fas fa-globe w-5"></i>Marketplace Control</a>
@@ -65,7 +65,7 @@
                 <details class="sa-dropdown-container" {{ $isMasterSettingsActive ? 'open' : '' }}>
                     <summary class="sa-dropdown-trigger sidebar-link w-full">
                         <i class="fas fa-cogs w-5"></i>
-                        <span class="sidebar-label whitespace-nowrap">Master Settings</span>
+                        <span class="sidebar-label whitespace-nowrap"> Settings</span>
                         <i
                             class="sa-dropdown-arrow fas fa-chevron-right ml-auto text-[11px] transition-transform duration-200"></i>
                     </summary>
@@ -74,7 +74,7 @@
                         class="sa-dropdown-menu pl-2 ml-3 border-l border-white/10 space-y-2 mb-9">
                         <a href="{{ route('superadmin.services.index') }}"
                             class="sidebar-link {{ request()->routeIs('superadmin.services.*') ? 'active' : '' }}">
-                            <i class="fas fa-layer-group w-3"></i>Service Master
+                            <i class="fas fa-layer-group w-3"></i>Service Management
                         </a>
                         <a href="{{ route('superadmin.currencies.index') }}"
                             class="sidebar-link {{ request()->routeIs('superadmin.currencies.*') ? 'active' : '' }}">
@@ -93,7 +93,7 @@
                 </details>
             </div>
         </nav>
-
+ 
         <!-- bottom user -->
         <div class="border-t border-white/5 pt-4 mt-4">
             <div class="flex items-center gap-3">
