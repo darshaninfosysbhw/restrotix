@@ -1,6 +1,8 @@
 body {
-    font-family: 'Inter', sans-serif;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    font-family: "Inter", sans-serif;
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
 }
 
 .sidebar-item {
@@ -10,11 +12,13 @@ body {
 .sidebar-item:hover,
 .sidebar-item.active {
     background: rgba(255, 107, 53, 0.2);
-    color: #FF6B35;
+    color: #ff6b35;
 }
 
 .card-hover {
-    transition: transform 0.2s, box-shadow 0.2s;
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
 }
 
 .card-hover:hover {
@@ -29,16 +33,16 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: #1F2937;
+    background: #1f2937;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #4B5563;
+    background: #4b5563;
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #FF6B35;
+    background: #ff6b35;
 }
 
 /* Light theme overrides (same as before) */
@@ -98,6 +102,26 @@ body.light-theme .text-gray-300 {
     color: #4b5563;
 }
 
+body.light-theme [data-branch-menu] {
+    background-color: #ffffff;
+    border-color: #e5e7eb;
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.14);
+}
+
+body.light-theme [data-branch-menu] [data-branch-option] {
+    color: #374151;
+}
+
+body.light-theme [data-branch-menu] [data-branch-option]:hover {
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+body.light-theme [data-branch-menu] [data-branch-option].bg-orange-500\/10 {
+    background-color: rgba(255, 107, 53, 0.1);
+    color: #c2410c;
+}
+
 body.light-theme .sidebar-item {
     color: #374151;
 }
@@ -105,7 +129,7 @@ body.light-theme .sidebar-item {
 body.light-theme .sidebar-item:hover,
 body.light-theme .sidebar-item.active {
     background: rgba(255, 107, 53, 0.15);
-    color: #FF6B35;
+    color: #ff6b35;
 }
 
 body.light-theme .bg-gray-700.rounded-lg {
@@ -141,7 +165,10 @@ body.light-theme .bg-orange-900\/50 {
 }
 
 /* Admin supplier comparison table readability in light theme */
-body.light-theme .supplier-comparison-table tbody td:not(.text-green-400):not(.text-white) {
+body.light-theme
+    .supplier-comparison-table
+    tbody
+    td:not(.text-green-400):not(.text-white) {
     color: #334155;
 }
 
@@ -169,7 +196,7 @@ body.light-theme ::-webkit-scrollbar-thumb {
 }
 
 body.light-theme ::-webkit-scrollbar-thumb:hover {
-    background: #FF6B35;
+    background: #ff6b35;
 }
 
 /* Light Theme Overrides */

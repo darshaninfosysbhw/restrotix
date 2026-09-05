@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\Branch\BranchController;
 use App\Http\Controllers\Admin\Branch\BranchPaymentGatewayController;
 // ---Super Admin CONTROLLERS LINKS---
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\BranchSwitchController;
 use App\Http\Controllers\Admin\Employee\EmployeeController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\Settings\MenuSettingsController;
@@ -74,7 +75,7 @@ Route::view('/ui/order-flow', 'core.components.order-flow.index')
 
 Route::get('/admin/get-table-orders/{table_number}', function ($tableNumber) {
     $tenantId = auth()->user()->tenant_id;
-    $requestedBranchId = request()->filled('branch_id') ? (int) request()->query('branch_id') : null;
+    $requestedBranchId = (int) session('active_branch_id', auth()->user()->branch_id ?? 0) ?: null;
 
     $ordersQuery = Order::where('tenant_id', $tenantId)
         ->where('table_number', $tableNumber)
@@ -181,6 +182,7 @@ Route::middleware(['auth'])->group(function () {
 
         // DASHBOARD & PROFILE
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
+        Route::post('/switch-branch', [BranchSwitchController::class, 'switch'])->name('admin.branch.switch');
         Route::get('/profile', [ProfileController::class, 'show'])->name('admin.profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('admin.profile.update');
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('admin.profile.password.update');

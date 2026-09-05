@@ -24,8 +24,18 @@ class ViewServiceProvider extends ServiceProvider
                     view()->share('planServiceSlugs', []);
                     view()->share('activeServiceSlugs', []);
                     view()->share('allowedServiceSlugs', []);
+                    view()->share('availableBranches', collect());
+                    view()->share('activeBranch', null);
+                    view()->share('canSwitchBranches', false);
                     return;
                 }
+
+                $availableBranches = $tenant->branches()
+                    ->orderBy('branch_name')
+                    ->get(['id', 'branch_name']);
+                $canSwitchBranches = in_array(strtolower((string) $user->role), ['admin', 'superadmin'], true)
+                    && (int) ($tenant->plan->max_branches ?? 1) > 1;
+                $activeBranch = $availableBranches->firstWhere('id', (int) session('active_branch_id'));
                 // 1. User ke PLAN mein kaun-kaun si services allowed hain? (Visibility ke liye)
                 $planServiceSlugs = $tenant->plan->services->pluck('slug')->toArray();
 
@@ -52,6 +62,9 @@ class ViewServiceProvider extends ServiceProvider
                         'planServiceSlugs'   => $planServiceSlugs,
                         'activeServiceSlugs' => $activeServiceSlugs,
                         'allowedServiceSlugs' => $allowedServiceSlugs,
+                        'availableBranches' => $availableBranches,
+                        'activeBranch' => $activeBranch,
+                        'canSwitchBranches' => $canSwitchBranches,
                     ]
                 );
             }

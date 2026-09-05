@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             \App\Http\Middleware\CountryManager::class,
             \App\Http\Middleware\SetUserCurrency::class,
+            \App\Http\Middleware\SetBranchContext::class,
 
         ]);
 

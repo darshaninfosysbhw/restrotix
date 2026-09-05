@@ -11,12 +11,12 @@ use App\Models\User;
 
 class DashboardService
 {
-    public function buildDashboardPayload(int $tenantId, string $currencySymbol): array
+    public function buildDashboardPayload(int $tenantId, string $currencySymbol, ?int $branchId = null): array
     {
-        $dashboardMetrics = $this->buildDashboardMetrics($tenantId, $currencySymbol);
-        $qrScanStats = $this->buildQrScanStats($tenantId);
-        $topBranches = $this->buildTopBranches($tenantId, $currencySymbol);
-        $productSales = $this->buildProductSalesInsights($tenantId, $currencySymbol);
+        $dashboardMetrics = $this->buildDashboardMetrics($tenantId, $currencySymbol, $branchId);
+        $qrScanStats = $this->buildQrScanStats($tenantId, $branchId);
+        $topBranches = $this->buildTopBranches($tenantId, $currencySymbol, $branchId);
+        $productSales = $this->buildProductSalesInsights($tenantId, $currencySymbol, $branchId);
 
         return array_merge(
             compact('dashboardMetrics', 'qrScanStats', 'topBranches'),
@@ -24,7 +24,7 @@ class DashboardService
         );
     }
 
-    private function buildDashboardMetrics(int $tenantId, string $currencySymbol): array
+    private function buildDashboardMetrics(int $tenantId, string $currencySymbol, ?int $branchId): array
     {
         $now = now();
         $currentMonthStart = $now->copy()->startOfMonth();
@@ -34,6 +34,7 @@ class DashboardService
 
         $invoiceBaseQuery = OrderInvoice::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->whereIn('status', ['unpaid', 'partially_paid', 'paid']);
 
         $currentMonthInvoices = (clone $invoiceBaseQuery)
@@ -50,6 +51,7 @@ class DashboardService
 
         $branches = Branch::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->whereKey($branchId))
             ->get(['id', 'branch_name']);
 
         $currentBranchRevenue = (clone $currentMonthInvoices)
@@ -75,6 +77,7 @@ class DashboardService
 
         $staffBaseQuery = User::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->whereIn('role', ['manager', 'chef', 'waiter', 'cashier']);
 
         $totalStaff = (int) (clone $staffBaseQuery)->count();
@@ -112,14 +115,15 @@ class DashboardService
         ];
     }
 
-    private function buildQrScanStats(int $tenantId): array
+    private function buildQrScanStats(int $tenantId, ?int $branchId): array
     {
         $now = now();
         $todayStart = $now->copy()->startOfDay();
         $todayEnd = $now->copy()->endOfDay();
 
         $baseQuery = TableQrScan::query()
-            ->where('tenant_id', $tenantId);
+            ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId));
 
         $uniqueSessionCountQuery = function ($query) {
             return $query->whereNotNull('table_access_session_id');
@@ -148,6 +152,7 @@ class DashboardService
         if ($topScanRow) {
             $tableNumber = Table::query()
                 ->whereKey((int) $topScanRow->table_id)
+                ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
                 ->value('table_number');
 
             $topTableLabel = $tableNumber ? 'Table ' . $tableNumber : 'Table #' . (int) $topScanRow->table_id;
@@ -163,7 +168,7 @@ class DashboardService
         ];
     }
 
-    private function buildTopBranches(int $tenantId, string $currencySymbol): array
+    private function buildTopBranches(int $tenantId, string $currencySymbol, ?int $branchId): array
     {
         $now = now();
         $currentMonthStart = $now->copy()->startOfMonth();
@@ -173,10 +178,12 @@ class DashboardService
 
         $branches = Branch::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->whereKey($branchId))
             ->get(['id', 'branch_name']);
 
         $invoiceBaseQuery = OrderInvoice::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
             ->whereIn('status', ['unpaid', 'partially_paid', 'paid']);
 
         $currentBranchRevenue = (clone $invoiceBaseQuery)
@@ -217,7 +224,7 @@ class DashboardService
             ->all();
     }
 
-    private function buildProductSalesInsights(int $tenantId, string $currencySymbol): array
+    private function buildProductSalesInsights(int $tenantId, string $currencySymbol, ?int $branchId): array
     {
         $now = now();
         $currentMonthStart = $now->copy()->startOfMonth();
@@ -229,6 +236,7 @@ class DashboardService
             ->join('order_invoices', 'order_items.invoice_id', '=', 'order_invoices.id')
             ->leftJoin('menu_items', 'order_items.menu_item_id', '=', 'menu_items.id')
             ->where('order_invoices.tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('order_invoices.branch_id', $branchId))
             ->whereIn('order_invoices.status', ['unpaid', 'partially_paid', 'paid']);
 
         $currentRows = (clone $baseQuery)

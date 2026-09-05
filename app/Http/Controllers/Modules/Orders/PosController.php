@@ -33,9 +33,7 @@ class PosController extends Controller
         abort_unless($user && $user->tenant_id, 403);
 
         $tenantId = (int) $user->tenant_id;
-        $branchId = $request->query('branch_id')
-            ? (int) $request->query('branch_id')
-            : ($user->branch_id ? (int) $user->branch_id : null);
+        $branchId = (int) session('active_branch_id', $user->branch_id ?? 0) ?: null;
 
         if (!$branchId) {
             $branchId = Branch::where('tenant_id', $tenantId)->value('id');

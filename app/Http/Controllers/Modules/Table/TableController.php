@@ -32,11 +32,12 @@ class TableController extends Controller
     {
         $user = Auth::user();
         $tenantId = Auth::user()->tenant_id;
+        $activeBranchId = (int) session('active_branch_id', $user->branch_id ?? 0);
 
         $branches = Branch::where('tenant_id', $tenantId)->get();
         $activeWaiters = User::query()
             ->where('tenant_id', $tenantId)
-            ->where('branch_id', $user->branch_id)
+            ->where('branch_id', $activeBranchId)
             ->where('role', 'waiter')
             ->where('is_active', true)
             ->when($user->role === 'waiter', fn ($query) => $query->where('id', '!=', $user->id))
@@ -45,6 +46,7 @@ class TableController extends Controller
 
         // 🔥 CHANGE: optimized stats query + out_of_service added
         $stats = Table::where('tenant_id', $tenantId)
+            ->where('branch_id', $activeBranchId)
             ->selectRaw("
             COUNT(*) as total,
             SUM(status = 'available') as available,
@@ -58,15 +60,13 @@ class TableController extends Controller
 
 
         $tableModels = Table::where('tenant_id', $tenantId)
+            ->where('branch_id', $activeBranchId)
             ->with(['branch', 'orders' => function ($q) {
                 // Sirf wo orders jo abhi tak finish nahi huye
                 // $q->whereIn('status', ['pending', 'preparing', 'ready', 'served'])
                 $q->where('status', 'running')
                     ->with(['items.orderItemAddons.masterAddon']);
             }])
-            ->when($request->branch_id, function ($q) use ($request) {
-                return $q->where('branch_id', $request->branch_id);
-            })
             ->orderBy('table_number', 'asc')
             ->get();
 
@@ -113,6 +113,7 @@ class TableController extends Controller
 
         $tables = Table::query()
             ->where('tenant_id', $tenantId)
+            ->where('branch_id', (int) session('active_branch_id', $user->branch_id ?? 0))
             ->with(['orders' => function ($query) {
                 $query->where('status', 'running')
                     ->select(['id', 'table_id', 'ordered_at', 'created_at', 'grand_total'])
@@ -164,7 +165,7 @@ class TableController extends Controller
 
         $table = Table::query()
             ->where('tenant_id', $user->tenant_id)
-            ->when($user->branch_id, fn ($query) => $query->where('branch_id', $user->branch_id))
+            ->where('branch_id', (int) session('active_branch_id', $user->branch_id ?? 0))
             ->findOrFail($validated['table_id']);
 
         $targetWaiter = User::query()

@@ -23,6 +23,9 @@ class EmployeeController extends Controller
             ->whereIn('role', ['manager', 'chef', 'waiter', 'cashier'])
             ->when($user->role !== 'admin', function (Builder $query) use ($user) {
                 $query->where('branch_id', $user->branch_id);
+            })
+            ->when($user->role === 'admin', function (Builder $query) {
+                $query->where('branch_id', (int) session('active_branch_id'));
             });
     }
 
@@ -106,6 +109,8 @@ class EmployeeController extends Controller
 
         if ($user->role !== 'admin') {
             $query->where('branch_id', $user->branch_id);
+        } else {
+            $query->where('branch_id', (int) session('active_branch_id'));
         }
 
         if ($search !== '') {

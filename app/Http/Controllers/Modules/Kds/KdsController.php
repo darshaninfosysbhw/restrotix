@@ -21,7 +21,7 @@ class KdsController extends Controller
     public function index(Request $request): View|JsonResponse
     {
         $user = Auth::user();
-        $branchId = $user->branch_id;
+        $branchId = (int) session('active_branch_id', $user->branch_id ?? 0);
         $layout = strtolower(trim($user->role)) === 'chef' ? 'core.layouts.chef' : 'core.layouts.admin';
 
         $statusFilter = (string) $request->query('status', 'all');
@@ -124,7 +124,9 @@ class KdsController extends Controller
 
     public function updateStatus(Request $request, $id): RedirectResponse|JsonResponse
     {
-        $order = Order::where('id', $id)->where('branch_id', Auth::user()->branch_id)->firstOrFail();
+        $order = Order::where('id', $id)
+            ->where('branch_id', (int) session('active_branch_id', Auth::user()->branch_id ?? 0))
+            ->firstOrFail();
         $requestedKotNumber = $request->filled('kot_number') ? (int) $request->input('kot_number') : null;
         $requestedStatus = $request->input('status');
         $targetItems = $order->items;
@@ -188,7 +190,7 @@ class KdsController extends Controller
      */
     public function markAllReady(Request $request): RedirectResponse|JsonResponse
     {
-        $branchId = Auth::user()->branch_id;
+        $branchId = (int) session('active_branch_id', Auth::user()->branch_id ?? 0);
         $kitchenBroadcasts = [];
 
         DB::transaction(function () use ($branchId, &$kitchenBroadcasts) {

@@ -18,25 +18,58 @@
             </h1>
         </div>
 
-        <div class="hidden sm:flex items-center mx-4 flex-1 justify-center max-w-xs md:max-w-md">
-            @if (auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
+        <div class="hidden sm:flex items-center mx-4 flex-1 justify-center max-w-xs md:max-w-md ">
+            @if (($canSwitchBranches ?? false) && ($availableBranches ?? collect())->isNotEmpty())
+                <form action="{{ route('admin.branch.switch') }}" method="POST" id="branchSwitcherForm" data-branch-switcher
+                    class="relative">
+                    @csrf
+                    <input type="hidden" name="branch_id" value="{{ $activeBranch?->id }}">
+                    <button type="button" data-branch-trigger aria-haspopup="listbox" aria-expanded="false"
+                        class="flex items-center gap-2 min-w-[10rem] max-w-[14rem] px-3 py-2 rounded-xl border border-gray-600/80 bg-gray-800 text-white shadow-sm hover:border-orange-400 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500/40 transition-all">
+                        <span class="w-6 h-6 rounded-lg bg-orange-500/15 text-orange-400 flex items-center justify-center shrink-0">
+                            <i class="fas fa-building text-[11px]"></i>
+                        </span>
+                        <span class="flex-1 min-w-0 text-left">
+                            <span class="block text-[9px] uppercase tracking-[0.14em] text-gray-500 font-bold leading-none mb-1">Branch</span>
+                            <span data-branch-label class="block truncate text-xs md:text-sm font-semibold leading-none">
+                                {{ $activeBranch?->branch_name ?? 'Select branch' }}
+                            </span>
+                        </span>
+                        <i data-branch-chevron class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform"></i>
+                    </button>
+
+                    <div data-branch-menu role="listbox" class="hidden fixed w-64 overflow-hidden rounded-xl border border-gray-700 bg-gray-900 shadow-2xl shadow-black/30 z-[2147483646]">
+                        <div class="px-3.5 py-3 border-b border-gray-800 bg-gray-900">
+                            <p class="text-[10px] uppercase tracking-[0.16em] text-gray-500 font-bold">Switch branch</p>
+                            <p class="text-[11px] text-gray-400 mt-1">Choose the workspace you want to view</p>
+                        </div>
+                        @foreach ($availableBranches as $branch)
+                            <button type="button" role="option" data-branch-option="{{ $branch->id }}"
+                                data-branch-name="{{ $branch->branch_name }}"
+                                aria-selected="{{ (int) ($activeBranch?->id ?? 0) === (int) $branch->id ? 'true' : 'false' }}"
+                                class="w-full flex items-center gap-3 px-3.5 py-3 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors {{ (int) ($activeBranch?->id ?? 0) === (int) $branch->id ? 'bg-orange-500/10 text-orange-300' : '' }}">
+                                <span class="w-7 h-7 rounded-lg flex items-center justify-center {{ (int) ($activeBranch?->id ?? 0) === (int) $branch->id ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-500' }}">
+                                    <i class="fas fa-store text-[11px]"></i>
+                                </span>
+                                <span class="flex-1 min-w-0 truncate font-semibold">{{ $branch->branch_name }}</span>
+                                <i class="fas fa-check text-[11px] text-orange-400 {{ (int) ($activeBranch?->id ?? 0) === (int) $branch->id ? '' : 'hidden' }}"></i>
+                            </button>
+                        @endforeach
+                    </div>
+                </form>
+            @elseif (auth()->user()->role == 'admin' || auth()->user()->role == 'superadmin')
                 <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-lg border border-gray-700">
-                    <span class="text-[10px] md:text-sm text-gray-400 uppercase font-bold">Viewing:</span>
-                    <select
-                        class="bg-gray-700 border border-gray-600 text-sm rounded-lg px-3 py-1.5 text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
-                        <option>All Branches (12)</option>
-                        <option>Downtown</option>
-                        <option>Westside</option>
-                        <option>East End</option>
-                        <option>Uptown</option>
-                    </select>
+                    <i class="fas fa-building text-orange-400 text-xs"></i>
+                    <span class="text-[10px] md:text-sm text-gray-300 font-semibold truncate">
+                        {{ $activeBranch?->branch_name ?? 'No branch assigned' }}
+                    </span>
                 </div>
             @else
                 <div
                     class="flex items-center space-x-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                     <i class="fas fa-store text-[10px] text-orange-500"></i>
                     <span class="text-[10px] md:text-xs font-bold text-orange-500 uppercase tracking-wider truncate">
-                        {{ auth()->user()->branch_name ?? 'Main Outlet' }}
+                        {{ auth()->user()->branch?->branch_name ?? 'Main Outlet' }}
                     </span>
                 </div>
             @endif
@@ -182,7 +215,63 @@
 
 <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
-        const branchId = Number(@json((int) (auth()->user()->branch_id ?? 0)));
+        const branchSwitcher = document.querySelector('[data-branch-switcher]');
+        const branchTrigger = branchSwitcher?.querySelector('[data-branch-trigger]');
+        const branchMenu = branchSwitcher?.querySelector('[data-branch-menu]');
+        const branchInput = branchSwitcher?.querySelector('input[name="branch_id"]');
+        const branchChevron = branchSwitcher?.querySelector('[data-branch-chevron]');
+
+        const positionBranchMenu = () => {
+            if (!branchMenu || !branchTrigger || branchMenu.classList.contains('hidden')) return;
+            const triggerRect = branchTrigger.getBoundingClientRect();
+            const menuWidth = branchMenu.offsetWidth || 256;
+            const left = Math.min(triggerRect.left, window.innerWidth - menuWidth - 8);
+            const top = triggerRect.bottom + 8;
+
+            branchMenu.style.left = `${Math.max(left, 8)}px`;
+            branchMenu.style.top = `${top}px`;
+        };
+
+        if (branchMenu) document.body.appendChild(branchMenu);
+
+        const closeBranchMenu = () => {
+            if (!branchMenu || !branchTrigger) return;
+            branchMenu.classList.add('hidden');
+            branchTrigger.setAttribute('aria-expanded', 'false');
+            branchChevron?.classList.remove('rotate-180');
+        };
+
+        branchTrigger?.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const isOpen = !branchMenu.classList.contains('hidden');
+            branchMenu.classList.toggle('hidden', isOpen);
+            branchTrigger.setAttribute('aria-expanded', String(!isOpen));
+            branchChevron?.classList.toggle('rotate-180', !isOpen);
+            if (!isOpen) positionBranchMenu();
+        });
+
+        branchMenu?.querySelectorAll('[data-branch-option]').forEach((option) => {
+            option.addEventListener('click', () => {
+                if (!branchInput || !branchSwitcher) return;
+                branchInput.value = option.dataset.branchOption;
+                branchSwitcher.classList.add('opacity-60', 'pointer-events-none');
+                branchTrigger?.querySelector('[data-branch-label]')?.replaceChildren(
+                    document.createTextNode('Switching...')
+                );
+                branchSwitcher.submit();
+            });
+        });
+
+        document.addEventListener('click', (event) => {
+            if (branchSwitcher && !branchTrigger?.contains(event.target) && !branchMenu?.contains(event.target)) {
+                closeBranchMenu();
+            }
+        });
+
+        window.addEventListener('resize', positionBranchMenu);
+        window.addEventListener('scroll', positionBranchMenu, true);
+
+        const branchId = Number(@json((int) session('active_branch_id', auth()->user()->branch_id ?? 0)));
         const currentUserId = Number(@json(auth()->id()));
         const storageKey = `admin-notifications:${branchId}:${currentUserId}`;
         const bell = document.getElementById('adminNotificationBell');

@@ -33,7 +33,11 @@ class DashboardController extends Controller
         $currencySymbol = trim((string) ($user->tenant?->currency?->symbol ?? session('currency_symbol', '₹')));
         $tenantId = (int) $user->tenant_id;
 
-        $dashboardData = $dashboardService->buildDashboardPayload($tenantId, $currencySymbol);
+        $dashboardData = $dashboardService->buildDashboardPayload(
+            $tenantId,
+            $currencySymbol,
+            (int) session('active_branch_id', $user->branch_id ?? 0) ?: null
+        );
 
         return view('admin.dashboard', array_merge(compact('user'), $dashboardData));
     }
