@@ -97,6 +97,7 @@
 @section('content')
     @php
         $categoryPaginator = $categoryPaginator ?? null;
+        $isManager = strtolower((string) auth()->user()->role) === 'manager';
     @endphp
 
     <div class="flex-1 overflow-y-auto p-6 bg-gray-900 space-y-6">
@@ -108,11 +109,13 @@
                     <p class="text-sm text-gray-400 mt-2">Manage your category tree by branch</p>
                 </div>
 
-                <button id="openTableModal" type="button"
-                    class="inline-flex items-center justify-center gap-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer">
-                    <i class="fas fa-plus"></i>
-                    Add Category
-                </button>
+                @if (!$isManager)
+                    <button id="openTableModal" type="button"
+                        class="inline-flex items-center justify-center gap-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-4 py-2.5 rounded-lg text-sm font-medium cursor-pointer">
+                        <i class="fas fa-plus"></i>
+                        Add Category
+                    </button>
+                @endif
             </div>
         </div>
 
@@ -194,7 +197,9 @@
                             <th class="text-center py-3 px-4 font-medium">Type</th>
                             <th class="text-center py-3 px-4 font-medium">Visible In Branch</th>
                             <th class="text-center py-3 px-4 font-medium">Status</th>
-                            <th class="text-center py-3 pl-8 font-medium">Action</th>
+                            @if (!$isManager)
+                                <th class="text-center py-3 pl-8 font-medium">Action</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="branchTableBody" class="divide-y divide-gray-700/80">
@@ -261,6 +266,7 @@
                                     </form>
                                 </td>
 
+                                @if (!$isManager)
                                 <td class="py-4 px-6 text-right">
                                     <div class="flex justify-end gap-2  transition">
                                         <button type="button"
@@ -286,6 +292,7 @@
                                         </form>
                                     </div>
                                 </td>
+                                @endif
                             </tr>
 
                             @if ($parentHasChildren)
@@ -342,6 +349,7 @@
                                                             </form>
                                                         </td>
 
+                                                        @if (!$isManager)
                                                         <td class="py-4 px-6 text-right">
                                                             <div class="flex justify-end gap-2">
                                                                 <button type="button"
@@ -368,6 +376,7 @@
                                                                 </form>
                                                             </div>
                                                         </td>
+                                                        @endif
                                                     </tr>
                                                 @endforeach
                                             </tbody>
@@ -444,10 +453,12 @@
                                 <div class="relative">
                                     <select name="branch_id"
                                         class="w-full bg-gray-900 text-sm border border-gray-700 rounded-lg px-3 py-2.5 text-white appearance-none focus:outline-none focus:ring-1 focus:ring-orange-500/50 cursor-pointer">
-                                        <option value="">All Branches (Global)</option>
+                                        @if (!$isManager)
+                                            <option value="">All Branches (Global)</option>
+                                        @endif
                                         @foreach ($branches as $branch)
                                             <option value="{{ $branch->id }}"
-                                                {{ old('branch_id') == $branch->id ? 'selected' : '' }}>
+                                                {{ (old('branch_id') ?: ($isManager ? $branchId : null)) == $branch->id ? 'selected' : '' }}>
                                                 {{ $branch->branch_name }}
                                             </option>
                                         @endforeach

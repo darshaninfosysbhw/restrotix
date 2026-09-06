@@ -60,7 +60,7 @@ class LoginController extends Controller
 
             // Chef ke liye direct KDS Module ka raasta
             if ($role === 'chef') {
-                return redirect()->intended(route('admin.kds.index'));
+                return redirect()->intended(route('chef.kds.index'));
             }
 
             // Waiter ke liye direct Table Management ka raasta
@@ -68,10 +68,13 @@ class LoginController extends Controller
                 return redirect()->intended(route('waiter.tables.index'));
             }
 
+             if ($role === 'manager') {
+                return redirect()->route('manager.dashboard');
+            }
+
             // Baaki saare managers (Admin, Sales, Accounts, etc.) ke liye Dashboard
             $managementRoles = [
                 'admin',
-                'manager',
                 'sales_manager',
                 'purchase_manager',
                 'account_manager',
@@ -80,7 +83,7 @@ class LoginController extends Controller
             ];
 
             if (in_array($role, $managementRoles)) {
-                return redirect()->intended(route('admin.dashboard'));
+                return redirect()->route('admin.dashboard');
             }
 
             // Default fall back

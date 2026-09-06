@@ -39,7 +39,7 @@
             <div class="flex items-center space-x-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                 <i class="fas fa-store text-[10px] text-orange-500"></i>
                 <span class="text-[10px] md:text-xs font-bold text-orange-500 uppercase tracking-wider truncate">
-                    {{ auth()->user()->branch_name ?? 'Main Outlet' }}
+                    {{ auth()->user()->branch?->branch_name ?? 'No branch assigned' }}
                 </span>
             </div>
 
@@ -121,7 +121,7 @@
                         </div>
 
                         <div class="mt-1">
-                            <a href="{{ route('admin.profile') }}"
+                            <a href="{{ route('waiter.profile') }}"
                                 class="group flex items-center px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-orange-500 transition-all">
                                 <div
                                     class="w-8 h-8 rounded-lg bg-gray-700 group-hover:bg-orange-500/10 flex items-center justify-center mr-3 transition-all">

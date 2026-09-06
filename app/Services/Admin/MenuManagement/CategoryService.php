@@ -8,10 +8,13 @@ use Illuminate\Support\Facades\Storage;
 
 class CategoryService
 {
-    public function getCategoryQuery($tenantId)
+    public function getCategoryQuery($tenantId, ?int $branchId = null)
     {
         return MenuCategory::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId !== null, fn ($query) => $query->where(function ($query) use ($branchId) {
+                $query->whereNull('branch_id')->orWhere('branch_id', $branchId);
+            }))
             ->whereNull('parent_id')
             ->with([
                 'branch:id,branch_name',
@@ -28,7 +31,10 @@ class CategoryService
                         'sort_order',
                         'is_active',
                     ])
-                    ->with('branch:id,branch_name'),
+                    ->when($branchId !== null, fn ($query) => $query->where(function ($query) use ($branchId) {
+                        $query->whereNull('branch_id')->orWhere('branch_id', $branchId);
+                    }))
+                        ->with('branch:id,branch_name'),
             ])
             ->orderBy('sort_order', 'asc');
     }
@@ -36,14 +42,14 @@ class CategoryService
     /**
      * Fetch all parent categories with their children (Tree Structure)
      */
-    public function getAllCategories($tenantId)
+    public function getAllCategories($tenantId, ?int $branchId = null)
     {
-        return $this->getCategoryQuery($tenantId)->get();
+        return $this->getCategoryQuery($tenantId, $branchId)->get();
     }
 
-    public function getPaginatedCategories($tenantId, int $perPage = 25, ?string $search = null)
+    public function getPaginatedCategories($tenantId, int $perPage = 25, ?string $search = null, ?int $branchId = null)
     {
-        $query = $this->getCategoryQuery($tenantId);
+        $query = $this->getCategoryQuery($tenantId, $branchId);
 
         $search = trim((string) $search);
         if ($search !== '') {
@@ -72,32 +78,43 @@ class CategoryService
             ->withQueryString();
     }
 
-    public function getParentCategories($tenantId)
+    public function getParentCategories($tenantId, ?int $branchId = null)
     {
         return MenuCategory::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId !== null, fn ($query) => $query->where(function ($query) use ($branchId) {
+                $query->whereNull('branch_id')->orWhere('branch_id', $branchId);
+            }))
             ->whereNull('parent_id')
             ->orderBy('name')
             ->get(['id', 'name']);
     }
 
-    public function getTenantBranches($tenantId)
+    public function getTenantBranches($tenantId, ?int $branchId = null)
     {
         return Branch::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId !== null, fn ($query) => $query->where('id', $branchId))
             ->orderBy('branch_name')
             ->get(['id', 'branch_name']);
     }
 
-    public function getCategoryStats($tenantId)
+    public function getCategoryStats($tenantId, ?int $branchId = null)
     {
-        $total = MenuCategory::query()->where('tenant_id', $tenantId)->count();
+        $baseQuery = MenuCategory::query()
+            ->where('tenant_id', $tenantId)
+            ->when($branchId !== null, fn ($query) => $query->where(function ($query) use ($branchId) {
+                $query->whereNull('branch_id')->orWhere('branch_id', $branchId);
+            }));
+        $total = (clone $baseQuery)->count();
 
         return [
             'total' => $total,
-            'active' => MenuCategory::query()->where('tenant_id', $tenantId)->where('is_active', true)->count(),
-            'inactive' => MenuCategory::query()->where('tenant_id', $tenantId)->where('is_active', false)->count(),
-            'global' => MenuCategory::query()->where('tenant_id', $tenantId)->whereNull('branch_id')->count(),
+            'active' => (clone $baseQuery)->where('is_active', true)->count(),
+            'inactive' => (clone $baseQuery)->where('is_active', false)->count(),
+            'global' => $branchId === null
+                ? (clone $baseQuery)->whereNull('branch_id')->count()
+                : 0,
         ];
     }
 

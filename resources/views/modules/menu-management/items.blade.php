@@ -39,6 +39,7 @@
         $categoryOptions = collect($categories ?? []);
         $branchOptions = collect($branches ?? []);
         $itemsPaginator = $itemsPaginator ?? null;
+        $isManager = strtolower((string) auth()->user()->role) === 'manager';
 
         $itemStats = $itemStats ?? [
             'total' => $menuItems->count(),
@@ -51,7 +52,7 @@
         $selectedCategory = $categoryOptions->firstWhere('id', (int) $selectedCategoryId) ?? $categoryOptions->first();
         $selectedCategoryName = $selectedCategory->name ?? 'Select Category';
 
-        $selectedBranchId = (string) old('branch_id', '');
+        $selectedBranchId = (string) old('branch_id', $isManager ? optional($branchOptions->first())->id : '');
         $selectedBranch = $branchOptions->firstWhere('id', (int) $selectedBranchId);
         $selectedBranchName = $selectedBranch ? $selectedBranch->branch_name : 'Global Specific';
 
@@ -73,11 +74,13 @@
                     <p class="text-sm text-gray-400 mt-2">Manage item listing, stock visibility, and pricing from one place.
                     </p>
                 </div>
-                <button id="openItemModal" type="button"
-                    class="inline-flex items-center justify-center gap-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-4 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer">
-                    <i class="fas fa-plus"></i>
-                    Add New Item
-                </button>
+                @if (!$isManager)
+                    <button id="openItemModal" type="button"
+                        class="inline-flex items-center justify-center gap-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-4 py-2.5 rounded-lg text-sm font-medium transition cursor-pointer">
+                        <i class="fas fa-plus"></i>
+                        Add New Item
+                    </button>
+                @endif
             </div>
         </div>
 
@@ -166,7 +169,9 @@
                             <th class="text-left py-3 px-4 font-medium">Availability</th>
                             <th class="text-left py-3 px-4 font-medium">Status</th>
                             <th class="text-left py-3 px-4 font-medium">Updated</th>
-                            <th class="text-left py-3 pl-8 font-medium">Action</th>
+                            @if (auth()->user()->role !== 'manager')
+                                <th class="text-left py-3 pl-8 font-medium">Action</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody id="itemTableBody" class="divide-y divide-gray-700/80">
@@ -222,6 +227,7 @@
                                     </form>
                                 </td>
                                 <td class="py-3 px-4 text-gray-300">{{ $item['updated_at'] ?? '-' }}</td>
+                                @if (auth()->user()->role !== 'manager')
                                 <td class="py-3 pl-8">
                                     <div class="flex items-center gap-2">
                                         <button type="button"
@@ -241,6 +247,7 @@
                                         </form>
                                     </div>
                                 </td>
+                                @endif
                             </tr>
                         @endforeach
                         <tr id="itemNoResultRow" class="{{ count($menuItems) ? 'hidden' : '' }}">
@@ -368,10 +375,12 @@
 
                                 <div id="branch_list"
                                     class="hidden absolute mt-1 w-full bg-gray-900 border border-gray-700 rounded-lg shadow-2xl z-30 overflow-hidden">
-                                    <div onclick="selectBranch('', 'Global Specific')"
-                                        class="px-4 py-2.5 text-sm text-gray-300 hover:bg-orange-500/10 hover:text-orange-400 cursor-pointer transition">
-                                        Global Specific
-                                    </div>
+                                    @if (!$isManager)
+                                        <div onclick="selectBranch('', 'Global Specific')"
+                                            class="px-4 py-2.5 text-sm text-gray-300 hover:bg-orange-500/10 hover:text-orange-400 cursor-pointer transition">
+                                            Global Specific
+                                        </div>
+                                    @endif
                                     @foreach ($branchOptions as $branch)
                                         <div onclick="selectBranch('{{ $branch->id }}', '{{ e($branch->branch_name) }}')"
                                             class="px-4 py-2.5 text-sm text-gray-300 hover:bg-orange-500/10 hover:text-orange-400 cursor-pointer border-t border-gray-800 transition">

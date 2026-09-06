@@ -45,7 +45,9 @@
                     <th class="text-left py-3 px-4 font-medium">Shift</th>
                     <th class="text-left py-3 px-4 font-medium">Status</th>
                     <th class="text-left py-3 px-4 font-medium">Joined</th>
-                    <th class="text-left py-3 pl-8 font-medium">Action</th>
+                    @if (!$isManager)
+                        <th class="text-left py-3 pl-8 font-medium">Action</th>
+                    @endif
                 </tr>
             </thead>
             <tbody id="employeeTableBody" class="divide-y divide-gray-700/80">
@@ -80,31 +82,33 @@
                             @endif
                         </td>
                         <td class="py-3 px-4 text-gray-300">{{ $employee['joined'] }}</td>
-                        <td class="py-3 pl-8">
-                            @include('core.components.actions', [
-                                'editClass' => 'openEmployeeEditModal',
-                                'editData' => [
-                                    'update-url' => route('admin.employee.update', $employee['id']),
-                                    'name' => $employee['name'],
-                                    'email' => $employee['email'],
-                                    'phone-number' => $employee['phone_number'],
-                                    'pin-code' => $employee['pin_code'],
-                                    'role' => $employee['role'],
-                                    'branch-id' => $employee['branch_id'],
-                                    'designation' => $employee['designation'],
-                                    'id-type' => $employee['id_type'],
-                                    'id-number' => $employee['id_number'],
-                                    'emergency-contact-number' => $employee['emergency_contact_number'],
-                                    'current-address' => $employee['current_address'],
-                                    'permanent-address' => $employee['permanent_address'],
-                                    'base-salary' => $employee['base_salary'],
-                                    'bank-name' => $employee['bank_name'],
-                                    'account-number' => $employee['account_number'],
-                                ],
-                                'deleteRoute' => route('admin.employee.destroy', $employee['id']),
-                                'deleteConfirm' => 'Are you sure you want to delete this employee?',
-                            ])
-                        </td>
+                        @if (!$isManager)
+                            <td class="py-3 pl-8">
+                                @include('core.components.actions', [
+                                    'editClass' => 'openEmployeeEditModal',
+                                    'editData' => [
+                                        'update-url' => route('admin.employee.update', $employee['id']),
+                                        'name' => $employee['name'],
+                                        'email' => $employee['email'],
+                                        'phone-number' => $employee['phone_number'],
+                                        'pin-code' => $employee['pin_code'],
+                                        'role' => $employee['role'],
+                                        'branch-id' => $employee['branch_id'],
+                                        'designation' => $employee['designation'],
+                                        'id-type' => $employee['id_type'],
+                                        'id-number' => $employee['id_number'],
+                                        'emergency-contact-number' => $employee['emergency_contact_number'],
+                                        'current-address' => $employee['current_address'],
+                                        'permanent-address' => $employee['permanent_address'],
+                                        'base-salary' => $employee['base_salary'],
+                                        'bank-name' => $employee['bank_name'],
+                                        'account-number' => $employee['account_number'],
+                                    ],
+                                    'deleteRoute' => route('admin.employee.destroy', $employee['id']),
+                                    'deleteConfirm' => 'Are you sure you want to delete this employee?',
+                                ])
+                            </td>
+                        @endif
                     </tr>
                 @endforeach
                 <tr id="employeeNoResultRow" class="{{ count($employees) ? 'hidden' : '' }}">

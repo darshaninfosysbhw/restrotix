@@ -2,6 +2,8 @@
 @php
     $user = auth()->user();
     $tenant = $user?->tenant;
+    $services = $activeServiceSlugs ?? [];
+    $userRole = auth()->user()->role;
 
     $restaurantName = trim((string) ($tenant?->company_name ?? 'RestoAdmin'));
     $restaurantName = $restaurantName !== '' ? $restaurantName : 'RestoAdmin';
@@ -25,6 +27,8 @@
             $restaurantLogoUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($restaurantLogoPath);
         }
     }
+
+    $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin'; 
 @endphp
 
 <div id="mobileSidebar"
@@ -56,13 +60,8 @@
         </button>
     </div>
     <nav class="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
-        @php
-            $services = $activeServiceSlugs ?? [];
-            $userRole = auth()->user()->role;
-        @endphp
-
-        <a href="{{ route('admin.dashboard') }}"
-            class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+        <a href="{{ route($panelPrefix . '.dashboard') }}"
+            class="sidebar-item {{ request()->routeIs('*.dashboard') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
             <i class="fas fa-tachometer-alt w-5 mr-3"></i>
             <span class="sidebar-label-text">Dashboard</span>
         </a>
@@ -76,7 +75,7 @@
         @endif
 
         @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'manager')
-            <a href="{{ route('admin.employee.index') }}"
+            <a href="{{ route($panelPrefix . '.employee.index') }}"
                 class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
                 <i class="fas fa-store w-5 mr-3"></i>
                 <span class="sidebar-label-text">Employee</span>
@@ -84,7 +83,7 @@
         @endif
         
          @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter' || $userRole == 'manager')
-                <a href="{{ route('admin.tables.index') }}"
+                <a href="{{ route($panelPrefix . '.tables.index') }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
                     <i class="fas fa-chair w-5 mr-3"></i>
                     <span class="sidebar-label-text">Table</span>
@@ -106,14 +105,14 @@
                     </button>
                     <div class="dropdown-menu hidden pl-12 space-y-1">
 
-                        <a href="{{ route('admin.menu.categories.index') }}"
+                        <a href="{{ route($panelPrefix . '.menu.categories.index') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Categories</a>
 
-                        <a href="{{ route('menu.items') }}"
+                        <a href="{{ route($panelPrefix . '.menu.items') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
                             Items</a>
 
-                        <!-- <a href="{{ route('menu.preview') }}"
+                        <!-- <a href="{{ route($panelPrefix . '.menu.preview') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
                             Preview</a> -->
                     </div>
@@ -121,8 +120,8 @@
             @endif
             
             
-            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'chef')
-                <a href="{{ route('admin.kds.index') }}"
+            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'chef' || $userRole == 'manager')
+                <a href="{{ route($panelPrefix . '.kds.index') }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
                     <i class="fas fa-utensils w-5 mr-3"></i>
                     <span class="sidebar-label-text">Kitchen Orders (KDS)</span>
@@ -130,8 +129,8 @@
             @endif
             
               @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
-            <a href="{{ route('admin.orders.history') }}"
-                class="sidebar-item {{ request()->routeIs('admin.orders.history') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+            <a href="{{ route($panelPrefix . '.orders.history') }}"
+                class="sidebar-item {{ request()->routeIs('*.orders.history') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
                 <i class="fas fa-clock-rotate-left w-5 mr-3"></i>
                 <span class="sidebar-label-text">Order History</span>
             </a>
@@ -326,8 +325,8 @@
                 $userRole = auth()->user()->role;
             @endphp
 
-            <a href="{{ route('admin.dashboard') }}"
-                class="sidebar-item {{ request()->routeIs('admin.dashboard') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+            <a href="{{ route($panelPrefix . '.dashboard') }}"
+                class="sidebar-item {{ request()->routeIs('*.dashboard') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
                 <i class="fas fa-tachometer-alt w-5 mr-3"></i>
                 <span class="sidebar-label-text">Dashboard</span>
             </a>
@@ -343,7 +342,7 @@
 
 
             @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'manager')
-                <a href="{{ route('admin.employee.index') }}"
+                <a href="{{ route($panelPrefix . '.employee.index') }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
                     <i class="fas fa-store w-5 mr-3"></i>
                     <span class="sidebar-label-text">Employee</span>
@@ -354,14 +353,14 @@
             {{-- // tabel (is not final) --}}
 
             @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter' || $userRole == 'manager')
-                <a href="{{ route('admin.tables.index') }}"
+                <a href="{{ route($panelPrefix . '.tables.index') }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
                     <i class="fas fa-chair w-5 mr-3"></i>
                     <span class="sidebar-label-text">Table</span>
                 </a>
             @endif
 
-            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter')
+            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter'|| $userRole == 'manager')
                 <div class="dropdown-container">
                     <button
                         class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all">
@@ -376,22 +375,22 @@
                     </button>
                     <div class="dropdown-menu hidden pl-12 space-y-1">
 
-                        <a href="{{ route('admin.menu.categories.index') }}"
+                        <a href="{{ route($panelPrefix . '.menu.categories.index') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Categories</a>
 
-                        <a href="{{ route('menu.items') }}"
+                        <a href="{{ route($panelPrefix . '.menu.items') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
                             Items</a>
 
-                        <!-- <a href="{{ route('menu.preview') }}"
+                        <!-- <a href="{{ route($panelPrefix . '.menu.preview') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
                             Preview</a> -->
                     </div>
                 </div>
             @endif
 
-            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'chef')
-                <a href="{{ route('admin.kds.index') }}"
+            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'chef'|| $userRole == 'manager')
+                <a href="{{ route($panelPrefix . '.kds.index') }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
                     <i class="fas fa-utensils w-5 mr-3"></i>
                     <span class="sidebar-label-text">Kitchen Orders (KDS)</span>
@@ -399,8 +398,8 @@
             @endif
 
             @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
-                <a href="{{ route('admin.orders.history') }}"
-                    class="sidebar-item {{ request()->routeIs('admin.orders.history') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+                <a href="{{ route($panelPrefix . '.orders.history') }}"
+                    class="sidebar-item {{ request()->routeIs('*.orders.history') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
                     <i class="fas fa-clock-rotate-left w-5 mr-3"></i>
                     <span class="sidebar-label-text">Order History</span>
                 </a>

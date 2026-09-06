@@ -58,7 +58,7 @@
         <div class="card-hover min-w-0 overflow-hidden bg-gray-800 rounded-lg border border-gray-700/50 p-6 shadow-xl">
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-white font-bold text-lg">Current Branch Orders</h3>
-                <a href="{{ route('admin.orders.history') }}" class="text-xs text-orange-500 font-bold cursor-pointer hover:underline">View All Orders →</a>
+                <a href="{{ route('manager.orders.history') }}" class="text-xs text-orange-500 font-bold cursor-pointer hover:underline">View All Orders →</a>
             </div>
             <div class="min-w-0 overflow-x-auto xl:overflow-x-hidden">
                 <table class="min-w-[600px] w-full table-fixed text-left text-sm text-gray-400 xl:!min-w-0">
@@ -106,7 +106,7 @@
                             <p class="text-[10px] text-orange-500 font-bold uppercase tracking-tighter italic">{{ $pendingOrders }} orders need attention</p>
                         </div>
                     </div>
-                    <a href="{{ route('admin.orders.history') }}"
+                    <a href="{{ route('manager.orders.history') }}"
                         class="bg-gray-800 hover:bg-orange-600 text-white text-[10px] font-black px-4 py-2 rounded-lg transition-all border border-gray-700">VIEW</a>
                 </div>
             </div>
@@ -116,5 +116,5 @@
             </p>
         </div>
 
-    </div>
+    </div> 
 </div>

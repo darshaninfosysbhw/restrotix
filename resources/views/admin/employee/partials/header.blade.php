@@ -7,10 +7,12 @@
                 All staff members are listed here. Use the modal form to add or update employee details.
             </p>
         </div>
-        <button id="openEmployeeModal" type="button"
-            class="inline-flex items-center justify-center gap-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-4 py-2.5 rounded-lg text-sm font-medium transition">
-            <i class="fas fa-user-plus"></i>
-            Add New Employee
-        </button>
+        @if (!$isManager)
+            <button id="openEmployeeModal" type="button"
+                class="inline-flex items-center justify-center gap-2 bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 px-4 py-2.5 rounded-lg text-sm font-medium transition">
+                <i class="fas fa-user-plus"></i>
+                Add New Employee
+            </button>
+        @endif
     </div>
 </div>

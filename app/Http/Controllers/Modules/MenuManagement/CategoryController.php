@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Modules\MenuManagement;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\MenuManagement\CategoryResource;
+use App\Models\Branch;
 use App\Models\MenuCategory;
 use App\Models\User;
 use App\Services\Admin\MenuManagement\CategoryService;
@@ -21,6 +22,28 @@ class CategoryController extends Controller
         $this->categoryService = $categoryService;
     }
 
+    private function managerBranchId(User $user): ?int
+    {
+        if (strtolower((string) $user->role) !== 'manager') {
+            return null;
+        }
+
+        $candidateBranchId = $user->branch_id ?: session('active_branch_id');
+        $branchId = Branch::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->when($candidateBranchId, fn ($query) => $query->whereKey($candidateBranchId))
+            ->value('id');
+
+        if (!$branchId) {
+            $branchId = Branch::query()
+                ->where('tenant_id', $user->tenant_id)
+                ->orderBy('branch_name')
+                ->value('id');
+        }
+
+        return $branchId ? (int) $branchId : null;
+    }
+
     /**
      * Display listing of categories
      */
@@ -29,15 +52,16 @@ class CategoryController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $tenantId = $user->tenant_id;
+        $branchId = $this->managerBranchId($user);
         $search = trim((string) $request->input('search', ''));
 
-        $categoryPaginator = $this->categoryService->getPaginatedCategories($tenantId, 25, $search);
+        $categoryPaginator = $this->categoryService->getPaginatedCategories($tenantId, 25, $search, $branchId);
         $categories = CategoryResource::collection($categoryPaginator->getCollection())->resolve();
-        $parentCategories = $this->categoryService->getParentCategories($tenantId);
-        $branches = $this->categoryService->getTenantBranches($tenantId);
-        $stats = $this->categoryService->getCategoryStats($tenantId);
+        $parentCategories = $this->categoryService->getParentCategories($tenantId, $branchId);
+        $branches = $this->categoryService->getTenantBranches($tenantId, $branchId);
+        $stats = $this->categoryService->getCategoryStats($tenantId, $branchId);
 
-        return view('modules.menu-management.categories', compact('categories', 'categoryPaginator', 'parentCategories', 'branches', 'stats'));
+        return view('modules.menu-management.categories', compact('categories', 'categoryPaginator', 'parentCategories', 'branches', 'stats', 'branchId'));
     }
 
     /**
@@ -48,18 +72,25 @@ class CategoryController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $tenantId = $user->tenant_id;
+        $branchId = $this->managerBranchId($user);
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:100',
             'parent_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('menu_categories', 'id')->where(fn($query) => $query->where('tenant_id', $tenantId)),
+                Rule::exists('menu_categories', 'id')->where(fn($query) => $query
+                    ->where('tenant_id', $tenantId)
+                    ->when($branchId !== null, fn($query) => $query->where(function ($query) use ($branchId) {
+                        $query->whereNull('branch_id')->orWhere('branch_id', $branchId);
+                    }))),
             ],
             'branch_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('branches', 'id')->where(fn($query) => $query->where('tenant_id', $tenantId)),
+                Rule::exists('branches', 'id')->where(fn($query) => $query
+                    ->where('tenant_id', $tenantId)
+                    ->when($branchId !== null, fn($query) => $query->where('id', $branchId))),
             ],
             'code' => [
                 'nullable',
@@ -72,17 +103,17 @@ class CategoryController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        $validator->after(function ($validator) use ($request, $tenantId) {
-            $branchId = $request->filled('branch_id') ? (int) $request->input('branch_id') : null;
+        $validator->after(function ($validator) use ($request, $tenantId, $branchId) {
+            $selectedBranchId = $branchId ?? ($request->filled('branch_id') ? (int) $request->input('branch_id') : null);
 
             $existsQuery = MenuCategory::query()
                 ->where('tenant_id', $tenantId)
                 ->whereRaw('LOWER(name) = ?', [mb_strtolower((string) $request->input('name'))]);
 
-            if ($branchId === null) {
+            if ($selectedBranchId === null) {
                 $existsQuery->whereNull('branch_id');
             } else {
-                $existsQuery->where('branch_id', $branchId);
+                $existsQuery->where('branch_id', $selectedBranchId);
             }
 
             if ($existsQuery->exists()) {
@@ -101,7 +132,7 @@ class CategoryController extends Controller
         $validated = $validator->validated();
         $validated['tenant_id'] = $tenantId;
         $validated['parent_id'] = $validated['parent_id'] ?? null;
-        $validated['branch_id'] = $validated['branch_id'] ?? null;
+        $validated['branch_id'] = $branchId ?? ($validated['branch_id'] ?? null);
         $validated['is_active'] = (bool) $validated['is_active'];
 
         try {
@@ -126,9 +157,11 @@ class CategoryController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $tenantId = $user->tenant_id;
+        $branchId = $this->managerBranchId($user);
 
         $category = MenuCategory::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId !== null, fn($query) => $query->where('branch_id', $branchId))
             ->findOrFail($id);
 
         $validator = Validator::make($request->all(), [
@@ -136,12 +169,18 @@ class CategoryController extends Controller
             'parent_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('menu_categories', 'id')->where(fn($query) => $query->where('tenant_id', $tenantId)),
+                Rule::exists('menu_categories', 'id')->where(fn($query) => $query
+                    ->where('tenant_id', $tenantId)
+                    ->when($branchId !== null, fn($query) => $query->where(function ($query) use ($branchId) {
+                        $query->whereNull('branch_id')->orWhere('branch_id', $branchId);
+                    }))),
             ],
             'branch_id' => [
                 'nullable',
                 'integer',
-                Rule::exists('branches', 'id')->where(fn($query) => $query->where('tenant_id', $tenantId)),
+                Rule::exists('branches', 'id')->where(fn($query) => $query
+                    ->where('tenant_id', $tenantId)
+                    ->when($branchId !== null, fn($query) => $query->where('id', $branchId))),
             ],
             'code' => [
                 'nullable',
@@ -156,23 +195,23 @@ class CategoryController extends Controller
             'is_active' => 'required|boolean',
         ]);
 
-        $validator->after(function ($validator) use ($request, $tenantId, $category) {
+        $validator->after(function ($validator) use ($request, $tenantId, $category, $branchId) {
             if ((int) $request->input('parent_id') === (int) $category->id) {
                 $validator->errors()->add('parent_id', 'Category cannot be its own parent.');
                 return;
             }
 
-            $branchId = $request->filled('branch_id') ? (int) $request->input('branch_id') : null;
+            $selectedBranchId = $branchId ?? ($request->filled('branch_id') ? (int) $request->input('branch_id') : null);
 
             $existsQuery = MenuCategory::query()
                 ->where('tenant_id', $tenantId)
                 ->whereRaw('LOWER(name) = ?', [mb_strtolower((string) $request->input('name'))])
                 ->where('id', '!=', $category->id);
 
-            if ($branchId === null) {
+            if ($selectedBranchId === null) {
                 $existsQuery->whereNull('branch_id');
             } else {
-                $existsQuery->where('branch_id', $branchId);
+                $existsQuery->where('branch_id', $selectedBranchId);
             }
 
             if ($existsQuery->exists()) {
@@ -193,7 +232,7 @@ class CategoryController extends Controller
 
         $validated = $validator->validated();
         $validated['parent_id'] = $validated['parent_id'] ?? null;
-        $validated['branch_id'] = $validated['branch_id'] ?? null;
+        $validated['branch_id'] = $branchId ?? ($validated['branch_id'] ?? null);
         $validated['is_active'] = (bool) $validated['is_active'];
 
         try {
@@ -221,9 +260,11 @@ class CategoryController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $tenantId = $user->tenant_id;
+        $branchId = $this->managerBranchId($user);
 
         $category = MenuCategory::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId !== null, fn($query) => $query->where('branch_id', $branchId))
             ->findOrFail($id);
 
         $validated = $request->validate([
@@ -252,9 +293,11 @@ class CategoryController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $tenantId = $user->tenant_id;
+        $branchId = $this->managerBranchId($user);
 
         $category = MenuCategory::query()
             ->where('tenant_id', $tenantId)
+            ->when($branchId !== null, fn($query) => $query->where('branch_id', $branchId))
             ->findOrFail($id);
 
         try {

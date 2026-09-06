@@ -178,9 +178,9 @@ Route::middleware(['auth'])->group(function () {
         })->name('superadmin.paymentGateway.index');
     });
 
-    // 2. RESTAURANT ADMIN/STAFF PANEL (Branch Level)
-    Route::prefix('admin')->middleware(['check.subscription'])->group(function () {
-
+    // 2. RESTAURANT ADMIN/STAFF PANEL (Branch Level) 
+    Route::prefix('admin')->middleware(['check.subscription'])->group(function (){
+     
         // DASHBOARD & PROFILE
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
         Route::post('/switch-branch', [BranchSwitchController::class, 'switch'])->name('admin.branch.switch');
@@ -205,12 +205,12 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/employee/{employee}', [EmployeeController::class, 'destroy'])->name('admin.employee.destroy');
 
         // Menu Managemnt
-        Route::get('/menu/item', [ItemController::class, 'index'])->name('menu.items');
+        Route::get('/menu/item', [ItemController::class, 'index'])->name('admin.menu.items');
         Route::get('/media-library', [MediaLibraryController::class, 'index'])
             ->middleware('check.service:media-library')
             ->name('admin.media-library.index');
 
-        Route::get('/menu/preview', [PublicMenuController::class, 'showAdmin'])->name('menu.preview');
+        Route::get('/menu/preview', [PublicMenuController::class, 'showAdmin'])->name('admin.menu.preview');
         Route::get('/table/order-status', [OrderStatusController::class, 'orderStatus'])
             ->name('admin.order.status');
 
@@ -316,8 +316,93 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
+
+    Route::prefix('manager')->middleware(['auth', 'role:manager','check.subscription'])->name('manager.')->group(function (){
+     
+        // DASHBOARD & PROFILE
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::post('/switch-branch', [BranchSwitchController::class, 'switch'])->name('branch.switch');
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+
+        Route::get('/employee', [EmployeeController::class, 'index'])->name('employee.index');
+    
+        // Menu Managemnt
+        Route::get('/menu/item', [ItemController::class, 'index'])->name('menu.items');
+        Route::get('/media-library', [MediaLibraryController::class, 'index'])
+            ->middleware('check.service:media-library')
+            ->name('media-library.index');
+
+        Route::get('/menu/preview', [PublicMenuController::class, 'showAdmin'])->name('menu.preview');
+        Route::get('/table/order-status', [OrderStatusController::class, 'orderStatus'])
+            ->name('order.status');
+
+        // Categories Routes
+        Route::get('menu/categories', [CategoryController::class, 'index'])->name('menu.categories.index');
+        Route::post('menu/categories', [CategoryController::class, 'store'])->name('menu.categories.store');
+        Route::post('menu/categories/update/{id}', [CategoryController::class, 'update'])->name('menu.categories.update');
+        Route::patch('menu/categories/status/{id}', [CategoryController::class, 'toggleStatus'])->name('menu.categories.toggle-status');
+        Route::delete('menu/categories/delete/{id}', [CategoryController::class, 'destroy'])->name('menu.categories.destroy');
+
+        // 🍕 Menu Items (New)
+        Route::get('menu/items', [ItemController::class, 'index'])->name('menu.items.index');
+        Route::patch('menu/items/status/{id}', [ItemController::class, 'toggleStatus'])->name('menu.items.toggle-status');
+
+
+        Route::get('/kds', [KdsController::class, 'index'])->name('kds.index');
+        Route::get('/kds/notifications', [KitchenNotificationController::class, 'index'])->name('kds.notifications.index');
+        Route::get('/kds/notifications/history', [KitchenNotificationController::class, 'history'])->name('kds.notifications.history');
+        Route::post('/kds/notifications/opened', [KitchenNotificationController::class, 'markOpened'])->name('kds.notifications.opened');
+        Route::delete('/kds/notifications', [KitchenNotificationController::class, 'clear'])->name('kds.notifications.clear');
+        Route::post('/kds/update-status/{id}', [KdsController::class, 'updateStatus'])->name('kds.update-status');
+        Route::post('/kds/mark-all-ready', [KdsController::class, 'markAllReady'])->name('kds.mark-all-ready');
+        Route::post('/kds/item/{id}/status', [KdsController::class, 'updateItemStatus'])->name('kds.item-status');
+        Route::get('/orders/history', [OrderHistoryController::class, 'index'])->name('orders.history');
+        Route::get('/orders/history/export', [OrderHistoryController::class, 'export'])->name('orders.history.export');
+        Route::post('/order-items/{id}/serve', [OrderItemActionController::class, 'serve'])->name('order-items.serve');
+        Route::post('/order-items/{id}/cancel', [OrderItemActionController::class, 'cancel'])
+            ->middleware('role:admin,manager')
+            ->name('order-items.cancel');
+        // -----------------------SERVICES-------------------
+
+        // Table
+        Route::get('/tables', [TableController::class, 'index'])->name('tables.index');
+        Route::get('/tables/{table_number}/kot/pdf', [TableController::class, 'kotPdf'])->name('tables.kot.pdf');
+        Route::post('/tables/bulk', [TableController::class, 'bulkStore'])->name('tables.bulk-store');
+        Route::put('/tables/{id}', [TableController::class, 'update'])->name('tables.update');
+        Route::get('/orders/manual', [PosController::class, 'index'])->name('order.index');
+        Route::get('/billing/drafts/{table}', [BillingDraftController::class, 'show'])->name('billing.drafts.show');
+        Route::post('/billing/drafts', [BillingDraftController::class, 'store'])->name('billing.drafts.store');
+        Route::delete('/billing/drafts/{table}', [BillingDraftController::class, 'destroy'])->name('billing.drafts.destroy');
+        Route::post('/billing/checkout', [BillingCheckoutController::class, 'store'])->name('billing.checkout.store');
+        Route::post('/billing/estimate/pdf', [BillingCheckoutController::class, 'estimatePdf'])->name('billing.estimate.pdf');
+
+    });
+
+    Route::prefix('chef')->middleware(['auth', 'role:chef', 'check.subscription'])->name('chef.')->group(function (){
+         Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
+        Route::get('/kds', [KdsController::class, 'index'])->name('kds.index');
+        Route::get('/kds/notifications', [KitchenNotificationController::class, 'index'])->name('kds.notifications.index');
+        Route::get('/kds/notifications/history', [KitchenNotificationController::class, 'history'])->name('kds.notifications.history');
+        Route::post('/kds/notifications/opened', [KitchenNotificationController::class, 'markOpened'])->name('kds.notifications.opened');
+        Route::delete('/kds/notifications', [KitchenNotificationController::class, 'clear'])->name('kds.notifications.clear');
+        Route::post('/kds/update-status/{id}', [KdsController::class, 'updateStatus'])->name('kds.update-status');
+        Route::post('/kds/mark-all-ready', [KdsController::class, 'markAllReady'])->name('kds.mark-all-ready');
+        Route::post('/kds/item/{id}/status', [KdsController::class, 'updateItemStatus'])->name('kds.item-status');
+        Route::get('/orders/history', [OrderHistoryController::class, 'index'])->name('orders.history');
+        Route::get('/orders/history/export', [OrderHistoryController::class, 'export'])->name('orders.history.export');
+        Route::post('/order-items/{id}/serve', [OrderItemActionController::class, 'serve'])->name('order-items.serve');
+        Route::post('/order-items/{id}/cancel', [OrderItemActionController::class, 'cancel'])->name('order-items.cancel');
+    });
+
     // 🔥 WAITER ROUTES
     Route::prefix('waiter')->middleware(['auth', 'role:waiter'])->group(function () {
+         Route::get('/profile', [ProfileController::class, 'show'])->name('waiter.profile');
+        Route::put('/profile', [ProfileController::class, 'update'])->name('waiter.profile.update');
+        Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('waiter.profile.password.update');
         Route::get('/kitchen-pickup-alerts', [KitchenPickupAlertController::class, 'index'])
             ->name('waiter.pickup-alerts.index');
         Route::post('/kitchen-pickup-alerts/{alert}/accept', [KitchenPickupAlertController::class, 'accept'])

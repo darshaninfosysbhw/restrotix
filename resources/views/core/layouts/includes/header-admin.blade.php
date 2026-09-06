@@ -1,3 +1,8 @@
+@php
+$userRole = auth()->user()->role;
+$panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
+@endphp
+
 <main class="flex-1 flex flex-col overflow-hidden">
 
     <header
@@ -148,7 +153,7 @@
                             </div>
 
                             <div class="mt-1">
-                                <a href="{{ route('admin.profile') }}"
+                                <a href="{{ route($panelPrefix . '.profile') }}"
                                     class="group flex items-center px-4 py-2.5 text-sm text-gray-300 hover:bg-gray-700/50 hover:text-orange-500 transition-all">
                                     <div
                                         class="w-8 h-8 rounded-lg bg-gray-700 group-hover:bg-orange-500/10 flex items-center justify-center mr-3 transition-all">

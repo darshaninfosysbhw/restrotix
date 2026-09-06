@@ -30,4 +30,4 @@ class AppServiceProvider extends ServiceProvider
         // Register modules folder
         Blade::anonymousComponentPath(resource_path('views/modules'), 'modules');
     }
-}
+} 
