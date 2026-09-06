@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\Branch;
+use App\Models\Order;
 use App\Models\OrderInvoice;
 use App\Models\OrderItem;
 use App\Models\Table;
@@ -17,11 +18,65 @@ class DashboardService
         $qrScanStats = $this->buildQrScanStats($tenantId, $branchId);
         $topBranches = $this->buildTopBranches($tenantId, $currencySymbol, $branchId);
         $productSales = $this->buildProductSalesInsights($tenantId, $currencySymbol, $branchId);
+        $managerOperational = $this->buildManagerOperationalData($tenantId, $currencySymbol, $branchId);
 
         return array_merge(
-            compact('dashboardMetrics', 'qrScanStats', 'topBranches'),
+            compact('dashboardMetrics', 'qrScanStats', 'topBranches', 'managerOperational'),
             $productSales
         );
+    }
+
+    private function buildManagerOperationalData(int $tenantId, string $currencySymbol, ?int $branchId): array
+    {
+        $todayStart = now()->startOfDay();
+        $todayEnd = now()->endOfDay();
+        $invoiceQuery = OrderInvoice::query()
+            ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->whereIn('status', ['unpaid', 'partially_paid', 'paid']);
+
+        $todayInvoices = (clone $invoiceQuery)->whereBetween('created_at', [$todayStart, $todayEnd]);
+        $todaySales = (float) (clone $todayInvoices)->sum('grand_total');
+        $todayOrders = (int) (clone $todayInvoices)->count();
+        $pendingOrders = (clone $invoiceQuery)
+            ->whereIn('status', ['unpaid', 'partially_paid'])
+            ->count();
+        $activeKots = (int) OrderItem::query()
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->where('orders.tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('orders.branch_id', $branchId))
+            ->where('orders.status', 'running')
+            ->whereIn('orders.kitchen_status', ['pending', 'confirmed', 'preparing'])
+            ->whereNotNull('order_items.kot_number')
+            ->where('order_items.kot_number', '>', 0)
+            ->distinct()
+            ->count('order_items.kot_number');
+
+        $recentOrders = Order::query()
+            ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->latest('ordered_at')
+            ->latest('id')
+            ->take(5)
+            ->get(['id', 'order_number', 'table_number', 'status', 'grand_total']);
+
+        $tablesQuery = Table::query()
+            ->where('tenant_id', $tenantId)
+            ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->where('is_active', true);
+        $totalTables = (int) (clone $tablesQuery)->count();
+        $occupiedTables = (int) (clone $tablesQuery)->where('status', '!=', 'available')->count();
+
+        return [
+            'today_sales' => $this->formatMoney($todaySales, $currencySymbol),
+            'today_orders' => number_format($todayOrders),
+            'pending_orders' => number_format($pendingOrders),
+            'active_kots' => number_format($activeKots),
+            'recent_orders' => $recentOrders,
+            'occupied_tables' => $occupiedTables,
+            'total_tables' => $totalTables,
+            'table_usage_percent' => $totalTables > 0 ? (int) round(($occupiedTables / $totalTables) * 100) : 0,
+        ];
     }
 
     private function buildDashboardMetrics(int $tenantId, string $currencySymbol, ?int $branchId): array
