@@ -214,7 +214,7 @@ body.light-theme #desktopToggleBtn {
 }
 
 /* Sidebar Parent relative for positioning button */
-#sidebar.admin-sidebar {
+#sidebar.admin-navigation-sidebar {
     position: relative;
     transition: width 0.3s ease;
 }
@@ -247,11 +247,11 @@ body.light-theme #desktopToggleBtn {
 }
 
 /* Sidebar labels ko hide karne ka tarika jab collapse ho */
-.admin-sidebar.sidebar-collapsed .sidebar-label-text {
+.admin-navigation-sidebar.sidebar-collapsed .sidebar-label-text {
     display: none;
 }
 
-.admin-sidebar.sidebar-collapsed .sidebar-lock-icon {
+.admin-navigation-sidebar.sidebar-collapsed .sidebar-lock-icon {
     display: none;
 }
 
@@ -261,11 +261,11 @@ body.light-theme #desktopToggleBtn {
 }
 
 /* Collapsed State Adjustment */
-.admin-sidebar.sidebar-collapsed {
+.admin-navigation-sidebar.sidebar-collapsed {
     width: 80px !important;
 }
 
-.admin-sidebar.sidebar-collapsed .sidebar-label {
+.admin-navigation-sidebar.sidebar-collapsed .sidebar-label {
     display: none;
 }
 
@@ -298,13 +298,13 @@ body.light-theme #profileMenu hr {
 }
 
 /* Sidebar chota ho toh dropdown na dikhe */
-.admin-sidebar.sidebar-collapsed .dropdown-menu {
+.admin-navigation-sidebar.sidebar-collapsed .dropdown-menu {
     display: none !important;
 }
 
 /* One sidebar: an off-canvas drawer below the desktop breakpoint. */
 @media (width < 48rem) {
-    #sidebar.admin-sidebar {
+    #sidebar.admin-navigation-sidebar {
         position: fixed;
         inset: 0 auto 0 0;
         z-index: 50;
@@ -315,22 +315,22 @@ body.light-theme #profileMenu hr {
         transition: transform 0.3s ease, visibility 0.3s;
     }
 
-    #sidebar.admin-sidebar.is-mobile-open {
+    #sidebar.admin-navigation-sidebar.is-mobile-open {
         transform: translateX(0);
         visibility: visible;
     }
 
-    .admin-sidebar #desktopToggleBtn {
+    .admin-navigation-sidebar #desktopToggleBtn {
         display: none;
     }
 
-    .admin-sidebar.sidebar-collapsed .sidebar-label,
-    .admin-sidebar.sidebar-collapsed .sidebar-label-text,
-    .admin-sidebar.sidebar-collapsed .sidebar-lock-icon {
+    .admin-navigation-sidebar.sidebar-collapsed .sidebar-label,
+    .admin-navigation-sidebar.sidebar-collapsed .sidebar-label-text,
+    .admin-navigation-sidebar.sidebar-collapsed .sidebar-lock-icon {
         display: revert;
     }
 
-    .admin-sidebar.sidebar-collapsed .dropdown-menu:not(.hidden) {
+    .admin-navigation-sidebar.sidebar-collapsed .dropdown-menu:not(.hidden) {
         display: block !important;
     }
 }

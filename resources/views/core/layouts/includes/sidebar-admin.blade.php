@@ -38,7 +38,7 @@
 <!-- Main Container -->
 <div class="flex h-screen overflow-hidden bg-gray-900">
 
-    <aside id="sidebar" class="admin-sidebar flex flex-col flex-shrink-0 w-64 bg-gray-800 border-r border-gray-700" aria-label="Main navigation">
+    <aside id="sidebar" class="admin-navigation-sidebar flex flex-col flex-shrink-0 w-64 bg-gray-800 border-r border-gray-700" aria-label="Main navigation">
         <button id="desktopToggleBtn" type="button" aria-label="Collapse sidebar" aria-expanded="true" aria-controls="sidebar">
             <i class="fas fa-angle-double-left text-xs" id="toggleIcon"></i>
         </button>

@@ -33,7 +33,7 @@
 
     // Mobile sidebar toggle
     const hamburger = document.getElementById('hamburgerBtn');
-    const mobileSidebar = document.querySelector('.admin-sidebar');
+    const mobileSidebar = document.querySelector('.admin-navigation-sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
     const closeBtn = document.getElementById('closeSidebarBtn');
     const desktopViewport = window.matchMedia('(min-width: 48rem)');
@@ -77,7 +77,7 @@
 
 // Desktop sidebar toggle script
 const desktopToggleBtn = document.getElementById('desktopToggleBtn');
-const sidebar = document.querySelector('.admin-sidebar');
+const sidebar = document.querySelector('.admin-navigation-sidebar');
 const toggleIcon = document.getElementById('toggleIcon');
 
 if (desktopToggleBtn && sidebar && toggleIcon) {
