@@ -34,8 +34,8 @@
 <div id="mobileSidebar"
     class="fixed inset-y-0 left-0 w-64 bg-gray-800 border-r border-gray-700 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out md:hidden flex flex-col">
 
-    <div class="flex items-center justify-between px-6 py-5 border-b border-gray-700">
-        <div class="flex items-center">
+    <div class="flex items-center justify-between gap-3 px-6 py-5 border-b border-gray-700">
+        <div class="flex min-w-0 flex-1 items-center">
             <div
                 class="w-9 h-9 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center mr-3 flex-shrink-0 overflow-hidden shadow-lg shadow-orange-500/20">
                 @if ($restaurantLogoUrl)
@@ -45,17 +45,17 @@
                     <i class="fas fa-utensils text-sm text-white"></i>
                 @endif
             </div>
-            <div class="min-w-0">
-                <span class="block text-xl font-bold text-white truncate max-w-[13rem]" title="{{ $restaurantName }}">
+            <div class="min-w-0 flex-1">
+                <span class="block text-xl font-bold text-white truncate" title="{{ $restaurantName }}">
                     {{ $restaurantName }}
                 </span>
-                <p class="text-[10px] uppercase tracking-[0.22em] text-gray-400 truncate max-w-[13rem]"
+                <p class="text-[10px] uppercase tracking-[0.22em] text-gray-400 truncate"
                     title="{{ $branchName }}">
                     {{ $branchName }}
                 </p>
             </div>
         </div>
-        <button id="closeSidebarBtn" class="text-gray-400 hover:text-orange-500">
+        <button id="closeSidebarBtn" class="flex-shrink-0 text-gray-400 hover:text-orange-500" aria-label="Close sidebar">
             <i class="fas fa-times text-xl"></i>
         </button>
     </div>
