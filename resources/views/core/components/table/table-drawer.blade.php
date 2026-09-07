@@ -113,7 +113,7 @@
 
 <script type="module">
     document.addEventListener('DOMContentLoaded', () => {
-        const currentBranchId = Number(@json((int) (auth()->user()->branch_id ?? 0)));
+        const currentBranchId = Number(@json((int) session('active_branch_id', auth()->user()->branch_id ?? 0)));
         const currentUserName = @json(auth()->user()->name ?? 'N/A');
         const orderSound = new Audio(@json(asset('sounds/forOrder.m4a')));
         const waiterCallSound = new Audio(@json(asset('sounds/forWaiter.m4a')));

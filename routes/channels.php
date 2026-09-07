@@ -10,11 +10,17 @@ Broadcast::channel('orders.branch.{branchId}', function ($user, $branchId) {
     $userBranchId = (int) ($user->branch_id ?? 0);
     $requestedBranchId = (int) $branchId;
 
-    if ($requestedBranchId <= 0) {
+    if ($requestedBranchId <= 0 || !$user->tenant_id) {
         return false;
     }
 
-    if (in_array((string) ($user->role ?? ''), ['superadmin', 'admin'], true) && $userBranchId === 0) {
+    $belongsToTenant = \App\Models\Branch::withoutGlobalScope('country_filter')
+        ->where('tenant_id', $user->tenant_id)->whereKey($requestedBranchId)->exists();
+    if (!$belongsToTenant) {
+        return false;
+    }
+
+    if (in_array((string) ($user->role ?? ''), ['superadmin', 'admin'], true)) {
         return true;
     }
 

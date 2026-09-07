@@ -1,7 +1,7 @@
 @extends($layout)
 
 @section('content')
-    <div id="kds-page" data-branch-id="{{ (int) (auth()->user()->branch_id ?? 0) }}"
+    <div id="kds-page" data-branch-id="{{ (int) $branchId }}"
         class="flex-1 overflow-y-auto bg-gray-900 space-y-4 sm:space-y-6 p-3 sm:p-6">
         @if (session('success'))
             <div class="px-4 py-3 rounded-xl border border-green-500/30 bg-green-500/10 text-green-300 text-sm">
@@ -340,6 +340,7 @@
                         emitKdsToast('success', `${formatKdsTableLabel(payload?.table_number)}: Served`);
                     }
                 })
+                @if (in_array(auth()->user()->role, ['admin', 'manager', 'waiter'], true))
                 .listen('WaiterCalled', async (e) => {
                     playWaiterCallSound();
 
@@ -347,7 +348,9 @@
                         tableNumber: e?.callData?.table_number ?? '',
                         type: 'waiter'
                     });
-                });
+                })
+                @endif
+                ;
 
         });
     </script>

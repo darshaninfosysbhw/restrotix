@@ -12,12 +12,28 @@
 @endphp
 
 <!-- Key Metrics Cards -->
+<form action="{{ route('admin.dashboard') }}" method="GET" class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div class="min-w-0">
+        <h2 class="text-lg font-semibold text-white break-words">{{ $dashboardBranchLabel ?? 'All Branches' }} Overview</h2>
+        <p class="text-xs text-gray-400">This month</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 min-w-0">
+        <label for="dashboardBranchFilter" class="text-sm text-gray-400">Dashboard branch</label>
+        <select id="dashboardBranchFilter" name="dashboard_branch" class="min-w-0 max-w-full bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm">
+            <option value="all" @selected(($dashboardBranchId ?? null) === null)>All Branches</option>
+            @foreach ($dashboardBranches ?? [] as $dashboardBranch)
+                <option value="{{ $dashboardBranch->id }}" @selected(($dashboardBranchId ?? null) === (int) $dashboardBranch->id)>{{ $dashboardBranch->branch_name }}</option>
+            @endforeach
+        </select>
+        <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-3 py-2 text-sm">Apply</button>
+    </div>
+</form>
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
     <!-- ... same cards ... (I'll keep them concise for space) -->
     <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover">
         <div class="flex items-center justify-between">
             <div>
-                <p class="text-sm text-gray-400">Total Revenue (All Branches)</p>
+                <p class="text-sm text-gray-400">Total Revenue ({{ $dashboardBranchLabel ?? 'All Branches' }})</p>
                 <h3 class="text-2xl font-bold text-white mt-1">{{ $revenueMetric['display'] ?? '₹0' }}</h3>
                 <p class="text-xs {{ $revenueMetric['trend']['class'] ?? 'text-green-400' }} mt-2"><i
                         class="{{ $revenueMetric['trend']['icon'] ?? 'fas fa-arrow-up' }} mr-1"></i>
@@ -112,62 +128,52 @@
 <!-- Map & Branch Performance -->
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
     <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 lg:col-span-2">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-lg font-semibold text-white">Branch Locations & Performance</h3><button
-                class="text-sm text-orange-500 hover:text-orange-400">View All Branches →</button>
+        <div class="flex items-center justify-between gap-3 mb-4">
+            <h3 class="text-lg font-semibold text-white">Branch Locations & Performance</h3>
+            <a href="{{ route('admin.branches.index') }}" class="text-sm text-orange-500 hover:text-orange-400">View All Branches &rarr;</a>
         </div>
-        <div class="relative bg-gray-700 rounded-lg h-64 overflow-hidden">
+        <div class="relative bg-gray-700 rounded-lg h-64 overflow-auto" aria-label="Branch performance overview">
             <div class="absolute inset-0 bg-gradient-to-br from-gray-600 to-gray-800 opacity-50"></div>
-            <!-- pins -->
-            <div class="absolute top-1/4 left-1/4">
-                <div class="relative group">
-                    <div
-                        class="w-6 h-6 rounded-full bg-green-500 border-2 border-gray-900 flex items-center justify-center">
-                        <i class="fas fa-store text-white text-xs"></i>
+            @php
+                $locationBranches = collect($branchLocations ?? []);
+                $originalPinPositions = [[25, 25], [67, 33], [33, 67], [75, 75]];
+            @endphp
+            <div class="relative h-full" style="min-width: {{ max(0, $locationBranches->count() * 45) }}px">
+                @forelse ($locationBranches as $branch)
+                    @php
+                        if ($locationBranches->count() <= 4) {
+                            [$pinX, $pinY] = $originalPinPositions[$loop->index];
+                        } else {
+                            $angle = (2 * M_PI * $loop->index / $locationBranches->count()) - M_PI / 2;
+                            $pinX = 50 + 35 * cos($angle);
+                            $pinY = 50 + 30 * sin($angle);
+                        }
+                        $pinColor = $branch['revenue_value'] <= 0 ? 'bg-yellow-500' : 'bg-green-500';
+                    @endphp
+                    <details class="absolute group hover:z-20 focus-within:z-20 open:z-20" style="left: {{ $pinX }}%; top: {{ $pinY }}%">
+                        <summary class="list-none cursor-pointer w-6 h-6 rounded-full {{ $pinColor }} border-2 border-gray-900 flex items-center justify-center focus-visible:outline focus-visible:outline-orange-500 [&::-webkit-details-marker]:hidden"
+                            aria-label="{{ $branch['name'] }}: {{ $branch['revenue_display'] }} this month">
+                            <i class="fas fa-store text-white text-xs" aria-hidden="true"></i>
+                        </summary>
+                        <div class="absolute {{ $pinY < 50 ? 'top-full mt-2' : 'bottom-full mb-2' }} {{ $pinX > 50 ? 'right-0' : 'left-0' }} hidden group-hover:block group-open:block group-focus-within:block bg-gray-900 text-white text-xs rounded py-2 px-3 w-40 break-words shadow-lg">
+                            <p class="font-semibold">{{ $branch['name'] }}: {{ $branch['revenue_display'] }}</p>
+                            <p class="text-gray-400 mt-1">This month &middot; {{ $branch['orders_display'] }} billed orders</p>
+                            <p class="text-gray-400 mt-1">{{ $branch['address'] }}</p>
+                            @if ($branch['map_url'])
+                                <a href="{{ $branch['map_url'] }}" target="_blank" rel="noopener noreferrer" class="inline-block mt-2 text-orange-500 hover:text-orange-400">View location &rarr;</a>
+                            @endif
+                        </div>
+                    </details>
+                @empty
+                    <p class="absolute inset-0 flex items-center justify-center px-4 text-sm text-gray-400 text-center">No branches found for the current selection.</p>
+                @endforelse
+                @if ($locationBranches->isNotEmpty())
+                    <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+                        <div class="w-10 h-10 rounded-full bg-orange-500 border-4 border-gray-900 flex items-center justify-center">
+                            <i class="fas fa-user-tie text-white" aria-hidden="true"></i>
+                        </div>
                     </div>
-                    <div
-                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        Downtown: ₹1,24,500</div>
-                </div>
-            </div>
-            <div class="absolute top-1/3 right-1/3">
-                <div class="relative group">
-                    <div
-                        class="w-6 h-6 rounded-full bg-green-500 border-2 border-gray-900 flex items-center justify-center">
-                        <i class="fas fa-store text-white text-xs"></i>
-                    </div>
-                    <div
-                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        Westside: ₹98,200</div>
-                </div>
-            </div>
-            <div class="absolute bottom-1/3 left-1/3">
-                <div class="relative group">
-                    <div
-                        class="w-6 h-6 rounded-full bg-yellow-500 border-2 border-gray-900 flex items-center justify-center">
-                        <i class="fas fa-store text-white text-xs"></i>
-                    </div>
-                    <div
-                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        East End: ₹45,300</div>
-                </div>
-            </div>
-            <div class="absolute bottom-1/4 right-1/4">
-                <div class="relative group">
-                    <div
-                        class="w-6 h-6 rounded-full bg-green-500 border-2 border-gray-900 flex items-center justify-center">
-                        <i class="fas fa-store text-white text-xs"></i>
-                    </div>
-                    <div
-                        class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap">
-                        Uptown: ₹1,02,800</div>
-                </div>
-            </div>
-            <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-                <div
-                    class="w-10 h-10 rounded-full bg-orange-500 border-4 border-gray-900 flex items-center justify-center">
-                    <i class="fas fa-user-tie text-white"></i>
-                </div>
+                @endif
             </div>
         </div>
     </div>

@@ -263,9 +263,15 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
         window.addEventListener('resize', positionBranchMenu);
         window.addEventListener('scroll', positionBranchMenu, true);
 
-        const branchId = Number(@json((int) session('active_branch_id', auth()->user()->branch_id ?? 0)));
+        @php
+            $notificationBranches = \App\Models\Branch::query()
+                ->where('tenant_id', auth()->user()->tenant_id)
+                ->whereKey((int) session('active_branch_id', auth()->user()->branch_id ?? 0))
+                ->get(['id', 'branch_name']);
+        @endphp
+        const notificationBranches = @json($notificationBranches->values());
         const currentUserId = Number(@json(auth()->id()));
-        const storageKey = `admin-notifications:${branchId}:${currentUserId}`;
+        const storageKey = `admin-notifications:${notificationBranches.map(branch => branch.id).sort().join(',')}:${currentUserId}`;
         const bell = document.getElementById('adminNotificationBell');
         const button = document.getElementById('adminNotificationBellBtn');
         const menu = document.getElementById('adminNotificationMenu');
@@ -275,7 +281,6 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
         const subtitle = document.getElementById('adminNotificationSubtitle');
         const clearButton = document.getElementById('clearAdminNotificationsBtn');
         const notifications = new Map();
-
         const positionNotificationMenu = () => {
             if (!menu || menu.classList.contains('hidden') || !button) return;
 
@@ -342,7 +347,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                 </div>`).join('');
         };
 
-        const addNotification = (id, title, message, icon = 'fa-bell') => {
+        const storeNotification = (id, title, message, icon = 'fa-bell') => {
             notifications.set(String(id), { id: String(id), title, message, icon, time: new Date().toISOString() });
             while (notifications.size > 20) notifications.delete(notifications.keys().next().value);
             persist();
@@ -368,7 +373,12 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
         });
         window.addEventListener('resize', positionNotificationMenu);
 
-        if (window.Echo && branchId > 0) {
+        if (window.Echo) notificationBranches.forEach(branch => {
+            const branchId = Number(branch.id);
+            if (branchId <= 0) return;
+            const addNotification = (id, title, message, icon = 'fa-bell') => {
+                storeNotification(`${branchId}:${id}`, title, `${branch.branch_name}: ${message}`, icon);
+            };
             window.Echo.private(`orders.branch.${branchId}`)
                 .listen('NewOrderReceived', event => {
                     const data = event?.orderData || {};
@@ -387,10 +397,10 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                     const alertId = Number(data.id || 0);
                     if (!alertId) return;
 
-                    const notificationId = `pickup:${alertId}`;
+                    const notificationId = `${branchId}:pickup:${alertId}`;
                     if (data.status === 'pending') {
                         addNotification(
-                            notificationId,
+                            `pickup:${alertId}`,
                             'Food ready for pickup',
                             `Table ${data.table_number || '--'} KOT #${data.kot_number || '--'} is ready.`,
                             'fa-bell-concierge'
@@ -416,10 +426,10 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                     const transferId = Number(data.id || 0);
                     if (!transferId) return;
 
-                    const notificationId = `transfer:${transferId}`;
+                    const notificationId = `${branchId}:transfer:${transferId}`;
                     if (data.status === 'pending') {
                         addNotification(
-                            notificationId,
+                            `transfer:${transferId}`,
                             'Waiter transfer request',
                             `Table ${data.table_number || '--'} transfer requested from ${data.from_waiter || 'waiter'} to ${data.target_waiter || 'waiter'}.`,
                             'fa-right-left'
@@ -446,7 +456,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                     if (!status || !data.table_number) return;
                     addNotification(`kitchen:${data.id || data.item_id || data.table_number}:${Date.now()}`, 'Kitchen update', `Table ${data.table_number}: ${status}.`, 'fa-kitchen-set');
                 });
-        }
+        });
 
         render();
     });

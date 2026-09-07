@@ -59,7 +59,7 @@ class KdsController extends Controller
             ]);
         }
 
-        return view('modules.kds.index', compact('orderCards', 'stats', 'layout', 'statusFilter'));
+        return view('modules.kds.index', compact('orderCards', 'stats', 'layout', 'statusFilter', 'branchId'));
     }
 
     /**

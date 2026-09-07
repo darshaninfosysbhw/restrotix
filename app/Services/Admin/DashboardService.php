@@ -16,12 +16,13 @@ class DashboardService
     {
         $dashboardMetrics = $this->buildDashboardMetrics($tenantId, $currencySymbol, $branchId);
         $qrScanStats = $this->buildQrScanStats($tenantId, $branchId);
-        $topBranches = $this->buildTopBranches($tenantId, $currencySymbol, $branchId);
+        $branchLocations = $this->buildBranchPerformance($tenantId, $currencySymbol, $branchId);
+        $topBranches = array_slice($branchLocations, 0, 5);
         $productSales = $this->buildProductSalesInsights($tenantId, $currencySymbol, $branchId);
         $managerOperational = $this->buildManagerOperationalData($tenantId, $currencySymbol, $branchId);
 
         return array_merge(
-            compact('dashboardMetrics', 'qrScanStats', 'topBranches', 'managerOperational'),
+            compact('dashboardMetrics', 'qrScanStats', 'topBranches', 'branchLocations', 'managerOperational'),
             $productSales
         );
     }
@@ -223,7 +224,7 @@ class DashboardService
         ];
     }
 
-    private function buildTopBranches(int $tenantId, string $currencySymbol, ?int $branchId): array
+    public function buildBranchPerformance(int $tenantId, string $currencySymbol, ?int $branchId = null): array
     {
         $now = now();
         $currentMonthStart = $now->copy()->startOfMonth();
@@ -234,7 +235,8 @@ class DashboardService
         $branches = Branch::query()
             ->where('tenant_id', $tenantId)
             ->when($branchId, fn ($query) => $query->whereKey($branchId))
-            ->get(['id', 'branch_name']);
+            ->orderBy('branch_name')
+            ->get(['id', 'branch_name', 'full_address', 'city', 'state', 'pincode', 'latitude', 'longitude']);
 
         $invoiceBaseQuery = OrderInvoice::query()
             ->where('tenant_id', $tenantId)
@@ -243,9 +245,9 @@ class DashboardService
 
         $currentBranchRevenue = (clone $invoiceBaseQuery)
             ->whereBetween('created_at', [$currentMonthStart, $currentMonthEnd])
-            ->selectRaw('branch_id, SUM(grand_total) as total_revenue')
+            ->selectRaw('branch_id, SUM(grand_total) as total_revenue, COUNT(*) as invoice_count')
             ->groupBy('branch_id')
-            ->pluck('total_revenue', 'branch_id');
+            ->get()->keyBy('branch_id');
 
         $previousBranchRevenue = (clone $invoiceBaseQuery)
             ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd])
@@ -255,8 +257,18 @@ class DashboardService
 
         return $branches
             ->map(function ($branch) use ($currentBranchRevenue, $previousBranchRevenue, $currencySymbol) {
-                $currentRevenue = (float) ($currentBranchRevenue[$branch->id] ?? 0);
+                $currentRevenue = (float) ($currentBranchRevenue->get($branch->id)?->total_revenue ?? 0);
                 $previousRevenue = (float) ($previousBranchRevenue[$branch->id] ?? 0);
+                $address = trim((string) $branch->full_address);
+                if ($address === '') {
+                    $address = implode(', ', array_filter(array_map(
+                        fn ($value) => trim((string) $value),
+                        [$branch->city, $branch->state, $branch->pincode]
+                    ), fn ($value) => $value !== ''));
+                }
+                $hasCoordinates = is_numeric($branch->latitude) && is_numeric($branch->longitude)
+                    && abs((float) $branch->latitude) <= 90 && abs((float) $branch->longitude) <= 180;
+                $mapQuery = $hasCoordinates ? $branch->latitude . ',' . $branch->longitude : $address;
                 $trend = $this->buildTrend($currentRevenue, $previousRevenue, 'last month');
                 $trendBadgeClass = match ($trend['class']) {
                     'text-red-400' => 'bg-red-900/50 text-red-400',
@@ -265,7 +277,11 @@ class DashboardService
                 };
 
                 return [
+                    'id' => (int) $branch->id,
                     'name' => (string) $branch->branch_name,
+                    'address' => $address !== '' ? $address : 'Location not added',
+                    'map_url' => $mapQuery !== '' ? 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($mapQuery) : null,
+                    'orders_display' => number_format((int) ($currentBranchRevenue->get($branch->id)?->invoice_count ?? 0)),
                     'revenue_value' => $currentRevenue,
                     'revenue_display' => $this->formatMoney($currentRevenue, $currencySymbol),
                     'trend_label' => $trend['label'],
@@ -274,7 +290,6 @@ class DashboardService
                 ];
             })
             ->sortByDesc('revenue_value')
-            ->take(5)
             ->values()
             ->all();
     }
