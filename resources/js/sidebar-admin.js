@@ -33,18 +33,29 @@
 
     // Mobile sidebar toggle
     const hamburger = document.getElementById('hamburgerBtn');
-    const mobileSidebar = document.getElementById('mobileSidebar');
+    const mobileSidebar = document.querySelector('.admin-sidebar');
     const backdrop = document.getElementById('sidebarBackdrop');
     const closeBtn = document.getElementById('closeSidebarBtn');
+    const desktopViewport = window.matchMedia('(min-width: 48rem)');
+
+    if (!mobileSidebar || !backdrop) return;
 
     function openSidebar() {
-        mobileSidebar.classList.remove('-translate-x-full');
+        if (desktopViewport.matches) return;
+        mobileSidebar.classList.add('is-mobile-open');
+        mobileSidebar.inert = false;
         backdrop.classList.remove('hidden');
+        hamburger?.setAttribute('aria-expanded', 'true');
+        closeBtn?.focus();
     }
 
     function closeSidebar() {
-        mobileSidebar.classList.add('-translate-x-full');
+        const hadFocus = mobileSidebar.contains(document.activeElement);
+        mobileSidebar.classList.remove('is-mobile-open');
+        mobileSidebar.inert = !desktopViewport.matches;
         backdrop.classList.add('hidden');
+        hamburger?.setAttribute('aria-expanded', 'false');
+        if (hadFocus && !desktopViewport.matches) hamburger?.focus();
     }
 
     if (hamburger) {
@@ -56,17 +67,25 @@
     if (closeBtn) {
         closeBtn.addEventListener('click', closeSidebar);
     }
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && mobileSidebar.classList.contains('is-mobile-open')) closeSidebar();
+    });
+    desktopViewport.addEventListener('change', closeSidebar);
+    closeSidebar();
 })();
 //end here mobile sidebar script
 
 // Desktop sidebar toggle script
 const desktopToggleBtn = document.getElementById('desktopToggleBtn');
-const sidebar = document.getElementById('sidebar');
+const sidebar = document.querySelector('.admin-sidebar');
 const toggleIcon = document.getElementById('toggleIcon');
 
 if (desktopToggleBtn && sidebar && toggleIcon) {
     desktopToggleBtn.addEventListener('click', () => {
         sidebar.classList.toggle('sidebar-collapsed');
+        const collapsed = sidebar.classList.contains('sidebar-collapsed');
+        desktopToggleBtn.setAttribute('aria-expanded', String(!collapsed));
+        desktopToggleBtn.setAttribute('aria-label', collapsed ? 'Expand sidebar' : 'Collapse sidebar');
         if (sidebar.classList.contains('sidebar-collapsed')) {
             toggleIcon.classList.replace('fa-angle-double-left', 'fa-angle-double-right');
         } else {

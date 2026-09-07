@@ -9,7 +9,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
         class="bg-gray-800 border-b border-gray-700 px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 ">
 
         <div class="flex items-center min-w-0">
-            <button id="hamburgerBtn" class="lg:hidden text-gray-400 mr-3 focus:outline-none flex-shrink-0">
+            <button id="hamburgerBtn" type="button" class="md:hidden text-gray-400 mr-3 focus:outline-none flex-shrink-0" aria-label="Open sidebar" aria-controls="sidebar" aria-expanded="false">
                 <i class="fas fa-bars text-xl"></i>
             </button>
 
