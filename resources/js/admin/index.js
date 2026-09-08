@@ -4,3 +4,4 @@ import './employees';
 import './orders-history';
 import './table-alerts';
 import './qr-order-approvals';
+import './qr-order-settings';

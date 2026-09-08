@@ -92,6 +92,40 @@ class QrOrderApprovalTest extends TestCase
         return $user;
     }
 
+    public function test_qr_settings_use_admin_selected_branch_and_manager_assigned_branch(): void
+    {
+        DB::table('branches')->insert(['id' => 2, 'tenant_id' => 1, 'branch_name' => 'Second']);
+        $controller = app(\App\Http\Controllers\Admin\Settings\QrOrderSettingsController::class);
+        foreach (['admin' => 2, 'manager' => 1] as $role => $expectedBranch) {
+            $user = $this->staff($role);
+            session(['active_branch_id' => 2]);
+            $request = Request::create('/admin/settings/qr-orders', 'PUT', [
+                'branch_id' => $expectedBranch, 'auto_accept_qr_orders' => '1',
+            ]);
+            $request->setUserResolver(fn () => $user);
+            $request->setLaravelSession(app('session.store'));
+            $this->assertSame($expectedBranch, $controller->index($request)->getData()['branch']->id);
+            $controller->update($request);
+            $this->assertTrue(Branch::find($expectedBranch)->auto_accept_qr_orders);
+            $request->merge(['auto_accept_qr_orders' => '0']);
+            $request->headers->set('Accept', 'application/json');
+            $response = $controller->update($request);
+            $this->assertFalse($response->getData(true)['auto_accept_qr_orders']);
+            $this->assertSame(200, $response->getStatusCode());
+            $this->assertFalse(Branch::find($expectedBranch)->auto_accept_qr_orders);
+        }
+    }
+
+    public function test_qr_settings_cannot_target_another_branch(): void
+    {
+        $user = $this->staff('manager');
+        $request = Request::create('/admin/settings/qr-orders', 'PUT', ['branch_id' => 2, 'auto_accept_qr_orders' => 1]);
+        $request->setUserResolver(fn () => $user);
+        $request->setLaravelSession(app('session.store'));
+        $this->expectException(\Illuminate\Validation\ValidationException::class);
+        app(\App\Http\Controllers\Admin\Settings\QrOrderSettingsController::class)->update($request);
+    }
+
     public function test_guest_cannot_bypass_confirmation_by_claiming_waiter_source_and_retry_is_idempotent(): void
     {
         $key = (string) Str::uuid();

@@ -334,10 +334,10 @@
                 </div>
             @endif -->
 
-            @if ($userRole == 'admin' || $userRole == 'superadmin')
+            @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
                 <div class="dropdown-container">
                     <button
-                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all {{ request()->routeIs('admin.settings.menu.*', 'admin.branches.payment-gateways*') ? 'text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }}">
+                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all {{ request()->routeIs('admin.settings.*', 'admin.branches.payment-gateways*') ? 'text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }}">
                         <div class="flex items-center">
                             <i class="fas fa-cog w-5 mr-3"></i>
                             <span class="sidebar-label-text">Settings</span>
@@ -348,6 +348,11 @@
                         </div>
                     </button>
                     <div class="dropdown-menu hidden pl-12 space-y-1">
+                        @if (in_array($userRole, ['admin', 'manager']))
+                            <a href="{{ route('admin.settings.qr-orders.index') }}"
+                                class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.settings.qr-orders.*') ? 'text-orange-500' : '' }}">QR Order Settings</a>
+                        @endif
+                        @if ($userRole !== 'manager')
                         <a href="{{ route('admin.settings.menu.index') }}"
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.settings.menu.*') ? 'text-orange-500' : '' }}">
                             Menu Settings
@@ -356,6 +361,7 @@
                             class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.branches.payment-gateways*') ? 'text-orange-500' : '' }}">
                             Payment Settings
                         </a>
+                        @endif
                     </div>
                 </div>
             @endif

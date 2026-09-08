@@ -202,6 +202,8 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/branches/payment-gateways', [BranchPaymentGatewayController::class, 'store'])->name('admin.branches.payment-gateways.store');
         Route::delete('/branches/payment-gateways/{config}', [BranchPaymentGatewayController::class, 'destroy'])->name('admin.branches.payment-gateways.destroy');
         Route::get('/settings/menu', [MenuSettingsController::class, 'index'])->name('admin.settings.menu.index');
+        Route::get('/settings/qr-orders', [\App\Http\Controllers\Admin\Settings\QrOrderSettingsController::class, 'index'])->middleware('role:admin,manager')->name('admin.settings.qr-orders.index');
+        Route::put('/settings/qr-orders', [\App\Http\Controllers\Admin\Settings\QrOrderSettingsController::class, 'update'])->middleware('role:admin,manager')->name('admin.settings.qr-orders.update');
         Route::put('/settings/menu/{branch}', [MenuSettingsController::class, 'update'])->name('admin.settings.menu.update');
 
         Route::get('/employee', [EmployeeController::class, 'index'])->name('admin.employee.index');

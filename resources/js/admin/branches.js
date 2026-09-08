@@ -28,7 +28,6 @@
         taxSetting: document.getElementById('taxSetting'),
         taxRate: document.getElementById('taxRate'),
         offlineBillingEnabled: document.getElementById('offlineBillingEnabled'),
-        autoAcceptQrOrders: document.getElementById('autoAcceptQrOrders'),
     };
 
     const setModalVisible = (isOpen) => {
@@ -59,7 +58,6 @@
         if (fields.taxSetting) fields.taxSetting.value = 'exclusive';
         if (fields.taxRate) fields.taxRate.value = '5.0';
         if (fields.offlineBillingEnabled) fields.offlineBillingEnabled.checked = false;
-        if (fields.autoAcceptQrOrders) fields.autoAcceptQrOrders.checked = false;
     };
 
     const setEditMode = (trigger) => {
@@ -89,7 +87,6 @@
         if (fields.offlineBillingEnabled) {
             fields.offlineBillingEnabled.checked = String(data.offlineBillingEnabled || '0') === '1';
         }
-        if (fields.autoAcceptQrOrders) fields.autoAcceptQrOrders.checked = String(data.autoAcceptQrOrders || '0') === '1';
     };
 
     const openCreateModal = () => {
