@@ -135,6 +135,12 @@
 @include('core.components.order-flow.partials.theme-overrides')
 
 @section('content')
+    @foreach ($pendingQrSubmissions ?? [] as $pendingQr)
+        <div class="mx-auto max-w-lg px-4 py-3 text-sm bg-orange-500/10 text-orange-500">
+            {{ $pendingQr->quantity }} new items awaiting restaurant confirmation.
+            <a class="underline" href="{{ route('qr-submissions.status', $pendingQr->public_token) }}">Track request</a>
+        </div>
+    @endforeach
     @php
         $isLightTheme = strtolower((string) ($publicMenuTheme ?? 'dark')) === 'light';
     @endphp

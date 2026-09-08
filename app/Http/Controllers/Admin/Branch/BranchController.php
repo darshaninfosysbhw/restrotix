@@ -224,6 +224,7 @@ class BranchController extends Controller
             'tax_setting' => ['nullable', Rule::in(['exclusive', 'inclusive'])],
             'tax_rate' => ['nullable', 'numeric', 'min:0'],
             'offline_billing_enabled' => ['nullable', 'boolean'],
+            'auto_accept_qr_orders' => ['nullable', 'boolean'],
         ];
     }
 
@@ -241,6 +242,7 @@ class BranchController extends Controller
             'pincode' => $request->filled('pincode') ? trim((string) $request->input('pincode')) : null,
             'full_address' => $request->filled('full_address') ? trim((string) $request->input('full_address')) : null,
             'offline_billing_enabled' => $request->boolean('offline_billing_enabled'),
+            'auto_accept_qr_orders' => $request->boolean('auto_accept_qr_orders'),
             'tax_setting' => $request->input('tax_setting', 'exclusive'),
             'tax_rate' => $request->filled('tax_rate') ? $request->input('tax_rate') : 5.0,
         ];

@@ -5,6 +5,28 @@ body {
         color 0.2s ease;
 }
 
+.table-identity-row .table-status-pill { flex-shrink: 0; white-space: nowrap; }
+#adminNotificationMenu:has([data-qr-approvals]:not(.hidden)) #adminNotificationEmpty,
+#pickupAlertMenu:has([data-qr-approvals]:not(.hidden)) #pickupAlertEmpty { display: none; }
+.table-alert-pill {
+    align-items: center; gap: 0.375rem; border: 1px solid; border-radius: 9999px;
+    padding: 0.375rem 0.625rem; font-size: 0.6875rem; font-weight: 600;
+    cursor: pointer; transition: background-color 150ms, color 150ms, opacity 150ms;
+}
+.table-alert-call { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+.table-alert-bill { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+.table-alert-pill .alert-action, .table-alert-pill .alert-spinner { display: none; }
+.table-alert-pill:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+@media (hover: hover) {
+    .table-alert-call:hover { background: #2563eb; color: white; }
+    .table-alert-bill:hover { background: #d97706; color: white; }
+    .table-alert-pill:hover .alert-label { display: none; }
+    .table-alert-pill:hover .alert-action { display: inline; }
+}
+.table-alert-pill[aria-busy="true"] { cursor: wait; opacity: 0.75; }
+.table-alert-pill[aria-busy="true"] .alert-icon { display: none; }
+.table-alert-pill[aria-busy="true"] .alert-spinner { display: inline-block; }
+
 .sidebar-item {
     transition: all 0.2s;
 }

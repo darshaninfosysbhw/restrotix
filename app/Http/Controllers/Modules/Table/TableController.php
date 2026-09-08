@@ -305,7 +305,8 @@ class TableController extends Controller
     {
         $user = Auth::user();
         abort_unless((int) $table->tenant_id === (int) $user->tenant_id, 403);
-        abort_if($user->branch_id && (int) $table->branch_id !== (int) $user->branch_id, 403);
+        $allowedBranchId = $user->role === 'admin' ? (int) session('active_branch_id', $user->branch_id) : (int) $user->branch_id;
+        abort_unless($allowedBranchId > 0 && (int) $table->branch_id === $allowedBranchId, 403);
 
         $table->update(['is_calling_waiter' => false]);
 
@@ -335,7 +336,8 @@ class TableController extends Controller
     {
         $user = Auth::user();
         abort_unless((int) $table->tenant_id === (int) $user->tenant_id, 403);
-        abort_if($user->branch_id && (int) $table->branch_id !== (int) $user->branch_id, 403);
+        $allowedBranchId = $user->role === 'admin' ? (int) session('active_branch_id', $user->branch_id) : (int) $user->branch_id;
+        abort_unless($allowedBranchId > 0 && (int) $table->branch_id === $allowedBranchId, 403);
 
         $table->update(['is_bill_requested' => false]);
 

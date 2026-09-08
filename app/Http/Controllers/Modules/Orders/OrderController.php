@@ -29,6 +29,7 @@ class OrderController extends Controller
 
     public function store(Request $request)
     {
+        $initialTransactionLevel = DB::transactionLevel();
         // 🌟 FIX 1: unique_key aur addons ke inner attributes ko nullable/optional kiya taaki Waiter/POS panel na toote
         $request->validate([
             'items'                    => 'required|array|min:1',
@@ -36,7 +37,8 @@ class OrderController extends Controller
             'items.*.unique_key'       => 'nullable|string', // Changed from required to nullable
             'items.*.name'             => 'required|string',
             'items.*.price'            => 'required|numeric',
-            'items.*.quantity'         => 'required|integer|min:1',
+            'items.*.quantity'         => 'required|integer|min:1|max:999',
+            'items.*.addons.*.quantity' => 'nullable|integer|min:1|max:999',
             'items.*.variant_name'     => 'nullable|string',
             'items.*.notes'            => 'nullable|string',
             'items.*.addons'           => 'nullable|array',
@@ -46,6 +48,7 @@ class OrderController extends Controller
             'client_longitude'         => 'nullable|numeric|between:-180,180',
             'order_type'               => 'required|string',
             'source'                   => 'nullable|in:waiter,qr,web,pos',
+            'request_key'              => 'nullable|uuid',
             'overall_instructions'     => 'nullable|string'
         ]);
 
@@ -54,6 +57,10 @@ class OrderController extends Controller
         try {
             $cartItems = $request->items;
             $user = Auth::user();
+            $approvedSubmission = $request->attributes->get('approved_qr_submission');
+            $isApprovedQr = $approvedSubmission instanceof \App\Models\QrOrderSubmission;
+            $isStaffOrder = !$isApprovedQr && $user && in_array($user->role, ['admin', 'manager', 'waiter', 'cashier', 'sales_manager'], true)
+                && $request->input('source') !== 'qr' && !$request->filled('session_token');
             $contextTable = null;
             $tableSession = null;
 
@@ -79,14 +86,20 @@ class OrderController extends Controller
                     ->first();
             }
 
-            if (!$contextTable && !$user) {
+            if (!$contextTable && !$isStaffOrder) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unable to resolve table context for this order.',
                 ], 422);
             }
 
-            if (!$user && $contextTable) {
+            if ($isStaffOrder && $contextTable) {
+                abort_unless((int) $contextTable->tenant_id === (int) $user->tenant_id, 403);
+                $allowedBranch = $user->role === 'admin' ? (int) session('active_branch_id', $user->branch_id) : (int) $user->branch_id;
+                abort_unless((int) $contextTable->branch_id === $allowedBranch, 403);
+            }
+
+            if (!$isStaffOrder && !$isApprovedQr && $contextTable) {
                 $sessionToken = trim((string) $request->input('session_token', ''));
                 $latestSession = $this->tableAccessSessionService->getLatestSessionForTable($contextTable);
                 $coolingDownMessage = 'This table is resetting. Please scan again after a few minutes.';
@@ -152,7 +165,23 @@ class OrderController extends Controller
                 }
             }
 
+            if (!$isStaffOrder && !$isApprovedQr) {
+                abort_unless($contextTable->is_active, 422, 'This table is unavailable.');
+                $request->merge(['source' => 'qr', 'order_type' => 'dine_in']);
+                $service = app(\App\Services\QrOrderSubmissionService::class);
+                $submission = $service->submit($contextTable, $tableSession, $request);
+                if ($contextTable->branch->auto_accept_qr_orders && $submission->status === 'pending') {
+                    $submission = $service->handle($submission, null, true);
+                }
+                return response()->json(['success' => true, 'pending_confirmation' => $submission->status === 'pending',
+                    'submission_id' => $submission->id, 'message' => $submission->status === 'pending' ? 'Awaiting restaurant confirmation.' : 'Order ' . $submission->status . '.',
+                    'redirect_url' => route('qr-submissions.status', $submission->public_token)]);
+            }
+            $request->merge(['source' => $isStaffOrder ? ($request->input('source') ?: 'waiter') : 'qr']);
+
+            if (!$isApprovedQr) $kotNumberLockAcquired = $this->acquireKotNumberLock();
             DB::beginTransaction();
+            if ($contextTable) Table::whereKey($contextTable->id)->lockForUpdate()->firstOrFail();
 
             $tenantId = $contextTable
                 ? (int) ($contextTable->tenant_id ?? $contextTable->branch?->tenant_id ?? 0)
@@ -203,7 +232,7 @@ class OrderController extends Controller
                     'payment_status'  => 'pending',
                     'notes'           => $request->overall_instructions,
                     'source'          => $request->source ?? 'qr',
-                    'created_by'      => Auth::id(),
+                    'created_by'      => $isStaffOrder ? Auth::id() : null,
                 ]);
             } else {
                 if ($request->filled('overall_instructions')) {
@@ -212,7 +241,6 @@ class OrderController extends Controller
                 $order->save();
             }
 
-            $kotNumberLockAcquired = $this->acquireKotNumberLock();
             $kotNumber = $this->generateNextKotNumber();
 
             if (empty($order->ordered_at)) {
@@ -228,7 +256,7 @@ class OrderController extends Controller
                 $submittedQuantityCount += max((int) ($item['quantity'] ?? 0), 0);
                 $submittedLineCount++;
                 $itemSource = trim((string) ($request->source ?? $order->source ?? 'manual'));
-                $itemCreatedBy = Auth::id();
+                $itemCreatedBy = $isStaffOrder ? Auth::id() : null;
                 $incomingMenuItemId = (int) ($item['id'] ?? 0);
                 $resolvedMenuItemId = $this->resolveMenuItemIdForOrderItem($item, $incomingMenuItemId);
 
@@ -408,7 +436,7 @@ class OrderController extends Controller
             }
 
             // 🚀 STEP 6: Broadcast Event to Live KDS Monitors / Kitchen Panels
-            broadcast(new \App\Events\NewOrderReceived([
+            $newOrderEvent = new \App\Events\NewOrderReceived([
                 'table_id'     => $order->table_id,
                 'table_number' => $order->table_number,
                 'order_number' => $order->order_number,
@@ -419,7 +447,10 @@ class OrderController extends Controller
                 'line_items_count' => $submittedLineCount,
                 'tenant_id'    => $order->tenant_id,
                 'branch_id'    => $order->branch_id,
-            ]))->toOthers();
+            ]);
+            DB::afterCommit(function () use ($newOrderEvent) {
+                try { broadcast($newOrderEvent); } catch (\Throwable $exception) { report($exception); }
+            });
 
             DB::commit();
 
@@ -440,8 +471,11 @@ class OrderController extends Controller
                 'kot_number' => $kotNumber,
                 'redirect_url' => $redirectUrl,
             ]);
+        } catch (\Illuminate\Validation\ValidationException|\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+            while (DB::transactionLevel() > $initialTransactionLevel) DB::rollBack();
+            throw $e;
         } catch (\Exception $e) {
-            DB::rollBack();
+            while (DB::transactionLevel() > $initialTransactionLevel) DB::rollBack();
             Log::error('Order store failed', [
                 'message' => $e->getMessage(),
                 'request' => $request->all(),
@@ -473,6 +507,7 @@ class OrderController extends Controller
 
     private function acquireKotNumberLock(): bool
     {
+        if (DB::getDriverName() !== 'mysql') return false;
         $result = DB::selectOne('SELECT GET_LOCK(?, 10) AS lock_status', ['restochain_kot_number_generation']);
 
         if ((int) ($result->lock_status ?? 0) !== 1) {

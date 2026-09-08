@@ -82,6 +82,7 @@
                         </div>
                         <i class="fas fa-bell-concierge text-orange-500"></i>
                     </div>
+                    @include('core.layouts.includes.qr-order-approvals')
                     <div id="pickupAlertList" class="max-h-[65vh] overflow-y-auto"></div>
                     <div id="pickupAlertEmpty" class="px-5 py-8 text-center text-sm text-gray-400">
                         <i class="fas fa-check-circle block mb-2 text-xl text-green-500"></i>

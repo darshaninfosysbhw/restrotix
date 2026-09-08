@@ -1905,6 +1905,7 @@
             saveWaiterCallActivity();
             applyCardActivityUi(normalizedTableNum);
         }
+        window.markWaiterCallSeen = markWaiterCallSeen;
 
         window.registerIncomingOrder = function(tableNum) {
             const normalizedTableNum = normalizeTableNum(tableNum);

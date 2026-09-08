@@ -91,6 +91,14 @@
     India, 13% VAT for Nepal).</p>
 
 <div class="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 mt-4">
+    <label for="autoAcceptQrOrders" class="text-xs text-white">
+        <span class="block font-medium">Auto-Accept QR Orders</span>
+        <span class="block text-gray-400 mt-1">Off: staff confirms QR orders before sending to kitchen. Waiter/POS orders stay direct.</span>
+    </label>
+    <input id="autoAcceptQrOrders" type="checkbox" name="auto_accept_qr_orders" value="1" class="ml-3 h-4 w-4 accent-orange-500"
+        @checked(old('auto_accept_qr_orders', false))>
+</div>
+<div class="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 mt-4">
     <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded bg-orange-500/10 text-orange-500 flex items-center justify-center text-xs">
             <i class="fas fa-wifi"></i>

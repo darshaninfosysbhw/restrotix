@@ -99,6 +99,7 @@
                                     'pincode' => $branch['pincode'] ?? '',
                                     'full-address' => $branch['full_address'] ?? '',
                                     'tax-setting' => $branch['tax_setting'] ?? 'exclusive',
+                                    'auto-accept-qr-orders' => !empty($branch['auto_accept_qr_orders']) ? '1' : '0',
                                     'tax-rate' => $branch['tax_rate'] ?? 5.0,
                                     'offline-billing-enabled' => !empty($branch['offline_billing_enabled'])
                                         ? '1'

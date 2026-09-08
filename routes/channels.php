@@ -2,6 +2,12 @@
 
 use Illuminate\Support\Facades\Broadcast;
 
+Broadcast::channel('qr-approvals.branch.{branchId}', function ($user, $branchId) {
+    if (!in_array($user->role, ['admin', 'manager', 'waiter'], true)) return false;
+    if (!\App\Models\Branch::withoutGlobalScope('country_filter')->where('tenant_id', $user->tenant_id)->whereKey((int) $branchId)->exists()) return false;
+    return $user->role === 'admin' || (int) $user->branch_id === (int) $branchId;
+});
+
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
 });

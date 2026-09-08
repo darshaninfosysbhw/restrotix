@@ -138,7 +138,10 @@ Route::get('/billing', function () {
 })->name('admin.billing');
 
 // --- AUTHENTICATED ROUTES ---
+Route::get('/qr-order-status/{token}', [\App\Http\Controllers\Admin\QrOrderSubmissionController::class, 'status'])->name('qr-submissions.status');
 Route::middleware(['auth'])->group(function () {
+    Route::get('/qr-order-approvals', [\App\Http\Controllers\Admin\QrOrderSubmissionController::class, 'index'])->name('qr-submissions.index');
+    Route::post('/qr-order-approvals/{submission}', [\App\Http\Controllers\Admin\QrOrderSubmissionController::class, 'handle'])->name('qr-submissions.handle');
     Route::get('/impersonate/leave', [ImpersonateController::class, 'leave'])->name('impersonate.leave');
     Route::post('/table/transfer', [TableController::class, 'transfer'])->name('waiter.table.transfer');
 
@@ -184,6 +187,8 @@ Route::middleware(['auth'])->group(function () {
         // DASHBOARD & PROFILE
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
         Route::post('/switch-branch', [BranchSwitchController::class, 'switch'])->name('admin.branch.switch');
+        Route::post('/tables/{table}/accept-call', [TableController::class, 'acceptWaiterCall'])->middleware('role:admin')->name('admin.tables.accept-call');
+        Route::post('/tables/{table}/clear-bill-request', [TableController::class, 'clearBillRequest'])->middleware('role:admin')->name('admin.tables.clear-bill-request');
         Route::get('/profile', [ProfileController::class, 'show'])->name('admin.profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('admin.profile.update');
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('admin.profile.password.update');
@@ -322,6 +327,8 @@ Route::middleware(['auth'])->group(function () {
         // DASHBOARD & PROFILE
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::post('/switch-branch', [BranchSwitchController::class, 'switch'])->name('branch.switch');
+        Route::post('/tables/{table}/accept-call', [TableController::class, 'acceptWaiterCall'])->name('tables.accept-call');
+        Route::post('/tables/{table}/clear-bill-request', [TableController::class, 'clearBillRequest'])->name('tables.clear-bill-request');
         Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');

@@ -1272,14 +1272,29 @@
                 }
             }
 
+            if (window.qrSubmissionInFlight) return;
+            window.qrSubmissionInFlight = true;
+            const signature = JSON.stringify([window.currentTableAccessSessionToken, Alpine.store('cart').items, overallNotesValue]);
+            let savedRequest;
+            try { savedRequest = JSON.parse(sessionStorage.getItem('qr-order-request') || 'null'); } catch (_) {}
+            if (!savedRequest || savedRequest.signature !== signature) {
+                const key = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                    const n = crypto.getRandomValues(new Uint8Array(1))[0] & 15;
+                    return (c === 'x' ? n : (n & 3) | 8).toString(16);
+                });
+                savedRequest = { signature, key };
+                try { sessionStorage.setItem('qr-order-request', JSON.stringify(savedRequest)); } catch (_) {}
+            }
             fetch('/place-order', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Accept': 'application/json',
                         'X-CSRF-TOKEN': '{{ csrf_token() }}'
                     },
                     body: JSON.stringify({
                         items: Alpine.store('cart').items,
+                        request_key: savedRequest.key,
                         overall_instructions: overallNotesValue,
                         table_number: '{{ $tableNumber }}',
                         table_id: @json($resolvedTableId),
@@ -1294,6 +1309,7 @@
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {
+                        try { sessionStorage.removeItem('qr-order-request'); } catch (_) {}
                         // 1. Cart Clear Karo
                         Alpine.store('cart').items = [];
                         Alpine.store('cart').sync();
@@ -1313,7 +1329,7 @@
                 .catch(err => {
                     console.error('Order Error:', err);
                     alert('Order submit failed. Please try again.');
-                });
+                }).finally(() => { window.qrSubmissionInFlight = false; });
         }
     </script>
 @endsection

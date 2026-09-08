@@ -53,6 +53,7 @@ class BranchResource extends JsonResource
             'status' => $status,
             'created' => optional($this->created_at)->format('Y-m-d') ?? '-',
             'offline_billing_enabled' => (bool) ($this->offline_billing_enabled ?? false),
+            'auto_accept_qr_orders' => (bool) ($this->auto_accept_qr_orders ?? false),
             'tax_setting' => (string) ($this->tax_setting ?? 'exclusive'),
             'tax_rate' => (string) ($this->tax_rate ?? 5.0),
         ];

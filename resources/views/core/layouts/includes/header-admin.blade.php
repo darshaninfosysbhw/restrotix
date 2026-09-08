@@ -113,6 +113,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                             <button id="clearAdminNotificationsBtn" type="button"
                                 class="text-[11px] font-semibold text-orange-400 hover:text-orange-300">Clear</button>
                         </div>
+                        @include('core.layouts.includes.qr-order-approvals')
                         <div id="adminNotificationList" class="max-h-[65vh] overflow-y-auto"></div>
                         <div id="adminNotificationEmpty" class="px-5 py-8 text-center text-sm text-gray-400">
                             <i class="fas fa-check-circle block mb-2 text-xl text-green-500"></i>

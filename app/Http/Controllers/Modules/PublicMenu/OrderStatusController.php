@@ -53,6 +53,8 @@ class OrderStatusController extends Controller
             try {
                 [$table, $order] = $this->orderStatusService->resolveContext($qr_token);
             } catch (ModelNotFoundException $e) {
+                $pending = \App\Models\QrOrderSubmission::where('table_id', $table->id)->where('status', 'pending')->latest()->first();
+                if ($pending && !$request->expectsJson()) return redirect()->route('qr-submissions.status', $pending->public_token);
                 if ($latestOrder && in_array(strtolower((string) ($latestOrder->status ?? '')), ['completed', 'paid', 'delivered'], true)) {
                     return $this->renderThankYou($table, $latestOrder, $request, [
                         'payment_status' => 'completed',
@@ -78,6 +80,7 @@ class OrderStatusController extends Controller
             : 'dark';
 
         return view('modules.public-menu.order-status', [
+            'pendingQrSubmissions' => \App\Models\QrOrderSubmission::where('table_id', $table->id)->where('status', 'pending')->get(['public_token', 'quantity']),
             'table' => $pageData['table'],
             'order' => $pageData['order'],
             'showOrderPlaced' => $pageData['showOrderPlaced'],

@@ -195,7 +195,7 @@
 
 
 
-            @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
+            <!--@if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
                 @php $isBillingActive = in_array('billing', $services); @endphp
                 <a href="{{ $isBillingActive ? route('billing.index') : 'javascript:void(0)' }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
@@ -206,9 +206,9 @@
                         <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
                     @endif
                 </a>
-            @endif
+            @endif -->
 
-            @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
+            <!-- @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
                 @php $isBillingActive = in_array('membership-card', $services); @endphp
                 <a href="{{ $isBillingActive ? route('membership-card.index') : 'javascript:void(0)' }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
@@ -219,9 +219,9 @@
                         <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
                     @endif
                 </a>
-            @endif
+            @endif -->
 
-            @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
+            <!-- @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
                 @php $isBillingActive = in_array('membership-card', $services); @endphp
                 <a href="{{ $isBillingActive ? route('membership-card.index') : 'javascript:void(0)' }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
@@ -232,7 +232,7 @@
                         <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
                     @endif
                 </a>
-            @endif
+            @endif -->
 
 
             {{-- @if (in_array($userRole, ['admin', 'manager', 'account_manager', 'superadmin']))
@@ -265,7 +265,7 @@
             @endif --}}
 
 
-            @if (in_array($userRole, ['admin', 'manager', 'purchase_manager', 'superadmin']))
+            <!-- @if (in_array($userRole, ['admin', 'manager', 'purchase_manager', 'superadmin']))
                 @php $isInventoryActive = in_array('inventory', $services); @endphp
                 <a href="{{ $isInventoryActive ? route('marketplace.index') : 'javascript:void(0)' }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
@@ -276,9 +276,9 @@
                         <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
                     @endif
                 </a>
-            @endif
+            @endif -->
 
-            @if (in_array($userRole, ['admin', 'manager', 'purchase_manager', 'superadmin']))
+            <!-- @if (in_array($userRole, ['admin', 'manager', 'purchase_manager', 'superadmin']))
                 @php $isMarketActive = in_array('marketplace', $services); @endphp
                 <a href="{{ $isMarketActive ? route('marketplace.index') : 'javascript:void(0)' }}"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isMarketActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
@@ -289,9 +289,9 @@
                         <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px] text-gray-600"></i>
                     @endif
                 </a>
-            @endif
+            @endif -->
 
-            @if (in_array($userRole, ['admin', 'manager', 'chef', 'superadmin']))
+            <!-- @if (in_array($userRole, ['admin', 'manager', 'chef', 'superadmin']))
                 @php $isInventoryActive = in_array('inventory', $services); @endphp
                 <a href="#"
                     class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
@@ -302,11 +302,11 @@
                         <i class="fas fa-lock sidebar-lock-icon ml-auto text-[10px]"></i>
                     @endif
                 </a>
-            @endif
+            @endif -->
 
 
 
-            @if (in_array($userRole, ['admin', 'manager', 'account_manager', 'superadmin']))
+            <!-- @if (in_array($userRole, ['admin', 'manager', 'account_manager', 'superadmin']))
                 @php $isAccountActive = in_array('accounts', $services); @endphp
                 <div class="dropdown-container">
                     <button
@@ -332,7 +332,7 @@
                             Tracker</a>
                     </div>
                 </div>
-            @endif
+            @endif -->
 
             @if ($userRole == 'admin' || $userRole == 'superadmin')
                 <div class="dropdown-container">

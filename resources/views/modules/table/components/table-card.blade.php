@@ -35,6 +35,24 @@
         data-currency-symbol="{{ $currencySymbol }}"
         data-orders='@json($table['active_orders'] ?? [])'>
 
+        @if (in_array(auth()->user()->role, ['admin', 'manager'], true))
+            <div class="table-identity-row flex items-center justify-between gap-3 mb-2">
+                <h3 class="text-white text-lg font-bold whitespace-nowrap min-w-0 overflow-hidden text-ellipsis" title="{{ $table['display_name'] }}">{{ $table['display_name'] }}</h3>
+                <span class="table-status-pill text-xs px-2 py-1 rounded-full bg-{{ $table['status_color'] }}-500/20 text-{{ $table['status_color'] }}-400">{{ $table['status_label'] }}</span>
+            </div>
+            <div class="table-alert-strip flex flex-wrap items-center gap-2 mb-2">
+                @foreach ([['call', 'waiter-call-bell', 'is_calling_waiter', 'Calling Waiter', 'Attend Call', 'fa-bell animate-bounce', 'waiter-call-count', 'accept-call'], ['bill', 'bill-request-bell', 'is_bill_requested', 'Bill Requested', 'Clear Bill Req', 'fa-file-invoice-dollar', 'bill-request-count', 'clear-bill-request']] as [$kind, $bellClass, $flag, $label, $action, $icon, $countClass, $routeAction])
+                    <button type="button" class="table-alert-pill table-alert-{{ $kind }} {{ $bellClass }}" data-table-alert="{{ $kind }}"
+                        data-url="{{ route(auth()->user()->role . '.tables.' . $routeAction, $table['id']) }}"
+                        aria-label="{{ $action }} for {{ $table['display_name'] }}" style="display: {{ !empty($table[$flag]) ? 'inline-flex' : 'none' }};">
+                        <i class="alert-icon fas {{ $icon }}" aria-hidden="true"></i>
+                        <i class="alert-spinner fas fa-spinner fa-spin" aria-hidden="true"></i>
+                        <span class="alert-label">{{ $label }}</span>
+                        <span class="alert-action">{{ $action }} &#10003;</span>
+                        <span class="{{ $countClass }}"></span>
+                    </button>
+                @endforeach
+        @else
         <div class="flex justify-between items-center mb-1">
             <h3 class="text-white font-semibold">
                 {{ $table['display_name'] }}
@@ -57,6 +75,7 @@
                 bg-{{ $table['status_color'] }}-500/20 text-{{ $table['status_color'] }}-400">
                     {{ $table['status_label'] }}
                 </span>
+                @endif
                 <span
                     class="kitchen-status-badge hidden text-[10px] px-2 py-1 rounded-full border border-gray-500/50 bg-gray-500/10 text-gray-300 font-semibold">
                     Kitchen
@@ -76,8 +95,10 @@
                     New
                 </span>
             </div>
+        @if (!in_array(auth()->user()->role, ['admin', 'manager'], true))
         </div>
 
+        @endif
         @if ($isAdmin ?? false)
             <p class="text-xs text-gray-400 mb-3">
                 Token: {{ $table['qr_token'] ?: 'N/A' }}

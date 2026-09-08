@@ -28,6 +28,7 @@ class Branch extends Model
         'latitude',
         'longitude',
         'offline_billing_enabled',
+        'auto_accept_qr_orders',
         'tax_setting',
         'tax_rate',
         'branch_menu_theme',
@@ -35,6 +36,7 @@ class Branch extends Model
 
     protected $casts = [
         'offline_billing_enabled' => 'boolean',
+        'auto_accept_qr_orders' => 'boolean',
         'tenant_id' => 'integer',
         'country_id' => 'integer',
         'currency_id' => 'integer',
