@@ -363,6 +363,52 @@ class TableController extends Controller
         ]);
     }
 
+    public function releaseVoidOrder(Request $request)
+    {
+        $user = $request->user();
+        $validated = $request->validate([
+            'table_id' => ['nullable', 'integer'],
+            'table_number' => ['nullable', 'string', 'max:50'],
+            'reason' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $tableNumber = trim((string) ($validated['table_number'] ?? ''));
+        abort_unless(!empty($validated['table_id']) || $tableNumber !== '', 422);
+
+        $branchId = (int) session('active_branch_id', $user->branch_id ?? 0);
+        $table = Table::query()
+            ->where('tenant_id', $user->tenant_id)
+            ->where('branch_id', $branchId)
+            ->where(function ($query) use ($validated, $tableNumber) {
+                if (!empty($validated['table_id'])) {
+                    $query->whereKey((int) $validated['table_id']);
+                }
+                if ($tableNumber !== '') {
+                    $query->orWhere('table_number', $tableNumber);
+                }
+            })
+            ->firstOrFail();
+
+        $table->orders()
+            ->where('status', 'running')
+            ->latest()
+            ->first()?->update([
+                'status' => 'cancelled',
+                'notes' => trim((string) ($validated['reason'] ?? 'All items were rejected/cancelled')),
+            ]);
+
+        $table->update([
+            'status' => 'available',
+            'is_calling_waiter' => false,
+            'is_bill_requested' => false,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Table {$table->table_number} is now available.",
+        ]);
+    }
+
     public function kotPdf(Request $request, string $table_number)
     {
         $user = Auth::user();

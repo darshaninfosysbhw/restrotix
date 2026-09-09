@@ -189,6 +189,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/switch-branch', [BranchSwitchController::class, 'switch'])->name('admin.branch.switch');
         Route::post('/tables/{table}/accept-call', [TableController::class, 'acceptWaiterCall'])->middleware('role:admin')->name('admin.tables.accept-call');
         Route::post('/tables/{table}/clear-bill-request', [TableController::class, 'clearBillRequest'])->middleware('role:admin')->name('admin.tables.clear-bill-request');
+        Route::post('/tables/release-order', [TableController::class, 'releaseVoidOrder'])->name('admin.tables.release-order');
         Route::get('/profile', [ProfileController::class, 'show'])->name('admin.profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('admin.profile.update');
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('admin.profile.password.update');

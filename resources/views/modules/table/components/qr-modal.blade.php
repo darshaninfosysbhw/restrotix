@@ -1931,6 +1931,7 @@
 
         function renderLoadingState(tableNum) {
             window.currentOpenTableOrders = [];
+            window.syncDrawerActionButtons?.([]);
             resetDrawerKotSelectionState();
             setKotPrintButtonState(false);
             if (typeof window.setDrawerGenerateBillButtonState === 'function') {
@@ -2029,6 +2030,7 @@
         function renderOrdersToDrawer(tableNum, orders) {
             if (!orders || orders.length === 0) {
                 window.currentOpenTableOrders = [];
+                window.syncDrawerActionButtons?.([]);
                 resetDrawerKotSelectionState();
                 setKotPrintButtonState(false);
                 setDrawerSubtitle(formatOrderItemCount(0));
@@ -2056,6 +2058,7 @@
             }
 
             window.currentOpenTableOrders = orders;
+            window.syncDrawerActionButtons?.(orders);
             setKotPrintButtonState(true);
             window.setDrawerGenerateBillButtonState?.(true);
             const totalItems = getOrderItemCount(orders);
@@ -2172,8 +2175,10 @@
 
         function renderKotViewToDrawer(tableNum, orders) {
             window.currentOpenTableOrders = Array.isArray(orders) ? orders : [];
+            window.syncDrawerActionButtons?.(orders);
 
             if (!orders || orders.length === 0) {
+                window.syncDrawerActionButtons?.([]);
                 setKotPrintButtonState(false);
                 const hasMatchingBillingDraft = Boolean(
                     String(window.currentOpenTableId || '').trim() &&

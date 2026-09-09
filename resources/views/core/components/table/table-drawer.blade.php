@@ -106,6 +106,10 @@
                 Generate Bill
             @endif
         </button>
+        <button id="drawerReleaseTableBtn" type="button"
+            class="hidden w-full text-center border border-red-500/50 text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white font-semibold py-2.5 rounded-lg transition cursor-pointer">
+            <i class="fas fa-ban mr-1.5"></i> Void &amp; Release Table
+        </button>
     </div>
 </div>
 
@@ -348,6 +352,7 @@
         const billingModalPanel = document.getElementById('billingPosPanel');
         const billingModalCloseBtn = document.getElementById('billingPosCloseBtn');
         const drawerGenerateBillBtn = document.getElementById('drawerGenerateBillBtn');
+        const drawerReleaseTableBtn = document.getElementById('drawerReleaseTableBtn');
         const transferTableBtn = document.getElementById('transferTableBtn');
         const billingModalClosers = document.querySelectorAll('[data-billing-modal-close]');
         const billingOrdersBaseUrl = @json('/admin/get-table-orders');
@@ -358,6 +363,72 @@
         const drawerGenerateBillDisabledClasses = [
             'opacity-60',
         ];
+        const releaseTableUrl = @json(route('admin.tables.release-order'));
+
+        const syncDrawerActionButtons = (ordersOrItems = []) => {
+            const records = (Array.isArray(ordersOrItems) ? ordersOrItems : []).flatMap((entry) => {
+                return Array.isArray(entry?.items) ? entry.items : [entry];
+            });
+            const activeValidItems = records.filter((item) => {
+                const status = String(item?.status ?? item?.item_status ?? '').toLowerCase();
+                return !(item?.isRejected || item?.is_rejected || ['rejected', 'cancelled'].includes(status));
+            });
+            const shouldReleaseTable = records.length > 0 && activeValidItems.length === 0;
+
+            drawerGenerateBillBtn?.classList.toggle('hidden', shouldReleaseTable);
+            drawerReleaseTableBtn?.classList.toggle('hidden', !shouldReleaseTable);
+        };
+
+        window.syncDrawerActionButtons = syncDrawerActionButtons;
+        syncDrawerActionButtons([]);
+
+        if (drawerReleaseTableBtn) {
+            drawerReleaseTableBtn.addEventListener('click', async () => {
+                const tableNumber = String(window.currentOpenTable || '').trim();
+                const tableId = window.currentOpenTableId || null;
+
+                if (!tableId && !tableNumber) return;
+                if (!window.confirm(`Are you sure you want to cancel the order and release Table ${tableNumber}?`)) return;
+
+                const defaultLabel = '<i class="fas fa-ban mr-1.5"></i> Void &amp; Release Table';
+
+                try {
+                    drawerReleaseTableBtn.disabled = true;
+                    drawerReleaseTableBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Releasing...';
+
+                    const response = await fetch(releaseTableUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                        body: JSON.stringify({
+                            table_id: tableId,
+                            table_number: tableNumber,
+                            reason: 'All items were rejected/cancelled',
+                        }),
+                    });
+                    const data = await response.json();
+
+                    if (!response.ok || data.status !== 'success') {
+                        throw new Error(data.message || 'Failed to release table');
+                    }
+
+                    emitTableToast('success', `Table ${tableNumber} released successfully`);
+                    window.markTableAsAvailable?.(tableNumber);
+                    document.getElementById('closeDrawer')?.click();
+                    await window.refreshWaiterTableCard?.(tableNumber, window.currentOpenTableBranchId);
+                } catch (error) {
+                    console.error('Table release failed:', error);
+                    emitTableToast('error', error.message || 'Something went wrong while releasing table');
+                } finally {
+                    drawerReleaseTableBtn.disabled = false;
+                    drawerReleaseTableBtn.innerHTML = defaultLabel;
+                }
+            });
+        }
 
         if (transferTableBtn) {
             transferTableBtn.addEventListener('click', () => {
@@ -762,6 +833,7 @@
             };
 
             const items = (Array.isArray(order?.items) ? order.items : []).map(normalizeBillingItem);
+            syncDrawerActionButtons(items);
             const isDraftRestore = Boolean(options?.restoreDraft);
             const restoreSource = isDraftRestore && order?.billing_state && typeof order.billing_state === 'object'
                 ? { ...order, ...order.billing_state }
