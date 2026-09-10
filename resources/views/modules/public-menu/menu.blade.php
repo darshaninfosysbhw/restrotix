@@ -66,8 +66,8 @@
 @section('content')
     <script>
         window.storeTaxSetting = "{{ $branch->tax_setting ?? 'exclusive' }}";
-        window.storeTaxRate = parseFloat("{{ $branch->tax_rate ?? 5.0 }}") / 100;
-        window.storeTaxLabelName = parseFloat("{{ $branch->tax_rate ?? 5.0 }}") === 13.00 ? "VAT" : "Tax";
+        window.storeTaxRate = parseFloat("{{ $branch->effective_tax_rate ?? 5.0 }}") / 100;
+        window.storeTaxLabelName = parseFloat("{{ $branch->effective_tax_rate ?? 5.0 }}") === 13.00 ? "VAT" : "Tax";
     </script>
     @php
         $isLightTheme = strtolower((string) ($publicMenuTheme ?? 'dark')) === 'light';
@@ -806,7 +806,7 @@
                         </div>
 
                         <div class="flex justify-between border-b border-gray-200/50 dark:border-gray-700/50 pb-1.5"
-                            x-show="window.storeTaxSetting !== 'inclusive'">
+                            x-show="window.storeTaxSetting !== 'inclusive' && window.storeTaxRate > 0">
                             <span
                                 x-text="window.storeTaxLabelName + ' (' + (window.storeTaxRate * 100).toFixed(0) + '%):'">Tax:</span>
                             <span class="font-bold text-gray-900 dark:text-white"

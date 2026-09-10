@@ -21,7 +21,7 @@ class TenantController extends Controller
         // Table ke liye paginated tenants
         $tenantsQuery = Tenant::with([
             'users:id,tenant_id,email,phone_number,role',
-            'branches:id,tenant_id,city',
+            'branches' => fn ($query) => $query->select('id', 'tenant_id', 'city', 'full_address')->orderBy('id'),
             'plan:id,name,slug',
         ])
             ->withCount('branches')
@@ -86,10 +86,12 @@ class TenantController extends Controller
             'email'                     => 'required|email|unique:users,email',
             'phone'                     => 'required|string|max:20|unique:users,phone_number',
             'city'                      => 'required|string|max:255',
+            'address'                   => 'nullable|string|max:65535',
             'country_id'                => 'required|exists:countries,id',
             'subscription_plan'         => 'required|exists:plans,id',
             'billing_cycle'             => 'required|in:monthly,yearly',
-            'subscription_status'       => 'nullable|in:trial,active,expired,canceled',
+            'subscription_status'       => 'required|in:trial,active,expired,canceled',
+            'trial_days' => 'exclude_unless:subscription_status,trial|required|integer|min:0|max:36500',
         ]);
 
         if ($validator->fails()) {
@@ -120,7 +122,7 @@ class TenantController extends Controller
                 'owner_name'                 => $request->owner_name,
                 'country_id'                 => $request->country_id,
                 'subscription_status'        => $subscriptionStatus,
-                'subscription_ends_at'       => in_array($subscriptionStatus, ['trial'], true) ? now()->addDays(14) : null,
+                'subscription_ends_at'       => $subscriptionStatus === 'trial' ? now()->addDays((int) $request->input('trial_days')) : null,
                 'is_banned'                  => in_array($subscriptionStatus, ['canceled'], true),
                 'plan_id'                    => $request->subscription_plan,
                 'billing_cycle'              => $billingCycle,
@@ -133,6 +135,7 @@ class TenantController extends Controller
                 'country_id'                  => $request->country_id,
                 'city'                        => $request->city,
                 'contact_number'              => $request->phone,
+                'full_address'                => $request->filled('address') ? trim((string) $request->input('address')) : null,
             ]);
 
             // STEP 3: Create Admin User for this Tenant
@@ -194,10 +197,12 @@ class TenantController extends Controller
                 Rule::unique('users', 'phone_number')->ignore(optional($adminUser)->id),
             ],
             'city'         => 'required|string|max:255',
+            'address'      => 'nullable|string|max:65535',
             'subscription_plan' => 'required|exists:plans,id',
             'country_id' => 'required|exists:countries,id',
             'billing_cycle' => 'required|in:monthly,yearly',
             'subscription_status' => 'required|in:trial,active,expired,canceled',
+            'trial_days' => 'exclude_unless:subscription_status,trial|required|integer|min:0|max:36500',
         ]);
 
         if ($validator->fails()) {
@@ -235,7 +240,14 @@ class TenantController extends Controller
                 $tenantPayload['subscription_ends_at'] = null;
             } elseif ($subscriptionStatus === 'trial') {
                 $tenantPayload['is_banned'] = false;
-                $tenantPayload['subscription_ends_at'] = now()->addDays(14);
+                $trialDays = (int) $request->input('trial_days');
+                $remainingDays = $tenant->subscription_ends_at
+                    ? max(0, (int) now()->startOfDay()->diffInDays($tenant->subscription_ends_at->copy()->startOfDay(), false))
+                    : null;
+                // Preserve the expiry when only unrelated tenant details are edited.
+                $tenantPayload['subscription_ends_at'] = $tenant->subscription_status === 'trial' && $remainingDays === $trialDays
+                    ? $tenant->subscription_ends_at
+                    : now()->addDays($trialDays);
             } else {
                 $tenantPayload['is_banned'] = false;
                 $tenantPayload['subscription_ends_at'] = null;
@@ -251,6 +263,7 @@ class TenantController extends Controller
                 $branch->update([
                     'city'            => $request->city,
                     'contact_number'  => $request->phone,
+                    'full_address'    => $request->filled('address') ? trim((string) $request->input('address')) : null,
                     'country_id'      => $request->country_id,
                 ]);
             }

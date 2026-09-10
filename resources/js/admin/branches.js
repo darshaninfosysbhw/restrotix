@@ -27,8 +27,18 @@
         fullAddress: document.getElementById('fullAddress'),
         taxSetting: document.getElementById('taxSetting'),
         taxRate: document.getElementById('taxRate'),
+        vatTaxRegistration: document.getElementById('vatTaxRegistration'),
+        panVatNumber: document.getElementById('panVatNumber'),
         offlineBillingEnabled: document.getElementById('offlineBillingEnabled'),
     };
+
+    const taxCalculation = document.getElementById('branchTaxCalculation');
+    const syncTaxCalculationVisibility = () => {
+        taxCalculation?.classList.toggle('hidden', !fields.vatTaxRegistration?.checked);
+    };
+
+    fields.vatTaxRegistration?.addEventListener('change', syncTaxCalculationVisibility);
+    syncTaxCalculationVisibility();
 
     const setModalVisible = (isOpen) => {
         modal.classList.toggle('hidden', !isOpen);
@@ -57,6 +67,9 @@
         if (fields.fullAddress) fields.fullAddress.value = '';
         if (fields.taxSetting) fields.taxSetting.value = 'exclusive';
         if (fields.taxRate) fields.taxRate.value = '5.0';
+        if (fields.vatTaxRegistration) fields.vatTaxRegistration.checked = false;
+        if (fields.panVatNumber) fields.panVatNumber.value = '';
+        syncTaxCalculationVisibility();
         if (fields.offlineBillingEnabled) fields.offlineBillingEnabled.checked = false;
     };
 
@@ -84,6 +97,9 @@
         if (fields.fullAddress) fields.fullAddress.value = data.fullAddress || '';
         if (fields.taxSetting) fields.taxSetting.value = data.taxSetting || 'exclusive';
         if (fields.taxRate) fields.taxRate.value = data.taxRate ?? '5.0';
+        if (fields.vatTaxRegistration) fields.vatTaxRegistration.checked = String(data.isVatRegistered || '0') === '1';
+        if (fields.panVatNumber) fields.panVatNumber.value = data.panVatNumber || '';
+        syncTaxCalculationVisibility();
         if (fields.offlineBillingEnabled) {
             fields.offlineBillingEnabled.checked = String(data.offlineBillingEnabled || '0') === '1';
         }

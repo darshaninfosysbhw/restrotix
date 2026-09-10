@@ -139,10 +139,12 @@
                                                 'email' => $restaurant['email'],
                                                 'phone' => $restaurant['phone'],
                                                 'city' => $restaurant['city'],
+                                                'address' => $restaurant['address'] ?? '',
                                                 'country-id' => $restaurant['country_id'],
                                                 'plan-id' => $restaurant['plan_id'],
                                                 'billing-cycle' => $restaurant['billing_cycle'] ?? 'monthly',
                                                 'status-key' => $restaurant['status_key'] ?? strtolower($restaurant['status'] ?? ''),
+                                                'trial-days' => $restaurant['trial_days'] ?? '',
                                             ],
                                         
                                             'deleteRoute' => route(
@@ -257,7 +259,7 @@
                                         $currentPrice = $plan->prices->first();
                                         $symbol = session('currency_symbol', '₹');
                                     @endphp
-                                    <option value="{{ $plan->id }}">
+                                    <option value="{{ $plan->id }}" data-trial-days="{{ $plan->trial_days }}">
                                         {{ $plan->name }}
                                         @if ($currentPrice)
                                             ({{ $symbol }}{{ $currentPrice->monthly_price }}/mo)
@@ -281,12 +283,20 @@
                             <select id="restaurantStatus" name="subscription_status" required
                                 class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
                                 <option value="">Select status</option>
-                                <option value="trial">Trial</option>
+                                <option value="trial" {{ old('subscription_status') === 'trial' ? 'selected' : '' }}>Trial</option>
                                 <option value="active">Active</option>
                                 <option value="expired">Expired</option>
                                 <option value="canceled">Canceled</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div id="restaurantTrialDaysField" class="hidden">
+                        <label for="restaurantTrialDays" class="block text-xs text-slate-400 mb-1.5">Trial Days</label>
+                        <input id="restaurantTrialDays" type="number" name="trial_days" min="0" max="36500" step="1"
+                            value="{{ old('trial_days') }}" placeholder="Enter trial days"
+                            class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
+                        <p class="text-[10px] text-slate-500 mt-1">Days from today. When editing a trial, this shows the remaining days; change it to update the expiry.</p>
                     </div>
 
                     <div>

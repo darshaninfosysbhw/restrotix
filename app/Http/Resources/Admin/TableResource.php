@@ -76,7 +76,7 @@ class TableResource extends JsonResource
         $branch = $this->relationLoaded('branch') ? $this->branch : null;
         $branchTaxSetting = strtolower((string) ($branch?->tax_setting ?? 'exclusive'));
         $branchTaxSetting = $branchTaxSetting === 'inclusive' ? 'inclusive' : 'exclusive';
-        $branchTaxRatePercent = max((float) ($branch?->tax_rate ?? 0), 0);
+        $branchTaxRatePercent = max((float) ($branch?->effective_tax_rate ?? 0), 0);
         $branchTaxLabelName = $branchTaxSetting === 'inclusive' || (float) $branchTaxRatePercent === 13.0
             ? 'VAT'
             : 'Tax';

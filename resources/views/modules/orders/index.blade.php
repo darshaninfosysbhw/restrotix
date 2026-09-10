@@ -2,8 +2,8 @@
 @section('content')
     <script>
         window.storeTaxSetting = "{{ $branch->tax_setting ?? 'exclusive' }}";
-        window.storeTaxRate = parseFloat("{{ $branch->tax_rate ?? 5.0 }}") / 100;
-        window.storeTaxLabelName = parseFloat("{{ $branch->tax_rate ?? 5.0 }}") === 13.00 ? "VAT" : "Tax";
+        window.storeTaxRate = parseFloat("{{ $branch->effective_tax_rate ?? 5.0 }}") / 100;
+        window.storeTaxLabelName = parseFloat("{{ $branch->effective_tax_rate ?? 5.0 }}") === 13.00 ? "VAT" : "Tax";
     </script>
     <div class="flex-1 overflow-hidden bg-gray-900" x-data="{
         customizeOpen: false,
@@ -1238,8 +1238,8 @@
                     taxAmount = subtotal * taxRate;
                     grandTotal = subtotal + taxAmount;
 
-                    if (byId('desktopTaxRow')) byId('desktopTaxRow').style.display = 'flex';
-                    if (byId('mobileTaxRow')) byId('mobileTaxRow').style.display = 'flex';
+                    if (byId('desktopTaxRow')) byId('desktopTaxRow').style.display = taxRate > 0 ? 'flex' : 'none';
+                    if (byId('mobileTaxRow')) byId('mobileTaxRow').style.display = taxRate > 0 ? 'flex' : 'none';
 
                     if (byId('desktopTax')) {
                         byId('desktopTaxLabel').textContent =

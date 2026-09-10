@@ -207,7 +207,7 @@ class OrderStatusController extends Controller
         $excludeRejected = $request->boolean('exclude_rejected');
         $branch = $table->branch;
         $tenant = $branch?->tenant ?? Tenant::query()->find($table->tenant_id);
-        $taxRatePercent = (float) ($branch?->tax_rate ?? 0);
+        $taxRatePercent = (float) ($branch?->effective_tax_rate ?? 0);
         $taxLabel = strtolower((string) ($branch?->tax_setting ?? 'exclusive')) === 'inclusive'
             ? 'VAT'
             : ((float) $taxRatePercent === 13.0 ? 'VAT' : 'Tax');
@@ -311,6 +311,8 @@ class OrderStatusController extends Controller
                 'tax_rate_percent' => $taxRatePercent,
                 'invoice_date' => optional($order->created_at)->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A'),
                 'restaurant_name' => (string) ($tenant?->company_name ?? 'Restaurant'),
+                'is_vat_registered' => (bool) ($branch?->is_vat_registered ?? false),
+                'tax_registration' => (string) ($branch?->pan_vat_number ?? ''),
                 'branch_name' => (string) ($branch?->branch_name ?? ''),
                 'branch_address' => trim((string) ($branch?->full_address ?: implode(', ', array_filter([
                     $branch?->city,
@@ -319,7 +321,6 @@ class OrderStatusController extends Controller
                 ])))),
                 'branch_contact' => (string) ($branch?->contact_number ?? ''),
                 'branch_email' => (string) ($branch?->branch_email ?? ''),
-                'tax_registration' => 'N/A',
                 'amount_in_words' => $amountInWords,
                 'payment_status' => strtoupper((string) ($invoice?->status ?? 'PAID')),
                 'invoice_date_only' => optional($order->created_at)->format('d M Y') ?? now()->format('d M Y'),

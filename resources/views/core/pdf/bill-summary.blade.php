@@ -378,7 +378,13 @@
             </div>
         </div>
 
-        <div class="title">Tax Invoice</div>
+        <div class="title">
+            @if ($summary['is_vat_registered'] ?? false)
+              TAX INVOICE
+            @else
+              INVOICE
+            @endif
+        </div>
 
         @php
             $customerName = trim((string) ($summary['customer_name'] ?? ''));
@@ -517,38 +523,40 @@
         <div class="totals">
             <div class="totals-row">
                 <span>Subtotal</span>
-                <span>&#8377;{{ number_format($summary['subtotal'], 2) }}</span>
+                <span>Rs {{ number_format($summary['subtotal'], 2) }}</span>
             </div>
             @if ($itemDiscountAmount > 0)
                 <div class="totals-row">
                     <span>Item Discount</span>
-                    <span>&#8377;{{ number_format($itemDiscountAmount, 2) }}</span>
+                    <span>Rs {{ number_format($itemDiscountAmount, 2) }}</span>
                 </div>
             @endif
             <div class="totals-row">
                 <span>Discount</span>
-                <span>&#8377;{{ number_format((float) ($summary['discount_amount'] ?? 0), 2) }}</span>
+                <span>Rs {{ number_format((float) ($summary['discount_amount'] ?? 0), 2) }}</span>
             </div>
-            <div class="totals-row">
-                <span>Taxable Amount</span>
-                <span>&#8377;{{ number_format((float) ($summary['taxable_amount'] ?? 0), 2) }}</span>
-            </div>
-            <div class="totals-row">
-                <span>{{ $summary['tax_label'] ?? 'Tax' }}
-                    ({{ number_format((float) ($summary['tax_rate_percent'] ?? 0), 0) }}%)</span>
-                <span>&#8377;{{ number_format((float) ($summary['tax'] ?? 0), 2) }}</span>
-            </div>
+            @if ($summary['is_vat_registered'] ?? false)
+                <div class="totals-row">
+                    <span>Taxable Amount</span>
+                    <span>Rs {{ number_format((float) ($summary['taxable_amount'] ?? 0), 2) }}</span>
+                </div>
+                <div class="totals-row">
+                    <span>{{ $summary['tax_label'] ?? 'Tax' }}
+                        ({{ number_format((float) ($summary['tax_rate_percent'] ?? 0), 0) }}%)</span>
+                    <span>Rs {{ number_format((float) ($summary['tax'] ?? 0), 2) }}</span>
+                </div>
+            @endif
             <div class="totals-row total">
                 <span>Total Amount</span>
-                <span>&#8377;{{ number_format($summary['grand_total'], 2) }}</span>
+                <span>Rs {{ number_format($summary['grand_total'], 2) }}</span>
             </div>
             <div class="totals-row">
                 <span>Tender Amount</span>
-                <span>&#8377;{{ number_format((float) ($summary['tender_amount'] ?? 0), 2) }}</span>
+                <span>Rs {{ number_format((float) ($summary['tender_amount'] ?? 0), 2) }}</span>
             </div>
             <div class="totals-row">
                 <span>Change to Return</span>
-                <span>&#8377;{{ number_format((float) ($summary['change_amount'] ?? 0), 2) }}</span>
+                <span>Rs {{ number_format((float) ($summary['change_amount'] ?? 0), 2) }}</span>
             </div>
         </div>
 

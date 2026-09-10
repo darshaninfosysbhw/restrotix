@@ -406,7 +406,7 @@ class OrderController extends Controller
             $branch = Branch::find($branchId);
             $taxSetting = $branch?->tax_setting ?? 'exclusive';
             // $taxRate = 0.05;
-            $taxRate = (float) ($branch?->tax_rate ?? 5.00) / 100;
+            $taxRate = (float) ($branch?->effective_tax_rate ?? 5.00) / 100;
 
             if ($taxSetting === 'inclusive') {
                 $taxAmount = $newSubtotal - ($newSubtotal / (1 + $taxRate));

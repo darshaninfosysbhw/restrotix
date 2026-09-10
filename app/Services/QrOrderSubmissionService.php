@@ -65,11 +65,11 @@ class QrOrderSubmissionService
             $items = $this->normalizeItems($request->items, $table);
             $subtotal = collect($items)->sum(fn ($item) => $item['price'] * $item['quantity'] + collect($item['addons'])->sum(fn ($addon) => $addon['price'] * $addon['quantity']));
             $branch = $table->branch;
-            $total = $branch->tax_setting === 'inclusive' ? $subtotal : $subtotal * (1 + (float) $branch->tax_rate / 100);
+            $total = $branch->tax_setting === 'inclusive' ? $subtotal : $subtotal * (1 + (float) $branch->effective_tax_rate / 100);
             $submission = QrOrderSubmission::create([
                 'public_token' => (string) Str::uuid(), 'tenant_id' => $table->tenant_id, 'branch_id' => $table->branch_id,
                 'table_id' => $table->id, 'table_access_session_id' => $session->id, 'request_key' => $key,
-                'payload' => ['items' => $items, 'table_id' => $table->id, 'order_type' => 'dine_in', 'source' => 'qr', 'tax_setting' => $branch->tax_setting, 'tax_rate' => $branch->tax_rate, 'overall_instructions' => $request->input('overall_instructions')],
+                'payload' => ['items' => $items, 'table_id' => $table->id, 'order_type' => 'dine_in', 'source' => 'qr', 'tax_setting' => $branch->tax_setting, 'tax_rate' => $branch->effective_tax_rate, 'overall_instructions' => $request->input('overall_instructions')],
                 'total' => round($total, 2), 'quantity' => collect($items)->sum('quantity'),
             ]);
             app(\App\Services\PublicMenu\TableAccessSessionService::class)->touchSession($session, $request);
@@ -104,7 +104,7 @@ class QrOrderSubmissionService
                         throw ValidationException::withMessages(['order' => 'Table session has ended. Reject this request instead.']);
                     }
                     $payload = $submission->payload;
-                    if ((string) $table->branch->tax_setting !== (string) $payload['tax_setting'] || (float) $table->branch->tax_rate !== (float) $payload['tax_rate']) {
+                    if ((string) $table->branch->tax_setting !== (string) $payload['tax_setting'] || (float) $table->branch->effective_tax_rate !== (float) $payload['tax_rate']) {
                         throw ValidationException::withMessages(['order' => 'Tax settings changed. Reject this request and ask the guest to submit again.']);
                     }
                     // Recheck availability; keep the submitted price snapshot for the customer's confirmed amount.

@@ -56,6 +56,8 @@ class BranchResource extends JsonResource
             'auto_accept_qr_orders' => (bool) ($this->auto_accept_qr_orders ?? false),
             'tax_setting' => (string) ($this->tax_setting ?? 'exclusive'),
             'tax_rate' => (string) ($this->tax_rate ?? 5.0),
+            'is_vat_registered' => (bool) ($this->is_vat_registered ?? false),
+            'pan_vat_number' => (string) ($this->pan_vat_number ?? ''),
         ];
     }
 }

@@ -48,6 +48,7 @@ class TenantResource extends JsonResource
             'email' => optional($adminUser)->email ?? '-',
             'phone' => optional($adminUser)->phone_number ?? '-',
             'city' => optional($this->branches->first())->city ?? '-',
+            'address' => optional($this->branches->first())->full_address ?? '',
             'slug' => $this->slug,
             'plan' => $this->plan?->name ?? ucfirst($this->subscription_plan ?? 'starter'),
             'plan_id' => $this->plan_id,
@@ -56,6 +57,9 @@ class TenantResource extends JsonResource
             'branches' => $this->branches_count ?? 0,
             'status' => $statusLabel,
             'status_key' => $subscriptionStatus,
+            'trial_days' => $subscriptionStatus === 'trial' && $this->subscription_ends_at
+                ? max(0, (int) now()->startOfDay()->diffInDays($this->subscription_ends_at->copy()->startOfDay(), false))
+                : null,
             'joined' => optional($joinedDate)->format('d M Y') ?? '-',
             'joined_bs' => $joinedBs,
         ];

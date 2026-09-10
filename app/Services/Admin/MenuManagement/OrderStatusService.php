@@ -43,8 +43,8 @@ class OrderStatusService
         $orderItems = $this->consolidateOrderItems($items);
         $branch = $table->branch;
         $taxSetting = strtolower((string) ($branch?->tax_setting ?? 'exclusive'));
-        $taxRate = (float) ($branch?->tax_rate ?? 0) / 100;
-        $taxLabelName = ((float) ($branch?->tax_rate ?? 0)) === 13.0 ? 'VAT' : 'Tax';
+        $taxRate = (float) ($branch?->effective_tax_rate ?? 0) / 100;
+        $taxLabelName = ((float) ($branch?->effective_tax_rate ?? 0)) === 13.0 ? 'VAT' : 'Tax';
 
         $originalSubtotal = (float) $items->sum(fn (OrderItem $item) => $this->itemTotal($item));
         $activeSubtotal = (float) $orderItems

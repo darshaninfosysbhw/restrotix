@@ -359,6 +359,8 @@
                         }
                         setValue('billingLeftTaxableAmount', `Rs ${taxableAmount.toFixed(2)}`);
                         setValue('billingLeftTaxLabelText', taxLabel);
+                        document.getElementById('billingLeftTaxRow')?.classList.toggle('hidden', taxRate <= 0);
+                        document.getElementById('billingRightTaxLabel')?.parentElement?.classList.toggle('hidden', taxRate <= 0);
                         setValue('billingLeftNoTax', `Rs ${taxAmount.toFixed(2)}`);
                         setValue('billingLeftGrandTotal', `Rs ${totalAmount.toFixed(2)}`);
                         window.billingItemDiscountTotal = itemDiscountTotal;
@@ -816,7 +818,7 @@
                                 {{ number_format($taxableAmount, 2) }}</span>
                         </div>
 
-                        <div class="flex items-center justify-between text-sm font-semibold text-slate-700">
+                        <div id="billingLeftTaxRow" class="flex items-center justify-between text-sm font-semibold text-slate-700">
                             <span class="flex items-center gap-2">
                                 <i class="fas fa-plus text-slate-400"></i>
                                 <span id="billingLeftTaxLabelText">Tax</span>

@@ -23,6 +23,8 @@
     const branchLimitInput = document.getElementById('restaurantBranchLimit');
     const addressInput = document.getElementById('restaurantAddress');
     const statusInput = document.getElementById('restaurantStatus');
+    const trialDaysField = document.getElementById('restaurantTrialDaysField');
+    const trialDaysInput = document.getElementById('restaurantTrialDays');
     const searchInput = document.getElementById('restaurantTableSearch');
     const resetBtn = document.getElementById('restaurantSearchReset');
     const rows = Array.from(document.querySelectorAll('.restaurant-row'));
@@ -30,6 +32,22 @@
     const countBadge = document.getElementById('restaurantCountBadge');
 
     if (!modal || !openBtn || !closeBtn || !cancelBtn || !backdrop || !form || !methodInput) return;
+
+    const syncTrialDays = () => {
+        const isTrial = statusInput?.value === 'trial';
+        trialDaysField?.classList.toggle('hidden', !isTrial);
+        if (trialDaysInput) {
+            trialDaysInput.disabled = !isTrial;
+            trialDaysInput.required = isTrial;
+        }
+    };
+    statusInput?.addEventListener('change', syncTrialDays);
+    planInput?.addEventListener('change', () => {
+        if (trialDaysInput && methodInput.disabled) {
+            trialDaysInput.value = planInput.selectedOptions[0]?.dataset.trialDays ?? '';
+        }
+    });
+    syncTrialDays();
 
     const normalizeStatusValue = (value) => {
         const raw = String(value || '').trim().toLowerCase();
@@ -69,6 +87,8 @@
         if (planInput) planInput.value = '';
         if (billingCycleInput) billingCycleInput.value = 'monthly';
         if (statusInput) statusInput.value = 'trial';
+        if (trialDaysInput) trialDaysInput.value = '';
+        syncTrialDays();
         if (branchLimitInput) branchLimitInput.value = '';
         if (addressInput) addressInput.value = '';
         if (slugInput) slugInput.value = '';
@@ -90,8 +110,10 @@
         if (planInput) planInput.value = data.planId || '';
         if (billingCycleInput) billingCycleInput.value = normalizeBillingCycleValue(data.billingCycle || 'monthly');
         if (statusInput) statusInput.value = normalizeStatusValue(data.statusKey || data.status || 'trial');
+        if (trialDaysInput) trialDaysInput.value = data.trialDays || planInput?.selectedOptions[0]?.dataset.trialDays || '';
+        syncTrialDays();
         if (branchLimitInput) branchLimitInput.value = '1';
-        if (addressInput) addressInput.value = '';
+        if (addressInput) addressInput.value = data.address || '';
 
         modalTitle.textContent = 'Edit Restaurant';
         modalSubtitle.textContent = 'Update tenant details';

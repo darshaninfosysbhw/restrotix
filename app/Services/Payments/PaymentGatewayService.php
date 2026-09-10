@@ -132,7 +132,7 @@ class PaymentGatewayService
                 ),
                 'subtotal' => (float) ($billData['subtotal'] ?? 0),
                 'discount_amount' => (float) ($order->discount_amount ?? 0),
-                'tax_rate' => (float) ($table->branch?->tax_rate ?? 0),
+                'tax_rate' => (float) ($table->branch?->effective_tax_rate ?? 0),
                 'tax_amount' => (float) ($billData['tax_amount'] ?? 0),
                 'grand_total' => (float) ($billData['grand_total'] ?? 0),
                 'status' => 'unpaid',
@@ -142,7 +142,7 @@ class PaymentGatewayService
         $invoice->update([
             'subtotal' => (float) ($billData['subtotal'] ?? 0),
             'discount_amount' => (float) ($order->discount_amount ?? 0),
-            'tax_rate' => (float) ($billData['tax_rate'] ?? ($table->branch?->tax_rate ?? 0)),
+            'tax_rate' => (float) ($billData['tax_rate'] ?? ($table->branch?->effective_tax_rate ?? 0)),
             'tax_amount' => (float) ($billData['tax_amount'] ?? 0),
             'grand_total' => (float) ($billData['grand_total'] ?? 0),
             'status' => $invoice->status === 'paid' ? 'paid' : 'unpaid',

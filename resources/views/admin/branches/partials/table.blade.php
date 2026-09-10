@@ -100,6 +100,8 @@
                                     'full-address' => $branch['full_address'] ?? '',
                                     'tax-setting' => $branch['tax_setting'] ?? 'exclusive',
                                     'tax-rate' => $branch['tax_rate'] ?? 5.0,
+                                    'is-vat-registered' => !empty($branch['is_vat_registered']) ? '1' : '0',
+                                    'pan-vat-number' => $branch['pan_vat_number'] ?? '',
                                     'offline-billing-enabled' => !empty($branch['offline_billing_enabled'])
                                         ? '1'
                                         : '0',

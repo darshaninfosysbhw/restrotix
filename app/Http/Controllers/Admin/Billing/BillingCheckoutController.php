@@ -594,11 +594,12 @@ class BillingCheckoutController extends Controller
             'due_amount' => $dueAmount,
             'amount_in_words' => $this->amountToWords($grandTotal, 'Nepalese Rupee', 'Nepalese Rupees'),
             'restaurant_name' => $restaurantName,
+            'is_vat_registered' => (bool) ($branch?->is_vat_registered ?? false),
+            'tax_registration' => (string) ($branch?->pan_vat_number ?? ''),
             'branch_name' => $branchName,
             'branch_address' => $branchAddress,
             'branch_contact' => $branchContact,
             'branch_email' => $branchEmail,
-            'tax_registration' => 'N/A',
             'payment_status' => $paymentStatusLabel,
             'notes_snapshot' => $notesSnapshot,
             'kot_no' => $kotNo,
@@ -921,7 +922,7 @@ class BillingCheckoutController extends Controller
         $branch = $table?->branch;
         $taxSetting = strtolower((string) ($branch?->tax_setting ?? ($fallback['tax_setting'] ?? 'exclusive')));
         $taxSetting = $taxSetting === 'inclusive' ? 'inclusive' : 'exclusive';
-        $taxRatePercent = max((float) ($branch?->tax_rate ?? ($fallback['tax_rate_snapshot'] ?? $fallback['tax_rate_percent'] ?? 0)), 0);
+        $taxRatePercent = max((float) ($branch?->effective_tax_rate ?? ($fallback['tax_rate_snapshot'] ?? $fallback['tax_rate_percent'] ?? 0)), 0);
         $taxRate = $taxRatePercent / 100;
         $taxLabel = $taxSetting === 'inclusive' || (float) $taxRatePercent === 13.0
             ? 'VAT'

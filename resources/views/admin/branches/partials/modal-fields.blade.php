@@ -65,6 +65,25 @@
         class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition">{{ old('full_address') }}</textarea>
 </div>
 
+<label class="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 mt-4 cursor-pointer">
+    <span class="text-xs font-medium text-white">VAT/Tax Registration</span>
+    <span class="relative inline-flex items-center">
+        <input type="hidden" name="is_vat_registered" value="0">
+        <input id="vatTaxRegistration" type="checkbox" name="is_vat_registered" value="1"
+            role="switch" aria-controls="branchTaxCalculation" class="sr-only peer"
+            {{ old('is_vat_registered') ? 'checked' : '' }}>
+        <span class="w-9 h-5 bg-gray-700 peer-focus-visible:ring-2 peer-focus-visible:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:!bg-orange-500"></span>
+    </span>
+</label>
+
+<div class="mt-4">
+    <label for="panVatNumber" class="block text-xs text-gray-400 mb-1.5 font-medium">PAN/VAT Number</label>
+    <input id="panVatNumber" type="text" name="pan_vat_number" maxlength="50"
+        value="{{ old('pan_vat_number') }}" placeholder="Enter PAN/VAT number"
+        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition">
+</div>
+
+<div id="branchTaxCalculation" class="{{ old('is_vat_registered') ? '' : 'hidden' }}">
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t border-gray-700 pt-4">
     <div>
         <label class="text-xs font-bold text-orange-400 uppercase tracking-wider block mb-1.5">Tax Calculation
@@ -89,6 +108,7 @@
 </div>
 <p class="text-[11px] text-gray-500 mt-1 md:col-span-2">Configure local compliance records globally (e.g., 5% GST for
     India, 13% VAT for Nepal).</p>
+</div>
 
 <div class="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 mt-4">
     <div class="flex items-center gap-3">

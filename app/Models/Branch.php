@@ -28,19 +28,27 @@ class Branch extends Model
         'latitude',
         'longitude',
         'offline_billing_enabled',
+        'is_vat_registered',
         'auto_accept_qr_orders',
         'tax_setting',
         'tax_rate',
+        'pan_vat_number',
         'branch_menu_theme',
     ];
 
     protected $casts = [
+        'is_vat_registered' => 'boolean',
         'offline_billing_enabled' => 'boolean',
         'auto_accept_qr_orders' => 'boolean',
         'tenant_id' => 'integer',
         'country_id' => 'integer',
         'currency_id' => 'integer',
     ];
+
+    public function getEffectiveTaxRateAttribute(): float
+    {
+        return $this->is_vat_registered ? max(0, (float) $this->tax_rate) : 0.0;
+    }
 
     // Relationships
     public function tenant()
