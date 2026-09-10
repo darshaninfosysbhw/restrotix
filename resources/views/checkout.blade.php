@@ -333,7 +333,8 @@
                         ...this.formData,
                         plan_id: this.plan_id,
                         billing_cycle: this.billingCycle,
-                        currency_id: '{{ session('currency_id') }}'
+                        currency_id: '{{ session('currency_id') }}',
+                         terms: this.agreed ? 1 : 0
                     })
                 });
     

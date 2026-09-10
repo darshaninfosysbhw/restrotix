@@ -114,8 +114,8 @@
     <footer class="p-6 flex flex-col md:flex-row justify-between items-center text-xs text-gray-500 gap-4">
         <div>© 2026 Restrotix </div>
         <div class="flex gap-6 uppercase tracking-wider">
-            <a href="#" class="hover:text-gray-800">Terms of Use</a>
-            <a href="#" class="hover:text-gray-800">Privacy Policy</a>
+            <a href="{{ route('policy.terms') }}" class="hover:text-gray-800">Terms of Use</a>
+            <a href="{{ route('policy.privacy') }}" class="hover:text-gray-800">Privacy Policy</a>
         </div>
     </footer>
 

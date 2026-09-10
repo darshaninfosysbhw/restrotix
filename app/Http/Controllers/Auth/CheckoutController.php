@@ -24,6 +24,9 @@ use App\Models\SubscriptionHistory;
 
 class CheckoutController extends Controller
 {
+    private const TERMS_VERSION = '2026-09-09';
+    private const PRIVACY_VERSION = '2026-09-09';
+
     public function index(Request $request)
     {
         $planSlug = $request->query('plan', 'base');
@@ -183,6 +186,7 @@ class CheckoutController extends Controller
                 'billing_cycle'   => 'nullable|in:monthly,yearly',
                 'pincode'         => 'nullable|string|max:10', // Field optional ho sakta hai
                 'currency_id' => 'nullable|exists:currencies,id',
+                'terms'            => 'required|accepted',
             ]);
 
             $verifiedEmail = $this->normalizeEmail((string) session('checkout_otp_verified_email', ''));
@@ -251,6 +255,14 @@ class CheckoutController extends Controller
                     'branch_id' => $branch->id,
                     'phone_number'     => $request->phone,
                     'role'      => 'admin',
+                    
+                    'email_verified_at' => now(),
+
+                    'terms_accepted_at'   => now(),
+                    'privacy_accepted_at' => now(),
+
+                    'terms_version'       => self::TERMS_VERSION,
+                    'privacy_version'     => self::PRIVACY_VERSION,
                 ]);
 
 

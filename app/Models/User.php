@@ -29,6 +29,13 @@ class User extends Authenticatable
         'tenant_id',
         'branch_id',
         'is_active',
+
+        'email_verified_at',
+
+        'terms_accepted_at',
+        'privacy_accepted_at',
+        'terms_version',
+        'privacy_version',
     ];
 
     /**
@@ -51,6 +58,10 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active'           => 'boolean',
+
+            'terms_accepted_at'   => 'datetime',
+            'privacy_accepted_at' => 'datetime',
         ];
     }
 

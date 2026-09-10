@@ -133,6 +133,14 @@ Route::get('/about', function () {
     return view('about');
 })->name('about');
 
+Route::get('/terms-and-conditions', function () {
+    return view('policy.terms');
+})->name('policy.terms');
+
+Route::get('/privacy-and-policy', function () {
+    return view('policy.privacy');
+})->name('policy.privacy');
+
 Route::get('/billing', function () {
     return 'Please contact Super Admin to manage your subscription and billing details.';
 })->name('admin.billing');

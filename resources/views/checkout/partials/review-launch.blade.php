@@ -35,8 +35,8 @@
     <div class="flex items-start gap-3 px-2">
         <input type="checkbox" id="terms" class="mt-1 w-4 h-4 accent-orange-600 cursor-pointer" x-model="agreed">
         <label for="terms" class="text-xs text-gray-500 leading-relaxed cursor-pointer">
-            I agree to the <a href="#" class="text-orange-600 underline">Terms of Use</a>
-            and <a href="#" class="text-orange-600 underline">Privacy Policy</a>.
+            I agree to the <a href="{{ route('policy.terms') }}" class="text-orange-600 underline">Terms of Use</a>
+            and <a href="{{ route('policy.privacy') }}" class="text-orange-600 underline">Privacy Policy</a>.
             No credit card required for trial. Enjoy full access!
         </label>
     </div>
