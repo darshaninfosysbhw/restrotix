@@ -26,9 +26,9 @@
         <label class="block text-xs text-gray-400 mb-1.5 font-medium">Country</label>
         <select id="countryCode" name="country_code"
             class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500 transition">
-            <option value="Ind" {{ old('country_code', 'Ind') === 'Ind' ? 'selected' : '' }}>India</option>
+            <!-- <option value="Ind" {{ old('country_code', 'Ind') === 'Ind' ? 'selected' : '' }}>India</option> -->
             <option value="Nep" {{ old('country_code') === 'Nep' ? 'selected' : '' }}>Nepal</option>
-            <option value="UAE" {{ old('country_code') === 'UAE' ? 'selected' : '' }}>UAE</option>
+            <!-- <option value="UAE" {{ old('country_code') === 'UAE' ? 'selected' : '' }}>UAE</option> -->
         </select>
     </div>
 
@@ -65,7 +65,7 @@
         class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-orange-500 transition">{{ old('full_address') }}</textarea>
 </div>
 
-<label class="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 mt-4 cursor-pointer">
+<!-- <label class="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 mt-4 cursor-pointer">
     <span class="text-xs font-medium text-white">VAT/Tax Registration</span>
     <span class="relative inline-flex items-center">
         <input type="hidden" name="is_vat_registered" value="0">
@@ -74,7 +74,7 @@
             {{ old('is_vat_registered') ? 'checked' : '' }}>
         <span class="w-9 h-5 bg-gray-700 peer-focus-visible:ring-2 peer-focus-visible:ring-orange-500 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:!bg-orange-500"></span>
     </span>
-</label>
+</label> -->
 
 <div class="mt-4">
     <label for="panVatNumber" class="block text-xs text-gray-400 mb-1.5 font-medium">PAN/VAT Number</label>
@@ -85,7 +85,7 @@
 
 <div id="branchTaxCalculation" class="{{ old('is_vat_registered') ? '' : 'hidden' }}">
 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t border-gray-700 pt-4">
-    <div>
+    <!-- <div>
         <label class="text-xs font-bold text-orange-400 uppercase tracking-wider block mb-1.5">Tax Calculation
             Mode</label>
         <select id="taxSetting" name="tax_setting"
@@ -97,17 +97,17 @@
                 Inclusive (Tax Included inside Menu Price)
             </option>
         </select>
-    </div>
-    <div>
+    </div> -->
+    <!-- <div>
         <label class="text-xs font-bold text-orange-400 uppercase tracking-wider block mb-1.5">Tax Percentage Rate
             (%)</label>
         <input id="taxRate" type="text" inputmode="decimal" name="tax_rate" value="{{ old('tax_rate', 5.0) }}"
             class="w-full bg-gray-900 border border-gray-700 rounded-xl p-3 text-sm text-white outline-none focus:border-orange-500 transition"
             placeholder="e.g. 5.00 or 13.00">
-    </div>
+    </div> -->
 </div>
-<p class="text-[11px] text-gray-500 mt-1 md:col-span-2">Configure local compliance records globally (e.g., 5% GST for
-    India, 13% VAT for Nepal).</p>
+<!-- <p class="text-[11px] text-gray-500 mt-1 md:col-span-2">Configure local compliance records globally (e.g., 5% GST for
+    India, 13% VAT for Nepal).</p> -->
 </div>
 
 <div class="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 mt-4">
