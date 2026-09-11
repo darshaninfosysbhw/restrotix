@@ -32,11 +32,13 @@ class OrderItem extends Model
         'rejection_reason',
         'kitchen_type',
         'preparation_time',
+        'estimated_preparation_minutes',
         'is_delayed',
         'priority'
     ];
 
     protected $casts = [
+        'estimated_preparation_minutes' => 'integer',
         'kot_number' => 'integer',
         'invoice_id' => 'integer',
         'applied_discount' => 'decimal:2',

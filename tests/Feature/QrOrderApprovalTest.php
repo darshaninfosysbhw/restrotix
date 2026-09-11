@@ -60,6 +60,8 @@ class QrOrderApprovalTest extends TestCase
             });
         }
         (require database_path('migrations/2026_09_07_140000_create_qr_order_submissions.php'))->up();
+        Schema::table('menu_items', fn (Blueprint $table) => $table->unsignedSmallInteger('preparation_time')->nullable());
+        Schema::table('order_items', fn (Blueprint $table) => $table->unsignedSmallInteger('estimated_preparation_minutes')->nullable());
         DB::table('branches')->insert(['id' => 1, 'tenant_id' => 1, 'branch_name' => 'Main', 'tax_setting' => 'exclusive', 'tax_rate' => 10]);
         DB::table('tables')->insert(['id' => 1, 'tenant_id' => 1, 'branch_id' => 1, 'table_number' => 'T-03', 'qr_token' => 'QR-TEST', 'status' => 'available', 'is_active' => '1']);
         DB::table('table_access_sessions')->insert(['id' => 1, 'tenant_id' => 1, 'branch_id' => 1, 'table_id' => 1, 'session_token' => 'session', 'status' => 'active', 'expires_at' => now()->addHour()]);
@@ -80,6 +82,16 @@ class QrOrderApprovalTest extends TestCase
         ], $extra));
 
         return app(OrderController::class)->store($request)->getData(true);
+    }
+
+    public function test_accepted_order_keeps_menu_preparation_estimate_snapshot(): void
+    {
+        DB::table('menu_items')->where('id', 1)->update(['preparation_time' => 20]);
+        $this->place();
+        app(QrOrderSubmissionService::class)->handle(QrOrderSubmission::first(), $this->staff(), true);
+        $this->assertSame(20, OrderItem::first()->estimated_preparation_minutes);
+        DB::table('menu_items')->where('id', 1)->update(['preparation_time' => 5]);
+        $this->assertSame(20, OrderItem::first()->fresh()->estimated_preparation_minutes);
     }
 
     private function staff(string $role = 'admin', int $branch = 1, int $tenant = 1): User

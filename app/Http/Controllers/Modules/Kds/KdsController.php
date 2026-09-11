@@ -72,7 +72,7 @@ class KdsController extends Controller
 
         $updateData = ['status' => $status];
 
-        if ($status === 'preparing') {
+        if ($status === 'preparing' && ! $item->started_at) {
             $updateData['started_at'] = now();
         }
 
@@ -150,6 +150,9 @@ class KdsController extends Controller
 
         DB::transaction(function () use ($order, $targetItems, $itemStatus) {
             foreach ($targetItems->whereNotIn('status', ['rejected']) as $item) {
+                if ($itemStatus === 'preparing' && in_array($item->status, ['ready', 'served'], true)) {
+                    continue;
+                }
                 $itemUpdates = ['status' => $itemStatus];
                 if ($itemStatus === 'ready' && ! $item->ready_at) {
                     $itemUpdates['ready_at'] = now();

@@ -509,6 +509,13 @@
 
                     <div class="flex flex-col gap-4 pt-4 border-t border-gray-700">
                         <div>
+                            <label for="item_preparation_time" class="block text-sm font-semibold text-gray-300 mb-2">Preparation Time in Minutes (Optional)</label>
+                            <input id="item_preparation_time" type="number" name="preparation_time" min="1" max="65535" step="1"
+                                placeholder="ex. 20" value="{{ old('preparation_time') }}"
+                                class="w-full border border-gray-700 bg-gray-900 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50">
+                            <p class="mt-1 text-xs text-gray-400">Estimated time to prepare this item. Leave blank if not set.</p>
+                        </div>
+                        <div>
                             <label class="block text-sm font-semibold text-gray-300 mb-2">Description (Optional)</label>
                             <textarea id="item_description" name="description" rows="2" placeholder="Tell something about this dish..."
                                 class="w-full border border-gray-700 bg-gray-900 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-orange-500/50">{{ old('description') }}</textarea>
@@ -594,6 +601,7 @@
             const basePriceInput = document.getElementById('item_base_price');
             const salePriceInput = document.getElementById('item_sale_price');
             const descriptionInput = document.getElementById('item_description');
+            const preparationTimeInput = document.getElementById('item_preparation_time');
             const isAvailableInput = document.getElementById('item_is_available');
             const isRecommendedInput = document.getElementById('item_is_recommended');
             const isActiveInput = document.getElementById('item_is_active');
@@ -752,6 +760,7 @@
                     if (basePriceInput) basePriceInput.value = item.base_price ?? '';
                     if (salePriceInput) salePriceInput.value = item.sale_price ?? '';
                     if (descriptionInput) descriptionInput.value = item.description || '';
+                    if (preparationTimeInput) preparationTimeInput.value = item.preparation_time ?? '';
                     if (isAvailableInput) isAvailableInput.checked = !!item.is_available;
                     if (isRecommendedInput) isRecommendedInput.checked = !!item.is_recommended;
                     if (isActiveInput) isActiveInput.checked = !!item.is_active;

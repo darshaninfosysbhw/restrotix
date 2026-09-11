@@ -100,6 +100,7 @@ class OrderStatusController extends Controller
             'branchTaxLabelName' => $pageData['branchTaxLabelName'],
             'showTaxAmount' => $pageData['showTaxAmount'],
             'kitchenStage' => $pageData['kitchenStage'],
+            'preparationTimer' => $pageData['snapshot']['preparation_timer'],
             'statusPill' => $pageData['statusPill'],
             'paymentFlow' => $paymentFlow,
             'publicMenuTheme' => $publicMenuTheme,

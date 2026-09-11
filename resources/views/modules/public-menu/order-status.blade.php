@@ -470,13 +470,13 @@
                     data-order-number="{{ $orderNumber }}" data-placed-at="{{ $orderPlacedAt }}"
                     data-kitchen-note="{{ $kitchenStage['note'] }}"
                     data-snapshot-url="{{ route('public.order.status', $qrToken) }}?snapshot=1"
-                    class="w-full overflow-hidden rounded-2xl border {{ $isLightTheme ? 'border-cyan-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 shadow-[0_12px_32px_rgba(15,23,42,0.08)]' : 'border-cyan-500/20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-[0_12px_32px_rgba(2,6,23,0.35)]' }} p-3 sm:p-5 mt-5">
-                    <div class="flex items-start justify-between gap-3">
+                    class="w-full overflow-hidden rounded-lg border {{ $isLightTheme ? 'border-cyan-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 shadow-sm' : 'border-cyan-500/20 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 shadow-lg' }} p-4 mt-5">
+                    <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0 pr-2">
-                            <p class="text-[10px] uppercase tracking-[0.3em] {{ $isLightTheme ? 'text-cyan-700/80' : 'text-cyan-300/80' }} font-semibold">
+                            <p class="text-[10px] uppercase tracking-[0.25em] {{ $isLightTheme ? 'text-cyan-700/80' : 'text-cyan-300/80' }} font-bold">
                                 Live Kitchen
                             </p>
-                            <h3 class="mt-1 text-base sm:text-xl font-extrabold tracking-tight {{ $isLightTheme ? 'text-slate-900' : 'text-white' }}">
+                            <h3 class="text-base font-extrabold tracking-tight {{ $isLightTheme ? 'text-slate-900' : 'text-white' }}">
                                 Order Progress
                             </h3>
                         </div>
@@ -488,58 +488,49 @@
                         </span>
                     </div>
 
-                    <div id="liveKitchenAlert"
-                        class="hidden mt-3 rounded-2xl border border-red-500/25 {{ $isLightTheme ? 'bg-red-50 text-red-700' : 'bg-red-500/10 text-red-100' }} p-3 sm:p-4">
-                        <div class="flex items-start gap-3">
-                            <div
-                                class="mt-0.5 flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-red-500/20 text-red-200">
-                                <i class="fas fa-triangle-exclamation"></i>
+                    <div id="preparationTimerCard" class="mt-3.5 rounded-lg border p-3 {{ $isLightTheme ? 'border-cyan-200/70 bg-white' : 'border-cyan-500/20 bg-slate-900/60' }}">
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex min-w-0 items-center gap-2.5">
+                                <i class="fas fa-stopwatch shrink-0 text-xl {{ $isLightTheme ? 'text-cyan-700' : 'text-cyan-400' }}" aria-hidden="true"></i>
+                                <div class="min-w-0">
+                                    <p id="preparationTimerLabel" class="text-[10px] uppercase font-bold tracking-wider {{ $isLightTheme ? 'text-cyan-800' : 'text-cyan-400' }}">Estimated Ready In</p>
+                                    <p id="preparationTimerValue" role="timer" aria-live="off" class="text-xl sm:text-2xl font-black tabular-nums tracking-tight break-words {{ $isLightTheme ? 'text-slate-900' : 'text-white' }}">{{ ($preparationTimer['estimated_minutes'] ?? null) ? $preparationTimer['estimated_minutes'] . ' min' : 'Waiting...' }}</p>
+                                </div>
                             </div>
-                            <div class="min-w-0">
-                                <p class="text-xs uppercase tracking-[0.25em] font-semibold {{ $isLightTheme ? 'text-red-500' : 'text-red-300' }}">Item Rejected
-                                </p>
+                            <span class="shrink-0 text-right text-[11px] font-semibold {{ $isLightTheme ? 'text-slate-500' : 'text-slate-400' }}">Freshly<br class="sm:hidden"> Cooked</span>
+                        </div>
+                        <p id="preparationTimerNote" hidden class="mt-2 text-[11px] leading-relaxed {{ $isLightTheme ? 'text-slate-500' : 'text-slate-400' }}"></p>
+                    </div>
+
+                    <div id="liveKitchenAlert"
+                        class="hidden mt-3 rounded-xl border border-red-500/25 {{ $isLightTheme ? 'bg-red-50 text-red-700' : 'bg-red-500/10 text-red-100' }} p-3">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fas fa-triangle-exclamation shrink-0 text-red-500 text-sm" aria-hidden="true"></i>
                                 <p id="liveKitchenAlertText"
-                                    class="mt-1 text-sm sm:text-base font-semibold leading-6 {{ $isLightTheme ? 'text-red-700' : 'text-red-50' }}">
+                                    class="text-xs font-semibold leading-tight">
                                     The kitchen cancelled one item in your order.
                                 </p>
-                            </div>
                         </div>
                     </div>
 
-                    <div class="mt-3 pb-3 border-b {{ $isLightTheme ? 'border-slate-200' : 'border-white/10' }}">
-                        <div class="flex items-center gap-2 min-w-0">
-                            <p class="text-[10px] uppercase tracking-[0.2em] {{ $isLightTheme ? 'text-slate-500' : 'text-gray-400' }} font-semibold flex-shrink-0">
-                                Order No</p>
-                            <p id="liveKitchenOrderNumber"
-                                class="text-sm sm:text-lg font-extrabold text-orange-400 truncate">
-                                {{ $orderNumber }}
-                            </p>
-                        </div>
-                        <p id="liveKitchenPlacedAt"
-                            class="mt-1 text-[10px] sm:text-xs font-semibold {{ $isLightTheme ? 'text-slate-500' : 'text-gray-400' }} truncate">
-                            {{ $orderPlacedAt }}
-                        </p>
-
-                    </div>
-
-                    <div class="mt-3 flex items-center gap-2">
+                    <div class="mt-4 flex items-center gap-1.5">
                         <div id="liveStepAccepted"
-                            class="status-step min-w-0 flex-1 rounded-2xl border px-2.5 py-2 text-center text-[10px] sm:text-xs font-bold transition">
+                            class="status-step min-w-0 flex-1 rounded-xl border py-1.5 text-center text-[10px] sm:text-xs font-bold transition">
                             Accepted
                         </div>
-                        <div id="liveStepLineAcceptedPreparing" class="status-connector flex-[0.55]"></div>
+                        <div id="liveStepLineAcceptedPreparing" class="status-connector flex-[0.4]"></div>
                         <div id="liveStepPreparing"
-                            class="status-step min-w-0 flex-1 rounded-2xl border px-2.5 py-2 text-center text-[10px] sm:text-xs font-bold transition">
+                            class="status-step min-w-0 flex-1 rounded-xl border py-1.5 text-center text-[10px] sm:text-xs font-bold transition">
                             Preparing
                         </div>
-                        <div id="liveStepLinePreparingServed" class="status-connector flex-[0.55]"></div>
+                        <div id="liveStepLinePreparingServed" class="status-connector flex-[0.4]"></div>
                         <div id="liveStepServed"
-                            class="status-step min-w-0 flex-1 rounded-2xl border px-2.5 py-2 text-center text-[10px] sm:text-xs font-bold transition">
+                            class="status-step min-w-0 flex-1 rounded-xl border py-1.5 text-center text-[10px] sm:text-xs font-bold transition">
                             Served
                         </div>
                     </div>
 
-                    <p id="liveKitchenNote" class="mt-3 text-xs sm:text-sm leading-5 sm:leading-6 {{ $isLightTheme ? 'text-slate-600' : 'text-gray-300' }}">
+                    <p id="liveKitchenNote" class="mt-2.5 text-center text-xs font-medium {{ $isLightTheme ? 'text-slate-500' : 'text-gray-400' }}">
                         {{ $kitchenStage['note'] }}
                     </p>
                 </div>
@@ -1052,7 +1043,7 @@
 
             if (stageBadge) {
                 stageBadge.className =
-                    'inline-flex flex-shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-bold';
+                    'inline-flex flex-shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold';
                 if (tone === 'cyan') {
                     stageBadge.classList.add('border-cyan-500/20', 'bg-cyan-500/10', 'text-cyan-300');
                 } else if (tone === 'orange') {
@@ -1513,8 +1504,57 @@
             if (headerItemCount) headerItemCount.textContent = String(totalQuantity);
         }
 
+        let preparationTimer = @json($preparationTimer);
+        let preparationTimerReceivedAt = performance.now();
+
+        function renderPreparationTimer() {
+            const timer = preparationTimer;
+            const card = document.getElementById('preparationTimerCard');
+            if (!card || !timer) return;
+            card.hidden = timer.state === 'unavailable';
+            const label = document.getElementById('preparationTimerLabel');
+            const value = document.getElementById('preparationTimerValue');
+            const note = document.getElementById('preparationTimerNote');
+            label.textContent = 'Estimated Ready In';
+            note.hidden = true;
+            if (timer.state === 'ready') {
+                value.textContent = 'Your order is ready';
+                note.textContent = 'All items have finished preparation.';
+                return;
+            }
+            const notes = [];
+            if (timer.state === 'preparing' && timer.ready_at) {
+                const elapsed = performance.now() - preparationTimerReceivedAt;
+                const remaining = Math.max(0, Math.ceil((Date.parse(timer.ready_at) - Date.parse(timer.server_now) - elapsed) / 1000));
+                label.textContent = timer.has_waiting_items || timer.has_unknown_time
+                    ? 'Preparing Items · Ready In' : 'Estimated Ready In';
+                value.textContent = remaining > 0
+                    ? `${String(Math.floor(remaining / 60)).padStart(2, '0')}:${String(remaining % 60).padStart(2, '0')}`
+                    : 'Taking a little longer';
+                notes.push(remaining > 0 ? 'The kitchen will confirm when your order is ready.' : 'Your food is still being prepared. Waiting for the kitchen update.');
+            } else if (timer.state === 'preparing') {
+                value.textContent = 'Preparation in progress';
+            } else {
+                value.textContent = timer.estimated_minutes ? `${timer.estimated_minutes} min` : 'Awaiting kitchen update';
+                notes.push('Countdown starts when the chef begins preparation.');
+            }
+            if (timer.has_waiting_items && timer.state === 'preparing') {
+                notes.push(timer.waiting_minutes
+                    ? `Some items have not started yet (up to ${timer.waiting_minutes} min preparation once started).`
+                    : 'Some items are still waiting for the chef to start.');
+            }
+            if (timer.has_unknown_time) notes.push('Preparation time is not set for some items.');
+            note.textContent = notes.join(' ');
+            note.hidden = !(timer.has_unknown_time || (timer.has_waiting_items && timer.state === 'preparing'));
+         }
+
         function applyOrderStatusSnapshot(snapshot) {
             if (!snapshot) return;
+            if (snapshot.preparation_timer) {
+                preparationTimer = snapshot.preparation_timer;
+                preparationTimerReceivedAt = performance.now();
+                renderPreparationTimer();
+            }
 
             const stage = snapshot.kitchen_stage || {};
             applyKitchenStage(stage.step, stage.label, stage.note);
@@ -1554,6 +1594,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            renderPreparationTimer();
+            setInterval(renderPreparationTimer, 1000);
             const totalToggle = document.getElementById('orderTotalToggle');
             const totalDetails = document.getElementById('orderTotalDetails');
             const totalChevron = document.getElementById('orderTotalChevron');
@@ -1638,6 +1680,7 @@
                         if (tableNum && tableNum !== currentTableNumber) {
                             return;
                         }
+                        syncOrderStatusSnapshot();
 
                         const kitchenStatus = String(payload.kitchen_status ?? payload.item_status ?? '')
                             .toLowerCase();

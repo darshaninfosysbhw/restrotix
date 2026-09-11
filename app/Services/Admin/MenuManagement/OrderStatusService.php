@@ -158,6 +158,7 @@ class OrderStatusService
             'order_number' => (string) ($order->order_number ?? ''),
             'order_status' => (string) ($order->status ?? 'running'),
             'kitchen_status' => $kitchenStatusKey,
+            'preparation_timer' => app(\App\Services\OrderPreparationTimerService::class)->build($order->items),
             'kitchen_stage' => $this->mapKitchenStage($kitchenStatusKey),
             'items' => $items->map(function (object $item) {
                 $rejectedAt = data_get($item, 'rejected_at');

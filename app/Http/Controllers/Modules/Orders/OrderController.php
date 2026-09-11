@@ -363,6 +363,9 @@ class OrderController extends Controller
                     }
 
                     $orderItem = OrderItem::create([
+                        'estimated_preparation_minutes' => $resolvedMenuItemId
+                            ? MenuItem::where('tenant_id', $order->tenant_id)->find($resolvedMenuItemId)?->preparation_time
+                            : null,
                         'order_id'             => $order->id,
                         'source'               => $itemSource !== '' ? $itemSource : 'manual',
                         'created_by'           => $itemCreatedBy,

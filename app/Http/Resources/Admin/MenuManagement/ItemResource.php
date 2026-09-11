@@ -15,6 +15,7 @@ class ItemResource extends JsonResource
             'code'           => $this->code,
             'slug'           => $this->slug,
             'description'    => $this->description,
+            'preparation_time' => $this->preparation_time,
             'image_url'      => $this->image ? asset('storage/' . $this->image) : asset('images/default-food.png'),
             'category_id'    => $this->category_id,
             'branch_id'      => $this->branch_id,

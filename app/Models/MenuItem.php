@@ -19,6 +19,7 @@ class MenuItem extends Model
         'slug',
         'code',
         'description',
+        'preparation_time',
         'image',
         'base_price',
         'sale_price',
@@ -32,6 +33,7 @@ class MenuItem extends Model
     ];
 
     protected $casts = [
+        'preparation_time' => 'integer',
         'base_price' => 'decimal:2',
         'sale_price' => 'decimal:2',
         'tax_percent' => 'decimal:2',
