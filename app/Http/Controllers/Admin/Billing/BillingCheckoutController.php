@@ -986,6 +986,7 @@ class BillingCheckoutController extends Controller
 
         return InvoiceNumberGenerator::generate(
             (int) $order->tenant_id,
+            (int) $order->branch_id,
             (string) data_get($table, 'tenant.company_name', ''),
             (string) data_get($table, 'branch.branch_name', ''),
             now((string) data_get($table, 'branch.timezone', config('app.timezone'))),

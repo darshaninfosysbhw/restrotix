@@ -125,6 +125,7 @@ class PaymentGatewayService
             [
                 'invoice_number' => InvoiceNumberGenerator::generate(
                     (int) $table->tenant_id,
+                     (int) $table->branch_id,
                     (string) data_get($table, 'tenant.company_name', ''),
                     (string) data_get($table, 'branch.branch_name', ''),
                     now((string) data_get($table, 'branch.timezone', config('app.timezone'))),
