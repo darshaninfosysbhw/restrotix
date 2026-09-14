@@ -141,7 +141,9 @@
             ->values();
 
         $tenantName = $tenant->company_name ?? 'Menu';
-        $tableLabel = $tableNumber && $tableNumber !== 'N/A' ? '#' . $tableNumber : 'N/A';
+        $tableLabel = ($tableDisplayNumber ?? $tableNumber) && ($tableDisplayNumber ?? $tableNumber) !== 'N/A'
+            ? '#' . ($tableDisplayNumber ?? $tableNumber)
+            : 'N/A';
         $resolvedTableId = isset($tableId) && $tableId ? (int) $tableId : null;
         $headerClass = $isLightTheme ? 'bg-white/95 border-slate-200' : 'bg-gray-900/80 border-gray-700';
         $callWaiterClass = $isLightTheme

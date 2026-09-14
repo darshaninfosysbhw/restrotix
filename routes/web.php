@@ -38,6 +38,8 @@ use App\Http\Controllers\SuperAdmin\SuperAdminProfileController;
 use App\Http\Controllers\SuperAdmin\TenantController;
 use App\Http\Controllers\Waiter\KitchenPickupAlertController;
 use App\Models\KotPrintLog;
+use App\Http\Controllers\Modules\Table\AreaController;
+
 // -------------------------Modules Controllers----------------------
 use App\Models\Order;
 use Illuminate\Support\Facades\Route;
@@ -77,9 +79,14 @@ Route::view('/ui/order-flow', 'core.components.order-flow.index')
 Route::get('/admin/get-table-orders/{table_number}', function ($tableNumber) {
     $tenantId = auth()->user()->tenant_id;
     $requestedBranchId = (int) session('active_branch_id', auth()->user()->branch_id ?? 0) ?: null;
+    $tableId = request()->integer('table_id') ?: null;
 
     $ordersQuery = Order::where('tenant_id', $tenantId)
-        ->where('table_number', $tableNumber)
+        ->when(
+            $tableId,
+            fn ($query) => $query->where('table_id', $tableId),
+            fn ($query) => $query->where('table_number', $tableNumber)
+        )
         // Active table drawer should show currently running orders
         ->where('status', 'running')
         ->when($requestedBranchId, function ($query) use ($requestedBranchId) {
@@ -93,7 +100,11 @@ Route::get('/admin/get-table-orders/{table_number}', function ($tableNumber) {
     $kotPrintCounts = KotPrintLog::query()
         ->selectRaw('kot_number, COUNT(*) as print_count, MAX(created_at) as last_printed_at')
         ->where('tenant_id', $tenantId)
-        ->where('table_number', $tableNumber)
+        ->when(
+            $tableId,
+            fn ($query) => $query->where('table_id', $tableId),
+            fn ($query) => $query->where('table_number', $tableNumber)
+        )
         ->when($requestedBranchId, function ($query) use ($requestedBranchId) {
             $query->where('branch_id', $requestedBranchId);
         })
@@ -283,6 +294,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/billing/checkout', [BillingCheckoutController::class, 'store'])->name('admin.billing.checkout.store');
         Route::post('/billing/estimate/pdf', [BillingCheckoutController::class, 'estimatePdf'])->name('admin.billing.estimate.pdf');
 
+        // Area
+        Route::get('areas', [AreaController::class, 'index'])->name('admin.areas.index');
+        Route::post('areas', [AreaController::class, 'store'])->name('admin.areas.store');
+        Route::match(['put', 'patch'], 'areas/{area}', [AreaController::class, 'update'])->name('admin.areas.update');
+        Route::delete('areas/{area}', [AreaController::class, 'destroy'])->name('admin.areas.destroy');
+        Route::patch('areas/{area}/toggle-status', [AreaController::class, 'toggleStatus'])->name('admin.areas.toggle-status');
+
         // Route::middleware(['role:admin,manager,sales_manager'])->prefix('billing')->group(function () {
         //     Route::get('/preview', function () {
         //         return view('modules.billing.pos');
@@ -323,7 +341,7 @@ Route::middleware(['auth'])->group(function () {
                 return view('modules.accounts.ledger');
             })->name('accounts.ledger');
         });
-
+        
         // D. Marketing
         Route::middleware(['role:admin,sales_manager', 'check.service:marketing'])->prefix('marketing')->group(function () {
             Route::get('/', function () {
@@ -395,6 +413,13 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/billing/drafts/{table}', [BillingDraftController::class, 'destroy'])->name('billing.drafts.destroy');
         Route::post('/billing/checkout', [BillingCheckoutController::class, 'store'])->name('billing.checkout.store');
         Route::post('/billing/estimate/pdf', [BillingCheckoutController::class, 'estimatePdf'])->name('billing.estimate.pdf');
+
+          // Area
+        Route::get('areas', [AreaController::class, 'index'])->name('areas.index');
+        Route::post('areas', [AreaController::class, 'store'])->name('areas.store');
+        Route::match(['put', 'patch'], 'areas/{area}', [AreaController::class, 'update'])->name('areas.update');
+        Route::delete('areas/{area}', [AreaController::class, 'destroy'])->name('areas.destroy');
+        Route::patch('areas/{area}/toggle-status', [AreaController::class, 'toggleStatus'])->name('areas.toggle-status');
 
     });
 

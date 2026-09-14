@@ -33,6 +33,7 @@
         </div>
 
         @include('modules.table.components.stats')
+        @include('modules.table.components.area-filter')
 
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
             @include('modules.table.components.table-card')
@@ -40,4 +41,5 @@
     </div>
 
     @include('modules.table.components.qr-modal')
+    @include('modules.table.admin.areas.partials.modal')
 @endsection

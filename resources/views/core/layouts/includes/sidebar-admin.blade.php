@@ -78,14 +78,14 @@
             @endphp
 
             <a href="{{ route($panelPrefix . '.dashboard') }}"
-                class="sidebar-item {{ request()->routeIs('*.dashboard') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+                class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm bg-orange-50 dark:bg-gray-700 transition-colors duration-200 {{ request()->routeIs( '*.dashboard') ? 'active' : '' }}">
                 <i class="fas fa-tachometer-alt w-5 mr-3"></i>
                 <span class="sidebar-label-text">Dashboard</span>
             </a>
 
             @if ($userRole == 'admin' || $userRole == 'superadmin')
                 <a href="{{ route('admin.branches.index') }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm text-gray-300 hover:text-orange-500 transition-colors duration-200 {{ request()->routeIs($panelPrefix . '.branches.*') ? 'active' : '' }}">
                     <i class="fas fa-store w-5 mr-3"></i>
                     <span class="sidebar-label-text">All Branches</span>
                 </a>
@@ -95,55 +95,104 @@
 
             @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'manager')
                 <a href="{{ route($panelPrefix . '.employee.index') }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm transition-colors duration-200 {{ request()->routeIs($panelPrefix . '.employee.*') ? 'active' : '' }}">
                     <i class="fas fa-store w-5 mr-3"></i>
                     <span class="sidebar-label-text">Employee</span>
                 </a>
             @endif
 
             {{-- ===========================This Step taken for fast work ======================================== --}}
+            
+                <a href="{{ route($panelPrefix . '.areas.index') }}" 
+                   class="sidebar-item flex items-center gap-3 px-3 py-3 rounded-sm text-sm font-medium transition-colors duration-200 {{ request()->routeIs($panelPrefix . '.areas.*') ? 'active' : '' }}">
+                    <!-- Floor/Grid Icon -->
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <span class="sidebar-label-text">Areas / Floors</span>
+                </a>
+           
             {{-- // tabel (is not final) --}}
 
             @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter' || $userRole == 'manager')
                 <a href="{{ route($panelPrefix . '.tables.index') }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm text-gray-300 transition-colors duration-200 {{ request()->routeIs($panelPrefix . '.tables.*') ? 'active' : '' }}">
                     <i class="fas fa-chair w-5 mr-3"></i>
                     <span class="sidebar-label-text">Table</span>
                 </a>
             @endif
 
-            @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter'|| $userRole == 'manager')
-                <div class="dropdown-container">
-                    <button
-                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all">
-                        <div class="flex items-center">
-                            <i class="fas fa-chart-pie w-5 mr-3"></i>
-                            <span class="sidebar-label-text">Menu Mangement</span>
-                        </div>
-                        <div class="flex items-center sidebar-label-text">
-                            <i
-                                class="fas fa-chevron-right text-[10px] transition-transform duration-200 trigger-arrow"></i>
-                        </div>
-                    </button>
-                    <div class="dropdown-menu hidden pl-12 space-y-1">
+    
 
-                        <a href="{{ route($panelPrefix . '.menu.categories.index') }}"
-                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Categories</a>
+        @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'waiter' || $userRole == 'manager')
 
-                        <a href="{{ route($panelPrefix . '.menu.items') }}"
-                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
-                            Items</a>
+            @php
+                $isMenuActive = request()->routeIs($panelPrefix . '.menu.*');
+            @endphp
 
-                        <!-- <a href="{{ route($panelPrefix . '.menu.preview') }}"
-                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors">Menu
-                            Preview</a> -->
-                    </div>
+            <div class="dropdown-container">
+
+                <button
+                    type="button"
+                     class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-sm focus:outline-none transition-colors duration-200
+                     {{ $isMenuActive ? 'active' : '' }}">
+            
+                     <div class="flex items-center">
+                         <i class="fas fa-chart-pie w-5 mr-3"></i>
+
+                           <span class="sidebar-label-text">
+                             Menu Management
+                        </span>
+                     </div>
+
+                     <div class="flex items-center sidebar-label-text">
+                         <i
+                             class="fas fa-chevron-right text-[10px] transition-transform duration-200 trigger-arrow
+                             {{ $isMenuActive ? 'rotate-90' : '' }}">
+                        </i>
+                     </div>
+                 </button>
+
+                <div
+                    class="dropdown-menu pl-12 space-y-1
+                    {{ $isMenuActive ? '' : 'hidden' }}">
+
+                     <a
+                         href="{{ route($panelPrefix . '.menu.categories.index') }}"
+                        class="block py-2 text-sm transition-colors duration-200
+                        {{ request()->routeIs($panelPrefix . '.menu.categories.*')
+                              ? 'text-orange-500 font-medium'
+                              : 'text-gray-400 hover:text-orange-500' }}">
+                         Categories
+                     </a>
+
+                     <a
+                          href="{{ route($panelPrefix . '.menu.items') }}"
+                          class="block py-2 text-sm transition-colors duration-200
+                          {{ request()->routeIs($panelPrefix . '.menu.items*')
+                               ? 'text-orange-500 font-medium'
+                               : 'text-gray-400 hover:text-orange-500' }}">
+                           Menu Items
+                     </a>
+
+                    {{-- Future --}}
+                    {{--
+                     <a
+                           href="{{ route($panelPrefix . '.menu.preview') }}"
+                           class="block py-2 text-sm transition-colors duration-200
+                           {{ request()->routeIs($panelPrefix . '.menu.preview*')
+                            ? 'text-orange-500 font-medium'
+                            : 'text-gray-400 hover:text-orange-500' }}">
+                         Menu Preview
+                     </a>
+                    --}}
                 </div>
-            @endif
+            </div>
+        @endif
 
             @if ($userRole == 'admin' || $userRole == 'superadmin' || $userRole == 'chef'|| $userRole == 'manager')
                 <a href="{{ route($panelPrefix . '.kds.index') }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg text-gray-300 hover:text-orange-500">
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm text-gray-300 hover:text-orange-500 transition-colors duration-200 {{ request()->routeIs($panelPrefix . '.kds.*') ? 'active' : '' }}">
                     <i class="fas fa-utensils w-5 mr-3"></i>
                     <span class="sidebar-label-text">Kitchen Orders (KDS)</span>
                 </a>
@@ -151,7 +200,7 @@
 
             @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
                 <a href="{{ route($panelPrefix . '.orders.history') }}"
-                    class="sidebar-item {{ request()->routeIs('*.orders.history') ? 'active text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }} flex items-center px-4 py-3 text-sm font-medium rounded-lg">
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm transition-colors duration-200 {{ request()->routeIs($panelPrefix . '.orders.*') ? 'active' : '' }}">
                     <i class="fas fa-clock-rotate-left w-5 mr-3"></i>
                     <span class="sidebar-label-text">Order History</span>
                 </a>
@@ -182,7 +231,7 @@
             {{-- @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
                @php $isInventoryActive = in_array('table', $services); @endphp
                <a href="{{ $isBillingActive ? route('table.index') : 'javascript:void(0)' }}"
-                   class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                   class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
                    onclick="{{ !$isInventoryActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
                    <i class="fas fa-chair w-5 mr-3"></i>
                    <span class="sidebar-label-text">Table</span>
@@ -198,7 +247,7 @@
             <!--@if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
                 @php $isBillingActive = in_array('billing', $services); @endphp
                 <a href="{{ $isBillingActive ? route('billing.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
                     onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
                     <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
                     <span class="sidebar-label-text">Billing System</span>
@@ -211,7 +260,7 @@
             <!-- @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
                 @php $isBillingActive = in_array('membership-card', $services); @endphp
                 <a href="{{ $isBillingActive ? route('membership-card.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
                     onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
                     <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
                     <span class="sidebar-label-text">Membership Card</span>
@@ -224,7 +273,7 @@
             <!-- @if (in_array($userRole, ['admin', 'manager', 'sales_manager', 'superadmin']))
                 @php $isBillingActive = in_array('membership-card', $services); @endphp
                 <a href="{{ $isBillingActive ? route('membership-card.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm {{ $isBillingActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
                     onclick="{{ !$isBillingActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
                     <i class="fas fa-file-invoice-dollar w-5 mr-3"></i>
                     <span class="sidebar-label-text">RestroTix Promotion</span>
@@ -239,7 +288,7 @@
                 @php $isAccountActive = in_array('accounts', $services); @endphp
                 <div class="dropdown-container">
                     <button
-                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg {{ $isAccountActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }} focus:outline-none transition-all">
+                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-sm {{ $isAccountActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }} focus:outline-none transition-all">
                         <div class="flex items-center">
                             <i class="fas fa-chart-pie w-5 "></i>
                             <span class="sidebar-label-text">RestroTix Promotion</span>
@@ -268,7 +317,7 @@
             <!-- @if (in_array($userRole, ['admin', 'manager', 'purchase_manager', 'superadmin']))
                 @php $isInventoryActive = in_array('inventory', $services); @endphp
                 <a href="{{ $isInventoryActive ? route('marketplace.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
                     onclick="{{ !$isInventoryActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
                     <i class="fas fa-boxes w-5 mr-3"></i>
                     <span class="sidebar-label-text">Inventory Management</span>
@@ -281,7 +330,7 @@
             <!-- @if (in_array($userRole, ['admin', 'manager', 'purchase_manager', 'superadmin']))
                 @php $isMarketActive = in_array('marketplace', $services); @endphp
                 <a href="{{ $isMarketActive ? route('marketplace.index') : 'javascript:void(0)' }}"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isMarketActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm {{ $isMarketActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
                     onclick="{{ !$isMarketActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
                     <i class="fas fa-shopping-cart w-5 mr-3"></i>
                     <span class="sidebar-label-text">Marketplace</span>
@@ -294,7 +343,7 @@
             <!-- @if (in_array($userRole, ['admin', 'manager', 'chef', 'superadmin']))
                 @php $isInventoryActive = in_array('inventory', $services); @endphp
                 <a href="#"
-                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-lg {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
+                    class="sidebar-item flex items-center px-4 py-3 text-sm font-medium rounded-sm {{ $isInventoryActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }}"
                     onclick="{{ !$isInventoryActive ? "alert('यह सर्विस आपके प्लान में नहीं है। कृपया एडन (Add-on) खरीदें।')" : '' }}">
                     <i class="fas fa-utensils w-5 mr-3"></i>
                     <span class="sidebar-label-text">Kitchen Orders (KDS)</span>
@@ -310,7 +359,7 @@
                 @php $isAccountActive = in_array('accounts', $services); @endphp
                 <div class="dropdown-container">
                     <button
-                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg {{ $isAccountActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }} focus:outline-none transition-all">
+                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-sm {{ $isAccountActive ? 'text-gray-300 hover:text-orange-500' : 'text-gray-500 opacity-60 italic' }} focus:outline-none transition-all">
                         <div class="flex items-center">
                             <i class="fas fa-chart-pie w-5 mr-3"></i>
                             <span class="sidebar-label-text">Financial Reports</span>
@@ -335,32 +384,75 @@
             @endif -->
 
             @if (in_array($userRole, ['admin', 'manager', 'superadmin']))
+
+                @php
+                    $isSettingsActive = request()->routeIs(
+                        'admin.settings.*',
+                        'admin.branches.payment-gateways*'
+                    );
+                @endphp
+
                 <div class="dropdown-container">
+
                     <button
-                        class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg focus:outline-none transition-all {{ request()->routeIs('admin.settings.*', 'admin.branches.payment-gateways*') ? 'text-orange-500 bg-gray-700/50' : 'text-gray-300 hover:text-orange-500' }}">
-                        <div class="flex items-center">
-                            <i class="fas fa-cog w-5 mr-3"></i>
-                            <span class="sidebar-label-text">Settings</span>
-                        </div>
-                        <div class="flex items-center sidebar-label-text">
-                            <i
-                                class="fas fa-chevron-right text-[10px] transition-transform duration-200 trigger-arrow"></i>
-                        </div>
+                       type="button"
+                       class="dropdown-trigger sidebar-item w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-sm focus:outline-none transition-colors duration-200
+                       {{ $isSettingsActive ? 'active' : '' }}">
+
+                       <div class="flex items-center">
+                           <i class="fas fa-cog w-5 mr-3"></i>
+                           <span class="sidebar-label-text">Settings</span>
+                       </div>
+
+                      <div class="flex items-center sidebar-label-text">
+                           <i
+                               class="fas fa-chevron-right text-[10px] transition-transform duration-200 trigger-arrow
+                               {{ $isSettingsActive ? 'rotate-90' : '' }}">
+                           </i>
+                       </div>
                     </button>
-                    <div class="dropdown-menu hidden pl-12 space-y-1">
+
+                    <div
+                        class="dropdown-menu pl-12 space-y-1
+                        {{ $isSettingsActive ? '' : 'hidden' }}">
+
+                        {{-- QR Order Settings --}}
                         @if (in_array($userRole, ['admin', 'manager']))
-                            <a href="{{ route('admin.settings.qr-orders.index') }}"
-                                class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.settings.qr-orders.*') ? 'text-orange-500' : '' }}">QR Order Settings</a>
+                           <a
+                               href="{{ route('admin.settings.qr-orders.index') }}"
+                               class="block py-2 text-sm transition-colors duration-200
+                               {{ request()->routeIs('admin.settings.qr-orders.*')
+                                   ? 'text-orange-500 font-medium'
+                                   : 'text-gray-400 hover:text-orange-500' }}">
+
+                               QR Order Settings
+                           </a>
                         @endif
+
+
+                        {{-- Admin / Superadmin Settings --}}
                         @if ($userRole !== 'manager')
-                        <a href="{{ route('admin.settings.menu.index') }}"
-                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.settings.menu.*') ? 'text-orange-500' : '' }}">
-                            Menu Settings
-                        </a>
-                        <a href="{{ route('admin.branches.payment-gateways') }}"
-                            class="block py-2 text-sm text-gray-400 hover:text-orange-500 transition-colors {{ request()->routeIs('admin.branches.payment-gateways*') ? 'text-orange-500' : '' }}">
-                            Payment Settings
-                        </a>
+
+                            <a
+                                href="{{ route('admin.settings.menu.index') }}"
+                                class="block py-2 text-sm transition-colors duration-200
+                                {{ request()->routeIs('admin.settings.menu.*')
+                                    ? 'text-orange-500 font-medium'
+                                    : 'text-gray-400 hover:text-orange-500' }}">
+
+                                Menu Settings
+                            </a>
+
+
+                            <a
+                                href="{{ route('admin.branches.payment-gateways') }}"
+                                class="block py-2 text-sm transition-colors duration-200
+                                {{ request()->routeIs('admin.branches.payment-gateways*')
+                                    ? 'text-orange-500 font-medium'
+                                    : 'text-gray-400 hover:text-orange-500' }}">
+
+                                Payment Settings
+                            </a>
                         @endif
                     </div>
                 </div>

@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Events\KitchenPickupAlertUpdated;
 use App\Models\KitchenPickupAlert;
 use App\Models\Order;
+use App\Models\TableServiceRequest;
 
 class KitchenPickupAlertService
 {
@@ -84,7 +85,7 @@ class KitchenPickupAlertService
 
     public function payload(KitchenPickupAlert $alert): array
     {
-        $alert->loadMissing(['order.items', 'acceptedBy:id,name']);
+        $alert->loadMissing(['order.table.area', 'order.items', 'acceptedBy:id,name']);
         $items = $alert->order->items
             ->where('kot_number', $alert->kot_number)
             ->where('status', '!=', 'rejected')
@@ -95,7 +96,8 @@ class KitchenPickupAlertService
             'branch_id' => (int) $alert->branch_id,
             'order_id' => (int) $alert->order_id,
             'table_id' => $alert->table_id ? (int) $alert->table_id : null,
-            'table_number' => (string) ($alert->order->table_number ?? ''),
+            'assigned_waiter_id' => $this->assignedWaiterIdForTable($alert->table_id),
+            'table_number' => (string) ($alert->order->table?->display_number ?? $alert->order->table_number ?? ''),
             'kot_number' => (int) $alert->kot_number,
             'status' => (string) $alert->status,
             'ready_at' => optional($alert->ready_at)->toIso8601String(),
@@ -107,5 +109,22 @@ class KitchenPickupAlertService
                 'quantity' => (int) $item->quantity,
             ])->all(),
         ];
+    }
+
+    public function assignedWaiterIdForTable(?int $tableId): ?int
+    {
+        if (! $tableId) {
+            return null;
+        }
+
+        $waiterId = TableServiceRequest::query()
+            ->where('table_id', $tableId)
+            ->where('type', 'table_transfer')
+            ->where('status', 'accepted')
+            ->latest('accepted_at')
+            ->latest('id')
+            ->value('target_waiter_id');
+
+        return $waiterId ? (int) $waiterId : null;
     }
 }

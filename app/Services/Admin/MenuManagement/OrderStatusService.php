@@ -16,7 +16,7 @@ class OrderStatusService
     public function resolveContext(string $qrToken): array
     {
         $table = Table::query()
-            ->with('branch')
+            ->with(['branch', 'area'])
             ->where('qr_token', $qrToken)
             ->where('is_active', true)
             ->firstOrFail();
@@ -77,7 +77,7 @@ class OrderStatusService
             'showOrderPlaced' => $showOrderPlaced,
             'orderNumber' => (string) ($order->order_number ?? 'N/A'),
             'orderPlacedAt' => optional($order->created_at)->format('d M Y, h:i A') ?? 'N/A',
-            'tableNumber' => (string) ($table->table_number ?? 'N/A'),
+            'tableNumber' => $table->display_number,
             'qrToken' => (string) ($table->qr_token ?? ''),
             'liveItems' => $this->countTotalQuantity($orderItems),
             'runningCount' => $this->countItemsByStatuses($orderItems, ['new', 'pending', 'preparing']),
@@ -154,7 +154,7 @@ class OrderStatusService
         $items = $this->consolidateOrderItems($order->items ?? collect());
 
         return [
-            'table_number' => (string) ($table->table_number ?? ''),
+            'table_number' => $table->display_number,
             'order_number' => (string) ($order->order_number ?? ''),
             'order_status' => (string) ($order->status ?? 'running'),
             'kitchen_status' => $kitchenStatusKey,

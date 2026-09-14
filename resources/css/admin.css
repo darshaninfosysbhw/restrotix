@@ -28,13 +28,25 @@ body {
 .table-alert-pill[aria-busy="true"] .alert-spinner { display: inline-block; }
 
 .sidebar-item {
-    transition: all 0.2s;
+    color: #d1d5db;
+
+    transition:
+        background-color 0.2s ease,
+        color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.sidebar-item:hover,
+/* Normal hover */
+.sidebar-item:hover {
+    background-color: #263244;
+    color: #f97316;
+}
+
+/* Current / Selected menu */
 .sidebar-item.active {
-    background: rgba(255, 107, 53, 0.2);
-    color: #ff6b35;
+    background-color: #2b3648;
+    color: #f97316;
+    box-shadow: inset 3px 0 0 #f97316;
 }
 
 .card-hover {
@@ -144,14 +156,22 @@ body.light-theme [data-branch-menu] [data-branch-option].bg-orange-500\/10 {
     color: #c2410c;
 }
 
+
 body.light-theme .sidebar-item {
     color: #374151;
 }
 
-body.light-theme .sidebar-item:hover,
+/* Normal hover */
+body.light-theme .sidebar-item:hover {
+    background-color: #f3f4f6;
+    color: #ea580c;
+}
+
+/* Current / Selected menu */
 body.light-theme .sidebar-item.active {
-    background: rgba(255, 107, 53, 0.15);
-    color: #ff6b35;
+    background-color: #fff7ed;
+    color: #ea580c;
+    box-shadow: inset 3px 0 0 #f97316;
 }
 
 body.light-theme .bg-gray-700.rounded-lg {

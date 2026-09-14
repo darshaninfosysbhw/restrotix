@@ -5,8 +5,11 @@
 
     <div class="flex-1 overflow-y-auto p-5 bg-gray-900 space-y-3">
 
-        <div class ="pb-3">
-            @include('modules.table.components.stats')
+       
+        @include('modules.table.components.stats')
+      
+        <div class="pb-2">
+            @include('modules.table.components.area-filter')
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">

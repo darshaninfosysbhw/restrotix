@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\KotPrintLog;
 use App\Models\Order;
 use App\Models\Table;
+use App\Models\Area;
 use App\Models\TableServiceRequest;
 use App\Models\User;
 use App\Models\Branch;
@@ -61,7 +62,7 @@ class TableController extends Controller
 
         $tableModels = Table::where('tenant_id', $tenantId)
             ->where('branch_id', $activeBranchId)
-            ->with(['branch', 'orders' => function ($q) {
+            ->with(['branch', 'area', 'orders' => function ($q) {
                 // Sirf wo orders jo abhi tak finish nahi huye
                 // $q->whereIn('status', ['pending', 'preparing', 'ready', 'served'])
                 $q->where('status', 'running')
@@ -80,7 +81,7 @@ class TableController extends Controller
                             ->where('requested_at', '>=', now()->subMinutes(2));
                     });
             })
-            ->with(['targetWaiter:id,name', 'table:id,table_number', 'handledByWaiter:id,name'])
+            ->with(['targetWaiter:id,name', 'table:id,area_id,table_number', 'table.area:id,code', 'handledByWaiter:id,name'])
             ->latest('requested_at')
             ->get()
             ->unique('table_id')
@@ -91,6 +92,13 @@ class TableController extends Controller
             $table->setAttribute('transfer_state', $transfer ? $this->transferPayload($transfer) : null);
         });
 
+         $areas = Area::query()
+        ->where('tenant_id', $tenantId)
+        ->where('branch_id', $activeBranchId)
+        ->where('is_active', true)
+        ->orderBy('name')
+        ->get();
+
 
         // 🔥 CHANGE: resource applied
         $data = [
@@ -98,6 +106,7 @@ class TableController extends Controller
             'branches' => $branches,
             'stats' => $stats,
             'activeWaiters' => $activeWaiters,
+            'areas' => $areas,
         ];
         if ($user->role === 'waiter') {
             return view('modules.table.waiter.index', $data);
@@ -136,6 +145,7 @@ class TableController extends Controller
             }
 
             return [
+                'table_id' => (int) $table->id,
                 'table_number' => (string) $table->table_number,
                 'status' => $status,
                 'is_calling_waiter' => (bool) $table->is_calling_waiter,
@@ -191,7 +201,7 @@ class TableController extends Controller
         ]);
 
         broadcast(new TableTransferRequestUpdated($this->transferPayload(
-            $transfer->load(['table', 'handledByWaiter', 'targetWaiter'])
+            $transfer->load(['table.area', 'handledByWaiter', 'targetWaiter'])
         )));
 
         return response()->json([
@@ -211,7 +221,7 @@ class TableController extends Controller
             ->where('target_waiter_id', $user->id)
             ->where('status', 'pending')
             ->where('requested_at', '>=', now()->subMinutes(2))
-            ->with(['table:id,table_number', 'handledByWaiter:id,name'])
+            ->with(['table:id,area_id,table_number', 'table.area:id,code', 'handledByWaiter:id,name'])
             ->latest('requested_at')
             ->get()
             ->map(fn ($transfer) => $this->transferPayload($transfer));
@@ -274,7 +284,7 @@ class TableController extends Controller
 
         $transfer->refresh();
         broadcast(new TableTransferRequestUpdated($this->transferPayload(
-            $transfer->load(['table', 'handledByWaiter', 'targetWaiter'])
+            $transfer->load(['table.area', 'handledByWaiter', 'targetWaiter'])
         )));
 
         return response()->json(['message' => $validated['decision'] === 'accepted'
@@ -288,7 +298,7 @@ class TableController extends Controller
             'id' => $transfer->id,
             'branch_id' => $transfer->branch_id,
             'table_id' => $transfer->table_id,
-            'table_number' => $transfer->table?->table_number,
+            'table_number' => $transfer->table?->display_number,
             'from_waiter' => $transfer->handledByWaiter?->name ?? 'Unknown waiter',
             'handled_by_waiter_id' => $transfer->handled_by_waiter_id,
             'target_waiter_id' => $transfer->target_waiter_id,
@@ -417,6 +427,7 @@ class TableController extends Controller
         $requestedKotNumber = $request->filled('kot_number') ? (int) $request->query('kot_number') : null;
         $requestedBranchId = $request->filled('branch_id') ? (int) $request->query('branch_id') : null;
         $tableNumber = trim((string) $table_number);
+        $resolvedTableId = null;
         $ordersQuery = Order::query()
             ->where('tenant_id', $tenantId)
             ->with(['items.orderItemAddons.masterAddon', 'items.creator', 'creator']);
@@ -427,6 +438,7 @@ class TableController extends Controller
                 ->firstOrFail();
 
             $tableNumber = trim((string) ($primaryOrder->table_number ?? $tableNumber));
+            $resolvedTableId = $primaryOrder->table_id ? (int) $primaryOrder->table_id : null;
             $orders = collect([$primaryOrder]);
         } else {
             $orders = (clone $ordersQuery)
@@ -470,9 +482,13 @@ class TableController extends Controller
         }
 
         $table = Table::query()
-            ->with(['branch', 'tenant'])
+            ->with(['branch', 'tenant', 'area'])
             ->where('tenant_id', $tenantId)
-            ->where('table_number', $tableNumber)
+            ->when(
+                $resolvedTableId,
+                fn ($query) => $query->whereKey($resolvedTableId),
+                fn ($query) => $query->where('table_number', $tableNumber)
+            )
             ->when($requestedBranchId, function ($query) use ($requestedBranchId) {
                 $query->where('branch_id', $requestedBranchId);
             })
@@ -571,6 +587,9 @@ class TableController extends Controller
         $orderCode = $orders->count() === 1
             ? (string) ($primaryOrder?->order_number ?? 'N/A')
             : 'MULTIPLE';
+        $orderTypeLabel = $orders->count() === 1
+            ? ucwords(str_replace('_', ' ', (string) ($primaryOrder?->order_type ?? 'dine_in')))
+            : 'Multiple';
         $orderByLabel = $items
             ->pluck('order_by_label')
             ->map(fn ($value) => trim((string) $value))
@@ -590,7 +609,8 @@ class TableController extends Controller
             'branchName' => $branchName,
             'showBranchName' => $showBranchName,
             'kotCode' => $kotCode,
-            'tableNumber' => $tableNumber,
+            'orderTypeLabel' => $orderTypeLabel,
+            'tableNumber' => $table->display_number,
             'orderCode' => $orderCode,
             'orderByLabel' => $orderByLabel,
             'receiptTimeLabel' => $receiptTimeLabel,
@@ -599,7 +619,7 @@ class TableController extends Controller
         ])->setPaper($this->thermalReceiptPaperForKot((int) $items->count(), $items->all()), 'portrait')
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        $fileName = 'kot-' . preg_replace('/[^A-Za-z0-9_-]+/', '-', $tableNumber) . '.pdf';
+        $fileName = 'kot-' . preg_replace('/[^A-Za-z0-9_-]+/', '-', $table->display_number) . '.pdf';
 
         return $request->boolean('print')
             ? $pdf->stream($fileName)
@@ -611,20 +631,44 @@ class TableController extends Controller
     {
         $request->validate([
             'branch_id'    => 'required',
+            'area_id'      => 'nullable|integer|exists:areas,id',
             'capacity'     => 'required|integer|min:1',
             'table_count'  => 'required|integer|min:1',
             'start_number' => 'required|integer|min:1',
         ]);
 
-        $count = $this->tableService->generateBulkTables($request->all(), Auth::user()->tenant_id);
+        $requestedCount = (int) $request->input('table_count');
+        $createdCount = $this->tableService->generateBulkTables($request->all(), Auth::user()->tenant_id);
+        $skippedCount = $requestedCount - $createdCount;
 
-        return redirect()->back()->with('success', "$count tables generate ho gayi hain!");
+        if ($createdCount === 0) {
+            return back()->withInput()->with('toast', [[
+                'type' => 'warning',
+                'message' => 'No tables were created. These table numbers already exist in the selected area / floor. Please try a different starting number.',
+                'duration' => 6000,
+            ]]);
+        }
+
+        if ($skippedCount > 0) {
+            return back()->with('toast', [[
+                'type' => 'warning',
+                'message' => "{$createdCount} table(s) created. {$skippedCount} duplicate table number(s) were skipped.",
+                'duration' => 6000,
+            ]]);
+        }
+
+        return back()->with('toast', [[
+            'type' => 'success',
+            'message' => "{$createdCount} table(s) created successfully.",
+            'duration' => 4000,
+        ]]);
     }
 
     public function update(Request $request, $id)
     {
         $request->validate([
             'branch_id'    => 'required',
+            'area_id'      => 'nullable|integer|exists:areas,id',
             'table_number' => 'required|string',
             'capacity'     => 'required|integer|min:1',
             'status'       => 'required|in:available,occupied,reserved,out_of_service',

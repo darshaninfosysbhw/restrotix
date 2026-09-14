@@ -18,7 +18,7 @@ class KitchenNotificationController extends Controller
             ->where('tenant_id', $user->tenant_id)
             ->where('branch_id', $branchId)
             ->whereNull('cleared_at')
-            ->with(['cancelledBy:id,name,role'])
+            ->with(['cancelledBy:id,name,role', 'order.table.area'])
             ->latest('cancelled_at')
             ->limit(50)
             ->get()
@@ -35,7 +35,7 @@ class KitchenNotificationController extends Controller
         $notifications = KitchenNotificationLog::query()
             ->where('tenant_id', $user->tenant_id)
             ->where('branch_id', $branchId)
-            ->with(['cancelledBy:id,name,role', 'openedBy:id,name', 'clearedBy:id,name'])
+            ->with(['cancelledBy:id,name,role', 'openedBy:id,name', 'clearedBy:id,name', 'order.table.area'])
             ->latest('cancelled_at')
             ->paginate(min((int) $request->input('per_page', 50), 100));
 
@@ -100,7 +100,7 @@ class KitchenNotificationController extends Controller
             'order_id' => $notification->order_id,
             'order_item_id' => $notification->order_item_id,
             'item_name' => $notification->item_name,
-            'table_number' => $notification->table_number,
+            'table_number' => $notification->order?->table?->display_number ?? $notification->table_number,
             'reason' => $notification->reason,
             'cancelled_at' => optional($notification->cancelled_at)->toIso8601String(),
             'cancelled_by' => $notification->cancelledBy?->name ?? 'Unknown',

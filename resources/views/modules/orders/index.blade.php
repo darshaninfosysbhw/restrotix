@@ -79,7 +79,7 @@
                             <div class="flex flex-col items-center gap-1 text-center">
                                 <div class="flex flex-wrap items-center justify-center gap-2">
                                     <h2 id="desktopTableHeading" class="text-lg font-bold text-white">
-                                        Table {{ $selectedTableNumber ?? request()->query('table', '5') }}
+                                        Table {{ $selectedTableDisplayNumber ?? $selectedTableNumber ?? request()->query('table', '5') }}
                                     </h2>
                                     <span
                                         class="rounded-md border px-2 py-1 text-xs font-semibold {{ $tableStatusBadgeClass ?? 'border-gray-500/60 bg-gray-500/15 text-gray-300' }}">{{ $tableStatusLabel ?? 'Inactive' }}</span>
@@ -286,7 +286,7 @@
 
                     <div class="flex flex-col items-center gap-1 text-center">
                         <h2 id="mobileTableHeading" class="text-base font-semibold text-white">
-                            Table {{ $selectedTableNumber ?? request()->query('table', '5') }}
+                            Table {{ $selectedTableDisplayNumber ?? $selectedTableNumber ?? request()->query('table', '5') }}
                         </h2>
                         <span
                             class="inline-flex items-center rounded-md border px-2 py-0.5 text-[8px] font-semibold {{ $tableStatusBadgeClass ?? 'border-gray-500/60 bg-gray-500/15 text-gray-300' }}">
@@ -587,12 +587,14 @@
             const tableSwitchSearch = byId('tableSwitchSearch');
             const tableSwitchEmptyState = byId('tableSwitchEmptyState');
             const tableSwitchFilterBtns = Array.from(document.querySelectorAll('[data-switch-filter]'));
+            const tableSwitchAreaFilterBtns = Array.from(document.querySelectorAll('[data-switch-area-filter]'));
             const tableSwitchCards = Array.from(document.querySelectorAll('[data-switch-table-card]'));
             const mobileCartSheet = byId('mobileCartSheet');
             const mobileReviewSheet = byId('mobileReviewSheet');
             const customizeModal = byId('customizeModal');
 
             let activeTableSwitchFilter = 'all';
+            let activeTableSwitchAreaFilter = 'all';
             let kotPrintFrame = null;
 
             function openTableSwitchModal() {
@@ -603,9 +605,11 @@
                 if (mobileReviewSheet) mobileReviewSheet.classList.add('hidden');
 
                 activeTableSwitchFilter = 'all';
+                activeTableSwitchAreaFilter = 'all';
                 if (tableSwitchSearch) tableSwitchSearch.value = '';
                 tableSwitchModal.classList.remove('hidden');
                 updateTableSwitchFilterButtons();
+                updateTableSwitchAreaFilterButtons();
                 applyTableSwitchFilters();
 
                 window.setTimeout(() => tableSwitchSearch?.focus(), 0);
@@ -640,10 +644,13 @@
                 tableSwitchCards.forEach((card) => {
                     const cardStatus = String(card.dataset.switchTableStatus || '').toLowerCase();
                     const cardText = String(card.dataset.switchTableSearch || '').toLowerCase();
+                    const cardArea = String(card.dataset.switchTableArea || 'general');
                     const matchesFilter = activeTableSwitchFilter === 'all' || cardStatus ===
                         activeTableSwitchFilter;
                     const matchesSearch = !searchTerm || cardText.includes(searchTerm);
-                    const isVisible = matchesFilter && matchesSearch;
+                    const matchesArea = activeTableSwitchAreaFilter === 'all' ||
+                        cardArea === activeTableSwitchAreaFilter;
+                    const isVisible = matchesFilter && matchesArea && matchesSearch;
 
                     card.classList.toggle('hidden', !isVisible);
                     if (isVisible) visibleCount++;
@@ -652,6 +659,18 @@
                 if (tableSwitchEmptyState) {
                     tableSwitchEmptyState.classList.toggle('hidden', visibleCount > 0);
                 }
+            }
+
+            function updateTableSwitchAreaFilterButtons() {
+                tableSwitchAreaFilterBtns.forEach((btn) => {
+                    const isActive = String(btn.dataset.switchAreaFilter || 'all') === activeTableSwitchAreaFilter;
+                    btn.classList.toggle('bg-orange-500/10', isActive);
+                    btn.classList.toggle('text-orange-600', isActive);
+                    btn.classList.toggle('border-orange-500/30', isActive);
+                    btn.classList.toggle('bg-white', !isActive);
+                    btn.classList.toggle('text-slate-600', !isActive);
+                    btn.classList.toggle('border-slate-200', !isActive);
+                });
             }
 
             function switchToTable(tableIdValue, tableNumberValue) {
@@ -783,6 +802,14 @@
                 btn.addEventListener('click', () => {
                     activeTableSwitchFilter = String(btn.dataset.switchFilter || 'all');
                     updateTableSwitchFilterButtons();
+                    applyTableSwitchFilters();
+                });
+            });
+
+            tableSwitchAreaFilterBtns.forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    activeTableSwitchAreaFilter = String(btn.dataset.switchAreaFilter || 'all');
+                    updateTableSwitchAreaFilterButtons();
                     applyTableSwitchFilters();
                 });
             });

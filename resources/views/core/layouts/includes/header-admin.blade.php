@@ -383,15 +383,15 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
             window.Echo.private(`orders.branch.${branchId}`)
                 .listen('NewOrderReceived', event => {
                     const data = event?.orderData || {};
-                    addNotification(`order:${data.id || data.order_id || Date.now()}`, 'New order received', `Table ${data.table_number || '--'} has a new order.`, 'fa-receipt');
+                    addNotification(`order:${data.id || data.order_id || Date.now()}`, 'New order received', `Table ${data.table_display_number || data.table_number || '--'} has a new order.`, 'fa-receipt');
                 })
                 .listen('WaiterCalled', event => {
                     const data = event?.callData || {};
-                    addNotification(`call:${data.id || data.table_id || data.table_number}:${Date.now()}`, 'Waiter called', `Table ${data.table_number || '--'} requested a waiter.`, 'fa-bell');
+                    addNotification(`call:${data.id || data.table_id || data.table_number}:${Date.now()}`, 'Waiter called', `Table ${data.table_display_number || data.table_number || '--'} requested a waiter.`, 'fa-bell');
                 })
                 .listen('BillRequested', event => {
                     const data = event?.requestData || event?.billData || event?.callData || {};
-                    addNotification(`bill:${data.id || data.table_id || data.table_number}:${Date.now()}`, 'Bill requested', `Table ${data.table_number || '--'} requested the bill.`, 'fa-file-invoice-dollar');
+                    addNotification(`bill:${data.id || data.table_id || data.table_number}:${Date.now()}`, 'Bill requested', `Table ${data.table_display_number || data.table_number || '--'} requested the bill.`, 'fa-file-invoice-dollar');
                 })
                 .listen('KitchenPickupAlertUpdated', event => {
                     const data = event?.alertData || {};

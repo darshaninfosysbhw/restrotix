@@ -20,8 +20,6 @@
         </div>
     </div>
 
-
-
     <div class="bg-gray-800 border border-gray-700 rounded-xl p-4 flex justify-between items-center">
         <div>
             <p class="text-xs text-gray-400 uppercase tracking-wide">Occupied</p>

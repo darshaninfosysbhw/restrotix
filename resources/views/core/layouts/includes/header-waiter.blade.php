@@ -392,6 +392,13 @@
                     const id = Number(alert.id || 0);
                     if (!id) return;
                     if (alert.status === 'pending') {
+                        const assignedWaiterId = Number(alert.assigned_waiter_id || 0);
+                        if (assignedWaiterId > 0 && assignedWaiterId !== currentUserId) {
+                            alerts.delete(id);
+                            lastReminderAt.delete(id);
+                            render();
+                            return;
+                        }
                         const isNew = !alerts.has(id);
                         alerts.set(id, alert);
                         if (isNew) {

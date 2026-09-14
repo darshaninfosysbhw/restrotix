@@ -23,7 +23,7 @@ class OrderStatusController extends Controller
     public function orderStatus(Request $request, string $qr_token)
     {
         $table = Table::query()
-            ->with('branch')
+            ->with(['branch', 'area'])
             ->where('qr_token', $qr_token)
             ->where('is_active', true)
             ->firstOrFail();
@@ -429,7 +429,7 @@ class OrderStatusController extends Controller
             'tenant' => $tenant,
             'table' => $table,
             'order' => $order,
-            'tableNumber' => (string) ($table->table_number ?? ''),
+            'tableNumber' => $table->display_number,
             'qrToken' => (string) ($table->qr_token ?? ''),
             'publicMenuTheme' => $publicMenuTheme,
             'paymentResult' => array_merge([

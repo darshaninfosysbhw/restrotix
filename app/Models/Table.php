@@ -13,6 +13,7 @@ class Table extends Model
     protected $fillable = [
         'tenant_id',
         'branch_id',
+        'area_id',
         'table_number',
         'capacity',
         'qr_token',
@@ -24,6 +25,7 @@ class Table extends Model
     ];
 
     protected $casts = [
+        'area_id' => 'integer',
         'capacity' => 'integer',
         'is_calling_waiter' => 'boolean',
         'is_bill_requested' => 'boolean',
@@ -61,7 +63,22 @@ class Table extends Model
     {
         return $this->belongsTo(Branch::class);
     }
+    
+    public function area()
+    {
+        return $this->belongsTo(Area::class);
+    }
 
+    /**
+     * Live UI label. The stored table_number remains local to the area.
+     */
+    public function getDisplayNumberAttribute(): string
+    {
+        $prefix = strtoupper(trim((string) ($this->area?->code ?: 'T')));
+        $number = trim((string) $this->table_number);
+
+        return $prefix . '-' . $number;
+    }
     // Table ke saare active orders dekhne ke liye
     public function orders()
     {

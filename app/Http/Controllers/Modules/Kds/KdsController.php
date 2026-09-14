@@ -28,7 +28,7 @@ class KdsController extends Controller
 
         $baseQuery = Order::where('branch_id', $branchId)
             ->where('status', 'running')
-            ->with(['items.orderItemAddons.masterAddon']);
+            ->with(['table.area', 'items.orderItemAddons.masterAddon']);
 
         $orders = $baseQuery->orderBy('created_at', 'asc')->get();
 
@@ -99,6 +99,7 @@ class KdsController extends Controller
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => (int) $order->id,
                     'table_number' => (string) ($order->table_number ?? ''),
+                    'table_display_number' => $this->displayTableNumber($order),
                     'branch_id' => (int) ($order->branch_id ?? 0),
                     'kitchen_status' => (string) ($order->kitchen_status ?? 'pending'),
                     'item_status' => (string) $status,
@@ -178,6 +179,7 @@ class KdsController extends Controller
         broadcast(new KitchenStatusUpdated([
             'order_id' => (int) $order->id,
             'table_number' => (string) ($order->table_number ?? ''),
+            'table_display_number' => $this->displayTableNumber($order),
             'branch_id' => (int) ($order->branch_id ?? 0),
             'kitchen_status' => (string) ($order->kitchen_status ?? 'pending'),
             'item_status' => $itemStatus,
@@ -218,6 +220,7 @@ class KdsController extends Controller
                 $kitchenBroadcasts[] = [
                     'order_id' => (int) $order->id,
                     'table_number' => (string) ($order->table_number ?? ''),
+                    'table_display_number' => $this->displayTableNumber($order),
                     'branch_id' => (int) ($order->branch_id ?? 0),
                     'kitchen_status' => 'served',
                     'item_status' => 'ready',
@@ -326,7 +329,7 @@ class KdsController extends Controller
         return [
             'id' => (int) $order->id,
             'order_number' => $order->order_number,
-            'table_number' => $order->table_number,
+            'table_number' => $this->displayTableNumber($order),
             'order_type' => strtoupper(str_replace('_', ' ', $order->order_type)),
             'created_at_iso' => $order->created_at->toIso8601String(),
             'timer_text' => sprintf('%02d:%02dm', intdiv($minutes, 60), $minutes % 60),
@@ -493,7 +496,7 @@ class KdsController extends Controller
             'id' => (int) $order->id,
             'batch_key' => ((int) $order->id).':'.$kotNumber,
             'order_number' => $order->order_number,
-            'table_number' => $order->table_number,
+            'table_number' => $this->displayTableNumber($order),
             'order_type' => strtoupper(str_replace('_', ' ', (string) $order->order_type)),
             'created_at_iso' => $batchCreatedAt instanceof \Carbon\CarbonInterface
                 ? $batchCreatedAt->toIso8601String()
@@ -635,6 +638,11 @@ class KdsController extends Controller
         }
 
         $order->save();
+    }
+
+    private function displayTableNumber(Order $order): string
+    {
+        return trim((string) ($order->table?->display_number ?: $order->table_number));
     }
 
     private function mapFilterToInternal($filter)

@@ -111,7 +111,8 @@ class PosController extends Controller
                 ->when($branchId, function ($query) use ($branchId) {
                     $query->where('branch_id', $branchId);
                 })
-                ->select(['id', 'table_number', 'capacity']);
+                ->with('area:id,name,code')
+                ->select(['id', 'area_id', 'table_number', 'capacity']);
 
             if ($selectedTableId) {
                 $selectedSwitchTable = $fallbackTableQuery->whereKey($selectedTableId)->first();
@@ -121,6 +122,11 @@ class PosController extends Controller
         }
 
         $selectedTableCapacity = (int) data_get($selectedSwitchTable, 'capacity', 0);
+        $selectedTableDisplayNumber = (string) data_get(
+            $selectedSwitchTable,
+            'display_number',
+            $request->query('table_number', $request->query('table', '5'))
+        );
 
         $sessionContext = $this->resolveSessionContext(
             tenantId: $tenantId,
@@ -134,6 +140,7 @@ class PosController extends Controller
             'dynamicCategories' => $categories->pluck('name')->values(),
             'dynamicMenuItems' => $dynamicMenuItems,
             'selectedTableNumber' => (string) $request->query('table', '5'),
+            'selectedTableDisplayNumber' => $selectedTableDisplayNumber,
             'selectedTableId' => $request->query('table_id'),
             'selectedTableCapacity' => $selectedTableCapacity,
             'selectedTableCapacityLabel' => $selectedTableCapacity > 0
@@ -310,7 +317,8 @@ class PosController extends Controller
             ->when($branchId, function ($query) use ($branchId) {
                 $query->where('branch_id', $branchId);
             })
-            ->select(['id', 'table_number', 'capacity', 'status', 'is_calling_waiter', 'is_bill_requested'])
+            ->with('area:id,name,code')
+            ->select(['id', 'area_id', 'table_number', 'capacity', 'status', 'is_calling_waiter', 'is_bill_requested'])
             ->orderBy('table_number')
             ->get()
             ->map(function (Table $table) use ($selectedTableId, $selectedTableNumber) {
@@ -319,6 +327,10 @@ class PosController extends Controller
                 return [
                     'id' => (int) $table->id,
                     'table_number' => (string) $table->table_number,
+                    'display_number' => $table->display_number,
+                    'area_id' => $table->area_id ? (int) $table->area_id : null,
+                    'area_name' => $table->area?->name,
+                    'area_code' => $table->area?->code,
                     'capacity' => (int) ($table->capacity ?? 0),
                     'status' => $status,
                     'status_label' => $this->formatTableStatusLabel($status),

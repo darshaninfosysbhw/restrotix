@@ -12,6 +12,12 @@
         'reserved' => 'text-amber-500',
         'out_of_service' => 'text-slate-400',
     ];
+
+    $switchAreas = collect($switchableTables ?? [])
+        ->filter(fn ($table) => !empty($table['area_id']))
+        ->unique('area_id')
+        ->sortBy('area_name')
+        ->values();
 @endphp
 
 <div id="tableSwitchModal" class="fixed inset-0 z-[120] hidden">
@@ -59,6 +65,24 @@
                     </div>
                 </div>
 
+                <div class="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+                    <span class="mr-1 text-[11px] font-bold uppercase tracking-wider text-slate-400">Area</span>
+                    <button type="button" data-switch-area-filter="all"
+                        class="switch-area-filter-btn rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold text-orange-600 cursor-pointer">
+                        All
+                    </button>
+                    <button type="button" data-switch-area-filter="general"
+                        class="switch-area-filter-btn rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-300 cursor-pointer">
+                        General
+                    </button>
+                    @foreach ($switchAreas as $switchArea)
+                        <button type="button" data-switch-area-filter="{{ $switchArea['area_id'] }}"
+                            class="switch-area-filter-btn rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 hover:border-slate-300 cursor-pointer">
+                            {{ $switchArea['area_name'] ?: 'Unnamed Area' }}
+                        </button>
+                    @endforeach
+                </div>
+
                 <div id="tableSwitchGrid"
                     class="mt-4 grid max-h-[56vh] grid-cols-2 gap-2.5 overflow-y-auto pr-1 sm:grid-cols-3 xl:grid-cols-4">
                     @forelse ($switchableTables ?? [] as $switchTable)
@@ -74,7 +98,8 @@
                                     implode(
                                         ' ',
                                         array_filter([
-                                            'table ' . (string) ($switchTable['table_number'] ?? ''),
+                                            'table ' . (string) ($switchTable['display_number'] ?? $switchTable['table_number'] ?? ''),
+                                            (string) ($switchTable['area_name'] ?? ''),
                                             (string) ($switchTable['status_label'] ?? ''),
                                         ]),
                                     ),
@@ -85,6 +110,7 @@
                         <button type="button" data-switch-table-card data-switch-table-id="{{ $switchTable['id'] }}"
                             data-switch-table-number="{{ $switchTable['table_number'] }}"
                             data-switch-table-status="{{ $status }}"
+                            data-switch-table-area="{{ $switchTable['area_id'] ?? 'general' }}"
                             data-switch-table-search="{{ $searchText }}"
                             data-switch-table-disabled="{{ $isDisabled ? '1' : '0' }}"
                             @if ($isDisabled) disabled @endif
@@ -95,7 +121,7 @@
                             <div class="flex items-start justify-between gap-2 mb-1">
                                 <div class="min-w-0 flex flex-wrap items-center gap-1.5">
                                     <h3 class="font-semibold text-sm leading-tight text-slate-950">
-                                        Table {{ $switchTable['table_number'] }}
+                                        Table {{ $switchTable['display_number'] ?? $switchTable['table_number'] }}
                                     </h3>
                                     @if ($statusDotClass)
                                         <span

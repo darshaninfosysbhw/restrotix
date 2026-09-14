@@ -22,7 +22,10 @@ class KitchenPickupAlertController extends Controller
             ->with('order.items')
             ->oldest('ready_at')
             ->get()
-            ->map(fn ($alert) => $service->payload($alert));
+            ->map(fn ($alert) => $service->payload($alert))
+            ->filter(fn (array $alert) => empty($alert['assigned_waiter_id'])
+                || (int) $alert['assigned_waiter_id'] === (int) $user->id)
+            ->values();
 
         return response()->json(['alerts' => $alerts]);
     }
@@ -32,6 +35,9 @@ class KitchenPickupAlertController extends Controller
         $user = $request->user();
         abort_unless((int) $alert->tenant_id === (int) $user->tenant_id
             && (int) $alert->branch_id === (int) $user->branch_id, 404);
+
+        $assignedWaiterId = $service->assignedWaiterIdForTable($alert->table_id);
+        abort_unless(! $assignedWaiterId || $assignedWaiterId === (int) $user->id, 403);
 
         $accepted = DB::transaction(function () use ($alert, $user) {
             return KitchenPickupAlert::whereKey($alert->id)

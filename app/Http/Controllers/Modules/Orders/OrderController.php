@@ -442,6 +442,7 @@ class OrderController extends Controller
             $newOrderEvent = new \App\Events\NewOrderReceived([
                 'table_id'     => $order->table_id,
                 'table_number' => $order->table_number,
+                'table_display_number' => $contextTable?->display_number ?? $order->table_number,
                 'order_number' => $order->order_number,
                 'order_id'     => $order->id,
                 'kot_number'   => $kotNumber,

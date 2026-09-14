@@ -16,7 +16,7 @@
             </div>
         @endif
         <div class="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-            <p class="text-sm text-gray-500">Table {{ $submission->table->table_number }}</p>
+            <p class="text-sm text-gray-500">Table {{ $submission->table->display_number }}</p>
             <h1 id="confirmationTitle" class="text-2xl font-bold mt-2">{{ $submission->status === 'rejected' ? 'Order not accepted' : 'Awaiting restaurant confirmation' }}</h1>
             <p id="confirmationMessage" class="text-sm text-gray-600 mt-3" aria-live="polite">{{ $submission->status === 'rejected' ? $submission->rejection_reason : 'Your request has reached the staff. Cooking starts after they confirm it. Please do not submit it again.' }}</p>
             <ul class="divide-y divide-gray-100 my-5">

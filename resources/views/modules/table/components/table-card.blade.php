@@ -23,7 +23,9 @@
     @endphp
     <div class="bg-gray-800 border rounded-xl p-4 card-hover table-card cursor-pointer {{ ($isAdmin ?? false) ? 'border-gray-700' : (!empty($table['is_calling_waiter']) ? 'border-blue-500/30' : (!empty($table['is_bill_requested']) ? 'border-orange-500/30' : (($table['status'] ?? '') === 'occupied' ? 'border-red-500/30' : 'border-green-500/20'))) }}"
         data-id="{{ $table['id'] }}" data-name="{{ $table['display_name'] }}"
-        data-table-number="{{ $table['table_number'] }}" data-qr-token="{{ $table['qr_token'] ?? '' }}"
+        data-area-id="{{ $table['area_id'] ?? '' }}"
+        data-table-number="{{ $table['table_number'] }}" data-display-number="{{ $table['display_number'] }}"
+        data-qr-token="{{ $table['qr_token'] ?? '' }}"
         data-branch-id="{{ $table['branch_id'] ?? 0 }}"
         data-branch-tax-setting="{{ $table['branch_tax_setting'] ?? 'exclusive' }}"
         data-branch-tax-rate="{{ $table['branch_tax_rate'] ?? 0 }}"
@@ -54,22 +56,12 @@
                 @endforeach
         @else
         <div class="flex justify-between items-center mb-1">
-            <h3 class="text-white font-semibold">
+            <h3 class="text-white font-semibold whitespace-nowrap min-w-0 overflow-hidden text-ellipsis">
                 {{ $table['display_name'] }}
             </h3>
+            
+            
             <div class="flex items-center gap-2">
-                <span class="waiter-call-bell items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-blue-500/60 bg-blue-500/20 text-blue-300 font-semibold"
-                    style="display: {{ !empty($table['is_calling_waiter']) ? 'flex' : 'none' }};">
-                    <i class="fas fa-bell animate-bounce"></i>
-                    <span>Calling Waiter</span>
-                    <span class="waiter-call-count"></span>
-                </span>
-                <span class="bill-request-bell items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-orange-500/60 bg-orange-500/20 text-orange-300 font-semibold"
-                    style="display: {{ !empty($table['is_bill_requested']) ? 'flex' : 'none' }};">
-                    <i class="fas fa-file-invoice-dollar animate-pulse"></i>
-                    <span>Bill Requested</span>
-                    <span class="bill-request-count"></span>
-                </span>
                 <span
                     class="table-status-pill text-xs px-2 py-1 rounded-full
                 bg-{{ $table['status_color'] }}-500/20 text-{{ $table['status_color'] }}-400">
@@ -97,12 +89,33 @@
             </div>
         @if (!in_array(auth()->user()->role, ['admin', 'manager'], true))
         </div>
-
+        <div class="waiter-request-strip mb-2 flex flex-wrap items-center gap-2"
+            style="display: {{ !empty($table['is_calling_waiter']) || !empty($table['is_bill_requested']) ? 'flex' : 'none' }};">
+            <span class="waiter-call-bell items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-blue-500/60 bg-blue-500/20 text-blue-300 font-semibold"
+                style="display: {{ !empty($table['is_calling_waiter']) ? 'flex' : 'none' }};">
+                <i class="fas fa-bell animate-bounce"></i>
+                <span>Calling Waiter</span>
+                <span class="waiter-call-count"></span>
+            </span>
+            <span class="bill-request-bell items-center gap-1 text-[10px] px-2 py-1 rounded-full border border-orange-500/60 bg-orange-500/20 text-orange-300 font-semibold"
+                style="display: {{ !empty($table['is_bill_requested']) ? 'flex' : 'none' }};">
+                <i class="fas fa-file-invoice-dollar animate-pulse"></i>
+                <span>Bill Requested</span>
+                <span class="bill-request-count"></span>
+            </span>
+        </div>
         @endif
+        
         @if ($isAdmin ?? false)
-            <p class="text-xs text-gray-400 mb-3">
-                Token: {{ $table['qr_token'] ?: 'N/A' }}
-            </p>
+            <div class="mb-3 flex items-center justify-between gap-3">
+                <p class="min-w-0 truncate text-xs text-gray-400">
+                    Token: {{ $table['qr_token'] ?: 'N/A' }}
+                </p>
+                <span class="shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ !empty($table['area_name']) ? 'border-orange-500/40 bg-orange-500/10 text-orange-400' : 'border-gray-500/40 bg-gray-500/10 text-gray-400' }}">
+                    <i class="fas fa-layer-group text-[9px]"></i>
+                    {{ $table['area_name'] ?: 'General' }}
+                </span>
+            </div>
         @endif
         <p class="last-order-activity text-[11px] text-orange-700 dark:text-orange-300/80 mb-3 hidden"></p>
 
@@ -112,14 +125,16 @@
             <div class="flex items-center justify-between">
 
                 <img class="qrPreview cursor-pointer border border-gray-600 rounded-lg p-2 card-hover"
-                    src="{{ $table['qr_code_inline'] }}" alt="Table {{ $table['table_number'] }} QR"
-                    data-name="Table {{ $table['table_number'] }}" data-table-number="{{ $table['table_number'] }}"
+                    src="{{ $table['qr_code_inline'] }}" alt="Table {{ $table['display_number'] }} QR"
+                    data-name="Table {{ $table['display_number'] }}" data-table-number="{{ $table['table_number'] }}"
+                    data-poster-table-number="{{ $table['display_number'] }}"
                     data-qr="{{ $table['qr_code_inline'] }}" />
 
                 <div class="flex gap-2">
 
                     <button class="viewQrBtn text-xs px-2 py-1 border border-gray-600 rounded-lg text-gray-300"
-                        data-name="Table {{ $table['table_number'] }}" data-table-number="{{ $table['table_number'] }}"
+                        data-name="Table {{ $table['display_number'] }}" data-table-number="{{ $table['table_number'] }}"
+                        data-poster-table-number="{{ $table['display_number'] }}"
                         data-qr="{{ $table['qr_code_inline'] }}">
                         View
                     </button>
@@ -128,16 +143,22 @@
                         data-id="{{ $table['id'] }}" data-table-number="{{ $table['table_number'] }}"
                         data-branch="{{ $table['branch_id'] }}" data-capacity="{{ $table['capacity'] }}"
                         data-status="{{ $table['status'] }}"
-                        data-update-url="{{ route('admin.tables.update', $table['id']) }}">
+                        data-update-url="{{ route('admin.tables.update', $table['id']) }}" data-area-id="{{ $table['area_id'] ?? '' }}">
                         Edit
                     </button>
 
                 </div>
             </div>
         @else
-            <div class="mb-2 flex items-center gap-1.5 text-xs text-gray-400">
-                <i class="fas fa-users text-[10px]"></i>
-                <span class="waiter-capacity-text">{{ $table['capacity'] }} {{ (int) $table['capacity'] === 1 ? 'Seat' : 'Seats' }}</span>
+            <div class="mb-2 flex items-center justify-between gap-3 text-xs text-gray-400">
+                <div class="flex min-w-0 items-center gap-1.5">
+                    <i class="fas fa-users text-[10px]"></i>
+                    <span class="waiter-capacity-text">{{ $table['capacity'] }} {{ (int) $table['capacity'] === 1 ? 'Seat' : 'Seats' }}</span>
+                </div>
+                <span class="shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold {{ !empty($table['area_name']) ? 'border-orange-500/40 bg-orange-500/10 text-orange-400' : 'border-gray-500/40 bg-gray-500/10 text-gray-400' }}">
+                    <i class="fas fa-layer-group text-[9px]"></i>
+                    {{ $table['area_name'] ?: 'General' }}
+                </span>
             </div>
 
             <hr class="waiter-card-divider mb-3 text-gray-700">
@@ -249,9 +270,10 @@
                 return `${hours} hr ${minutes} min`;
             };
 
-            window.updateWaiterTableCard = (tableNumber, orders, status = null, flags = {}) => {
-                const card = document.querySelector(
-                    `.table-card[data-table-number="${CSS.escape(String(tableNumber))}"]`);
+            window.updateWaiterTableCard = (tableNumber, orders, status = null, flags = {}, tableId = null) => {
+                const card = tableId
+                    ? document.querySelector(`.table-card[data-id="${CSS.escape(String(tableId))}"]`)
+                    : document.querySelector(`.table-card[data-table-number="${CSS.escape(String(tableNumber))}"]`);
                 if (!card || !card.querySelector('.waiter-order-summary')) return;
 
                 const safeOrders = Array.isArray(orders) ? orders : [];
@@ -281,6 +303,7 @@
                 const printEstimate = card.querySelector('[data-print-bill-estimate]');
                 const waiterBell = card.querySelector('.waiter-call-bell');
                 const billBell = card.querySelector('.bill-request-bell');
+                const requestStrip = card.querySelector('.waiter-request-strip');
                 const transferStatusBadge = card.querySelector('.transfer-status-badge');
                 const assignedWaiterBadge = card.querySelector('.assigned-waiter-badge');
                 let transferState = Object.prototype.hasOwnProperty.call(flags, 'transfer_state')
@@ -315,6 +338,7 @@
                 printEstimate?.classList.toggle('hidden', !isBillRequested || !hasOrders);
                 if (waiterBell) waiterBell.style.display = isCallingWaiter ? 'flex' : 'none';
                 if (billBell) billBell.style.display = isBillRequested ? 'flex' : 'none';
+                if (requestStrip) requestStrip.style.display = isCallingWaiter || isBillRequested ? 'flex' : 'none';
 
                 if (timer) {
                     timer.dataset.startedAt = String(startedAt || '');
@@ -346,9 +370,10 @@
                 window.syncTableStatsFromCards?.();
             };
 
-            window.refreshWaiterTableCard = async (tableNumber, branchId = null, status = null, flags = {}) => {
+            window.refreshWaiterTableCard = async (tableNumber, branchId = null, status = null, flags = {}, tableId = null) => {
                 const params = new URLSearchParams();
                 if (Number(branchId || 0) > 0) params.set('branch_id', String(Number(branchId)));
+                if (Number(tableId || 0) > 0) params.set('table_id', String(Number(tableId)));
                 const suffix = params.toString() ? `?${params.toString()}` : '';
                 const response = await fetch(`/admin/get-table-orders/${encodeURIComponent(tableNumber)}${suffix}`, {
                     headers: {
@@ -357,7 +382,7 @@
                     }
                 });
                 if (!response.ok) throw new Error(`Table summary refresh failed: ${response.status}`);
-                window.updateWaiterTableCard(tableNumber, await response.json(), status, flags);
+                window.updateWaiterTableCard(tableNumber, await response.json(), status, flags, tableId);
             };
 
             window.addEventListener('table-transfer-assigned', (event) => {
@@ -369,7 +394,7 @@
 
                 window.updateWaiterTableCard(card.dataset.tableNumber, JSON.parse(card.dataset.orders || '[]'), null, {
                     transfer_state: transfer.status === 'cancelled' ? null : transfer,
-                });
+                }, card.dataset.id);
             });
 
             document.addEventListener('click', async (event) => {
@@ -421,7 +446,7 @@
                         if (!clearResponse.ok) throw new Error(`Bill request clear failed: ${clearResponse.status}`);
                         const result = await clearResponse.json();
                         window.updateWaiterTableCard(card.dataset.tableNumber,
-                            JSON.parse(card.dataset.orders || '[]'), result.status, result);
+                            JSON.parse(card.dataset.orders || '[]'), result.status, result, card.dataset.id);
                     } catch (error) {
                         console.warn('Unable to print estimate', error);
                         if (mobilePrintWindow && !mobilePrintWindow.closed) mobilePrintWindow.close();
@@ -461,7 +486,7 @@
                     const result = await response.json();
                     const card = acceptButton.closest('.table-card');
                     await window.refreshWaiterTableCard(card.dataset.tableNumber, card.dataset.branchId, result.status,
-                        result);
+                        result, card.dataset.id);
                 } catch (error) {
                     console.warn('Unable to accept waiter call', error);
                 } finally {
@@ -496,7 +521,7 @@
                         if (!response.ok) return;
                         const summaries = await response.json();
                         summaries.forEach(summary => window.updateWaiterTableCard(summary.table_number, summary.orders,
-                            summary.status, summary));
+                            summary.status, summary, summary.table_id));
                     } catch (error) {
                         console.warn('Waiter table summaries refresh failed', error);
                     }

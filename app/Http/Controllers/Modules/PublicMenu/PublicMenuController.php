@@ -132,6 +132,7 @@ class PublicMenuController extends Controller
         broadcast(new WaiterCalled([
             'table_id' => (int) $table->id,
             'table_number' => (string) $table->table_number,
+            'table_display_number' => $table->display_number,
             'tenant_id' => (int) $table->tenant_id,
             'branch_id' => (int) $table->branch_id,
             'called_at' => now()->toIso8601String(),
@@ -191,6 +192,7 @@ class PublicMenuController extends Controller
         broadcast(new BillRequested([
             'table_id' => (int) $table->id,
             'table_number' => (string) $table->table_number,
+            'table_display_number' => $table->display_number,
             'tenant_id' => (int) $table->tenant_id,
             'branch_id' => (int) $table->branch_id,
             'requested_at' => now()->toIso8601String(),
@@ -222,6 +224,14 @@ class PublicMenuController extends Controller
                 })
                 ->value('id');
         }
+
+        $resolvedTable = $tableId
+            ? Table::query()
+                ->with('area:id,code')
+                ->where('tenant_id', $tenantId)
+                ->find($tableId)
+            : null;
+        $tableDisplayNumber = $resolvedTable?->display_number ?? $tableNumber;
 
         $branch = $branchId ? Branch::find($branchId) : Branch::where('tenant_id', $tenantId)->first();
 
@@ -293,6 +303,7 @@ class PublicMenuController extends Controller
         return view('modules.public-menu.menu', [
             'tenant' => $tenant,
             'tableNumber' => $tableNumber,
+            'tableDisplayNumber' => $tableDisplayNumber,
             'tableId' => $tableId ? (int) $tableId : null,
             'menuCategories' => $menuCategories,
             'selectedCategory' => $selectedCategory,

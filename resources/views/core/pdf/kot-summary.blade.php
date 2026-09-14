@@ -195,6 +195,10 @@
 
         <table class="meta-table">
             <tr>
+                <td class="meta-label">Type:</td>
+                <td class="meta-value">{{ $orderTypeLabel ?? 'Dine In' }}</td>
+            </tr>
+            <tr>
                 <td class="meta-label">Table:</td>
                 <td class="meta-value">{{ $tableNumber ?? '' }}</td>
             </tr>

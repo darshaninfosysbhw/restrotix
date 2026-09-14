@@ -231,21 +231,26 @@
                     playSound(orderSound);
 
                     const tableNum = String(e.orderData.table_number);
+                    const tableId = Number(e.orderData.table_id || 0) || null;
                     emitTableToast('success', `${formatTableToastLabel(tableNum)}: New order received`);
-                    const isCurrentTableOpen = window.currentOpenTable === tableNum;
+                    const isCurrentTableOpen = tableId
+                        ? String(window.currentOpenTableId || '') === String(tableId)
+                        : window.currentOpenTable === tableNum;
 
                     // 2. Visual feedback on card
-                    const card = document.querySelector(`.table-card[data-table-number="${tableNum}"]`);
+                    const card = tableId
+                        ? document.querySelector(`.table-card[data-id="${CSS.escape(String(tableId))}"]`)
+                        : document.querySelector(`.table-card[data-table-number="${CSS.escape(tableNum)}"]`);
                     if (card) card.classList.add('ring-2', 'ring-orange-500');
                     if (typeof window.markTableAsOccupied === 'function') {
-                        window.markTableAsOccupied(tableNum);
+                        window.markTableAsOccupied(tableNum, tableId);
                     }
                     if (!isCurrentTableOpen && typeof window.registerIncomingOrder === 'function') {
                         window.registerIncomingOrder(tableNum);
                     }
 
                     if (typeof window.refreshWaiterTableCard === 'function') {
-                        window.refreshWaiterTableCard(tableNum, card?.dataset.branchId).catch(error =>
+                        window.refreshWaiterTableCard(tableNum, card?.dataset.branchId, null, {}, card?.dataset.id).catch(error =>
                             console.warn('Live waiter card refresh failed', error));
                     }
 
@@ -385,10 +390,13 @@
         if (drawerReleaseTableBtn) {
             drawerReleaseTableBtn.addEventListener('click', async () => {
                 const tableNumber = String(window.currentOpenTable || '').trim();
+                const tableDisplayNumber = String(
+                    window.currentOpenTableDisplayNumber || tableNumber
+                ).trim();
                 const tableId = window.currentOpenTableId || null;
 
                 if (!tableId && !tableNumber) return;
-                if (!window.confirm(`Are you sure you want to cancel the order and release Table ${tableNumber}?`)) return;
+                if (!window.confirm(`Are you sure you want to cancel the order and release Table ${tableDisplayNumber}?`)) return;
 
                 const defaultLabel = '<i class="fas fa-ban mr-1.5"></i> Void &amp; Release Table';
 
@@ -416,10 +424,10 @@
                         throw new Error(data.message || 'Failed to release table');
                     }
 
-                    emitTableToast('success', `Table ${tableNumber} released successfully`);
+                    emitTableToast('success', `Table ${tableDisplayNumber} released successfully`);
                     window.markTableAsAvailable?.(tableNumber);
                     document.getElementById('closeDrawer')?.click();
-                    await window.refreshWaiterTableCard?.(tableNumber, window.currentOpenTableBranchId);
+                    await window.refreshWaiterTableCard?.(tableNumber, window.currentOpenTableBranchId, null, {}, window.currentOpenTableId);
                 } catch (error) {
                     console.error('Table release failed:', error);
                     emitTableToast('error', error.message || 'Something went wrong while releasing table');
@@ -432,7 +440,9 @@
 
         if (transferTableBtn) {
             transferTableBtn.addEventListener('click', () => {
-                const tableNumber = String(window.currentOpenTable || '').trim();
+                const tableNumber = String(
+                    window.currentOpenTableDisplayNumber || window.currentOpenTable || ''
+                ).trim();
                 const tableId = window.currentOpenTableId || null;
 
                 if (!tableId && !tableNumber) return;
@@ -1242,7 +1252,12 @@
                 }
 
                 const branchId = Number(window.currentOpenTableBranchId || 0);
-                const branchQuery = branchId > 0 ? `?branch_id=${encodeURIComponent(branchId)}` : '';
+                const queryParams = new URLSearchParams();
+                if (branchId > 0) queryParams.set('branch_id', String(branchId));
+                if (Number(window.currentOpenTableId || 0) > 0) {
+                    queryParams.set('table_id', String(Number(window.currentOpenTableId)));
+                }
+                const branchQuery = queryParams.toString() ? `?${queryParams.toString()}` : '';
                 const response = await fetch(
                     `${billingOrdersBaseUrl}/${encodeURIComponent(tableNumber)}${branchQuery}`, {
                         headers: {

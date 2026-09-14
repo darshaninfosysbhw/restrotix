@@ -1,124 +1,165 @@
 @if ($isAdmin ?? false)
-    <!-- Add Table MODAL -->
-    <div id="tableModal" class="fixed inset-0 z-[120] hidden overflow-y-auto">
-        <div id="tableModalBackdrop" class="absolute inset-0 bg-black/50"></div>
+<!-- Add Table MODAL -->
+<div id="tableModal" class="fixed inset-0 z-[120] hidden overflow-y-auto">
+    <div id="tableModalBackdrop" class="absolute inset-0 bg-black/50"></div>
 
-        <div class="relative z-10 min-h-screen flex items-center justify-center p-4">
-            <div class="w-full max-w-xl bg-gray-800 border border-gray-700 rounded-xl">
-                <div class="px-5 py-4 border-b border-gray-700 flex justify-between items-center">
-                    <div>
-                        <h2 class="text-lg font-semibold text-white" id="modalTitle">Add Tables</h2>
-                        <p class="text-xs text-gray-400">Bulk create tables with QR</p>
-                    </div>
-                    <button id="closeTableModal" class="text-gray-400 cursor-pointer">
-                        <i class="fas fa-times"></i>
-                    </button>
+    <div class="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-xl bg-gray-800 border border-gray-700 rounded-xl">
+            <div class="px-5 py-4 border-b border-gray-700 flex justify-between items-center">
+                <div>
+                    <h2 class="text-lg font-semibold text-white" id="modalTitle">Add Tables</h2>
+                    <p class="text-xs text-gray-400">Bulk create tables with QR</p>
                 </div>
+                <button id="closeTableModal" class="text-gray-400 cursor-pointer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
 
-                <form method="POST" action="{{ route('admin.tables.bulk-store') }}" class="p-4 sm:p-5 space-y-5"
-                    id="tableForm">
-                    @csrf
-                    <input type="hidden" id="formMethodField" name="_method" value="POST">
+            <form method="POST" action="{{ route('admin.tables.bulk-store') }}" class="p-4 sm:p-5 space-y-5"
+                id="tableForm">
+                @csrf
+                <input type="hidden" id="formMethodField" name="_method" value="POST">
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div class="relative group">
-                            <label class="block text-sm text-gray-400 mb-1.5 font-medium">
-                                Branch <span class="text-orange-500">*</span>
-                            </label>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="relative group">
+                        <label class="block text-sm text-gray-400 mb-1.5 font-medium">
+                            Branch <span class="text-orange-500">*</span>
+                        </label>
 
-                            <div class="relative">
-                                <select id="branchSelect" name="branch_id"
-                                    class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500 appearance-none cursor-pointer transition-all hover:border-gray-600">
-                                    <option value="" disabled selected class="bg-gray-800 text-gray-500">Select
-                                        Branch
-                                    </option>
-                                    @foreach ($branches as $branch)
-                                        <option value="{{ $branch->id }}" class="bg-gray-800 text-white py-2">
-                                            {{ $branch->branch_name }}
-                                        </option>
-                                    @endforeach
-                                </select>
+                        <div class="relative">
+                            <select id="branchSelect" name="branch_id"
+                                class="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500 appearance-none cursor-pointer transition-all hover:border-gray-600">
+                                <option value="" disabled selected class="bg-gray-800 text-gray-500">Select
+                                    Branch
+                                </option>
+                                @foreach ($branches as $branch)
+                                <option value="{{ $branch->id }}" class="bg-gray-800 text-white py-2">
+                                    {{ $branch->branch_name }}
+                                </option>
+                                @endforeach
+                            </select>
 
-                                <div
-                                    class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                                    <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 20 20">
-                                        <path
-                                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
-                                    </svg>
-                                </div>
+                            <div
+                                class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                                <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 20 20">
+                                    <path
+                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                                </svg>
                             </div>
                         </div>
-
-                        <div id="tableCountGroup">
-                            <label class="block text-sm text-gray-400 mb-1.5 font-medium">
-                                Number Of Tables <span class="text-orange-500">*</span>
-                            </label>
-                            <input type="text" placeholder="ex. 10" id="tableCount" name="table_count"
-                                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
-                        </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div id="startNumberGroup">
-                            <label class="block text-sm text-gray-400 mb-1.5 font-medium">
-                                Starting Number <span class="text-orange-500">*</span>
-                            </label>
-                            <input type="text" name="start_number" placeholder="ex. 1" id="startNumber"
-                                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
-                        </div>
+                   <div class="relative group">
+    <label class="block text-sm text-gray-400 mb-1.5 font-medium">
+        Area / Floor
+        <span class="text-gray-500 text-xs font-normal">(Optional)</span>
+    </label>
 
-                        <div id="tableNumberGroup" class="hidden">
-                            <label class="block text-sm text-gray-400 mb-1.5 font-medium">
-                                Table Number <span class="text-orange-500">*</span>
-                            </label>
-                            <input type="text" name="table_number" placeholder="ex. T-01" id="tableNumber"
-                                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
-                        </div>
+    <div class="relative">
+        <select
+            id="areaSelect"
+            name="area_id"
+            class="w-full bg-gray-800 border border-gray-700 rounded-lg
+                   px-3 py-2.5 pr-12 text-sm text-white
+                   focus:outline-none focus:ring-1 focus:ring-orange-500
+                   appearance-none cursor-pointer transition-all hover:border-gray-600">
 
-                        <div>
-                            <label class="block text-sm text-gray-400 mb-1.5 font-medium">
-                                Capacity <span class="text-orange-500">*</span>
-                            </label>
-                            <input type="text" name="capacity" placeholder="ex. 4" id="capacity"
-                                class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
-                        </div>
-                    </div>
+            <option value="">No Specific Area (General)</option>
 
-                    <div id="statusGroup" class="hidden">
+            @foreach ($areas as $area)
+                <option value="{{ $area->id }}">
+                    {{ $area->name }}
+                </option>
+            @endforeach
+        </select>
+
+        {{-- ADD AREA BUTTON --}}
+        <button
+            type="button"
+            id="openAreaShortcut"
+            title="Add Area / Floor"
+            class="absolute right-2 top-1/2 -translate-y-1/2 z-20
+                   w-7 h-7 flex items-center justify-center
+                   text-orange-500 hover:text-orange-400
+                   hover:bg-orange-500/10 rounded-md transition cursor-pointer">
+            <i class="fas fa-plus text-sm"></i>
+        </button>
+
+        
+    </div>
+</div>
+
+                    
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div id="tableCountGroup">
                         <label class="block text-sm text-gray-400 mb-1.5 font-medium">
-                            Status <span class="text-orange-500">*</span>
+                            Number Of Tables <span class="text-orange-500">*</span>
                         </label>
-                        <select id="status" name="status"
+                        <input type="text" placeholder="ex. 10" id="tableCount" name="table_count"
                             class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
-                            <option value="available">Available</option>
-                            <option value="reserved">Reserved</option>
-                            <option value="occupied">Occupied</option>
-                            <option value="out_of_service">Out Of Service</option>
-                        </select>
+                    </div>
+                    <div id="startNumberGroup">
+                        <label class="block text-sm text-gray-400 mb-1.5 font-medium">
+                            Starting Number <span class="text-orange-500">*</span>
+                        </label>
+                        <input type="text" name="start_number" placeholder="ex. 1" id="startNumber"
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
                     </div>
 
-                    <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
-                        <button type="button" id="closeTableModal"
-                            class="w-full sm:w-auto px-4 py-2.5 rounded text-sm bg-white/5 hover:bg-white/10 text-gray-300 border border-gray-500/30 transition cursor-pointer">
-                            Cancel
-                        </button>
-
-                        <button type="submit" id="submitBtn"
-                            class="w-full sm:w-auto px-4 py-2.5 rounded text-sm bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 transition cursor-pointer">
-                            <i class="fas fa-save mr-2"></i> Generate Tables
-                        </button>
+                    <div id="tableNumberGroup" class="hidden">
+                        <label class="block text-sm text-gray-400 mb-1.5 font-medium">
+                            Table Number <span class="text-orange-500">*</span>
+                        </label>
+                        <input type="text" name="table_number" placeholder="ex. T-01" id="tableNumber"
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
                     </div>
-                </form>
-            </div>
+                    <div  id="capacityGroup" class="sm:col-span-2">
+                        <label class="block text-sm text-gray-400 mb-1.5 font-medium">
+                            Capacity <span class="text-orange-500">*</span>
+                        </label>
+                        <input type="text" name="capacity" placeholder="ex. 4" id="capacity"
+                            class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
+                    </div>
+                </div>
+                
+
+                <div id="statusGroup" class="hidden">
+                    <label class="block text-sm text-gray-400 mb-1.5 font-medium">
+                        Status <span class="text-orange-500">*</span>
+                    </label>
+                    <select id="status" name="status"
+                        class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
+                        <option value="available">Available</option>
+                        <option value="reserved">Reserved</option>
+                        <option value="occupied">Occupied</option>
+                        <option value="out_of_service">Out Of Service</option>
+                    </select>
+                </div>
+
+                <div class="flex flex-col sm:flex-row justify-end gap-2 pt-2">
+                    <button type="button" id="closeTableModal"
+                        class="w-full sm:w-auto px-4 py-2.5 rounded text-sm bg-white/5 hover:bg-white/10 text-gray-300 border border-gray-500/30 transition cursor-pointer">
+                        Cancel
+                    </button>
+
+                    <button type="submit" id="submitBtn"
+                        class="w-full sm:w-auto px-4 py-2.5 rounded text-sm bg-orange-500/10 hover:bg-orange-500/20 text-orange-500 border border-orange-500/30 transition cursor-pointer">
+                        <i class="fas fa-save mr-2"></i> Generate Tables
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
+</div>
 @endif
 
 @include('core.components.table.table-drawer')
 @include('core.components.table.partials.transfer-table-modal', [
-    'activeWaiters' => $activeWaiters ?? [],
-    'isManager' => $isAdmin ?? false,
+'activeWaiters' => $activeWaiters ?? [],
+'isManager' => $isAdmin ?? false,
 ])
 
 <div id="qrModal" class="fixed inset-0 z-[130] hidden">
@@ -130,8 +171,7 @@
     <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
 
         <!-- INNER BOX -->
-        <div id="qrBox"
-            class="bg-transparent rounded-3xl shadow-none p-0 w-full max-w-[560px] text-center relative">
+        <div id="qrBox" class="bg-transparent rounded-3xl shadow-none p-0 w-full max-w-[560px] text-center relative">
 
             <!-- ❌ CLOSE BUTTON -->
             <button id="qrCloseBtn"
@@ -310,7 +350,7 @@
             margin: 4mm;
         }
 
-        body.print-mode > *:not(#printSheet) {
+        body.print-mode>*:not(#printSheet) {
             display: none !important;
         }
 
@@ -374,6 +414,7 @@
         const tableForm = document.getElementById('tableForm');
         const formMethodField = document.getElementById('formMethodField');
         const branchSelect = document.getElementById('branchSelect');
+        const areaSelect = document.getElementById('areaSelect');
         const tableCount = document.getElementById('tableCount');
         const startNumber = document.getElementById('startNumber');
         const tableNumber = document.getElementById('tableNumber');
@@ -383,11 +424,12 @@
         const tableCountGroup = document.getElementById('tableCountGroup');
         const startNumberGroup = document.getElementById('startNumberGroup');
         const tableNumberGroup = document.getElementById('tableNumberGroup');
+        const capacityGroup = document.getElementById('capacityGroup');
         const statusGroup = document.getElementById('statusGroup');
 
         const editButtons = document.querySelectorAll('.editBtn');
 
-        if (!modal || !tableForm || !formMethodField || !branchSelect || !tableCount || !startNumber || !
+        if (!modal || !tableForm || !formMethodField || !branchSelect || !areaSelect || !tableCount || !startNumber || !
             tableNumber ||
             !capacity || !status || !submitBtn || !tableCountGroup || !startNumberGroup || !tableNumberGroup ||
             !statusGroup) {
@@ -404,6 +446,7 @@
             startNumberGroup.classList.remove('hidden');
             tableNumberGroup.classList.add('hidden');
             statusGroup.classList.add('hidden');
+            capacityGroup.classList.add('sm:col-span-2');
 
             tableCount.required = true;
             startNumber.required = true;
@@ -421,6 +464,7 @@
             startNumberGroup.classList.add('hidden');
             tableNumberGroup.classList.remove('hidden');
             statusGroup.classList.remove('hidden');
+            capacityGroup.classList.remove('sm:col-span-2');
 
             tableCount.required = false;
             startNumber.required = false;
@@ -443,6 +487,7 @@
             openBtn.addEventListener('click', () => {
                 setAddMode();
                 branchSelect.value = "";
+                areaSelect.value = "";
                 tableCount.value = "";
                 startNumber.value = "";
                 tableNumber.value = "";
@@ -457,6 +502,7 @@
             btn.addEventListener('click', () => {
                 setEditMode(btn.dataset.updateUrl);
                 branchSelect.value = btn.dataset.branch;
+                areaSelect.value = btn.dataset.areaId || "";
                 tableNumber.value = btn.dataset.tableNumber;
                 capacity.value = btn.dataset.capacity;
                 status.value = btn.dataset.status;
@@ -498,7 +544,8 @@
         let activePosterKey = '';
         let posterRequestToken = 0;
         const posterTemplateUrl = @json(asset('images/RestoTix.png'));
-        const currentTenantName = @json(trim((string) (optional(auth()->user()->tenant)->company_name ?? 'FOOD PANDA')));
+        const currentTenantName = @json(trim((string)(optional(auth() -> user() -> tenant) -> company_name ??
+            'FOOD PANDA')));
 
         if (!qrModal || !qrBox || !qrCloseBtn || !qrPosterImage || !posterLoadingState || !downloadBtn ||
             !printSingleBtn || !printSheet) {
@@ -816,8 +863,12 @@
                     }, 150);
                 });
 
-                frameWin.addEventListener('afterprint', cleanup, { once: true });
-            }, { once: true });
+                frameWin.addEventListener('afterprint', cleanup, {
+                    once: true
+                });
+            }, {
+                once: true
+            });
 
             document.body.appendChild(frame);
             frame.srcdoc = buildPrintDocumentHtml(posterPagesHtml);
@@ -836,8 +887,12 @@
 
                 return new Promise((resolve) => {
                     const done = () => resolve();
-                    img.addEventListener('load', done, { once: true });
-                    img.addEventListener('error', done, { once: true });
+                    img.addEventListener('load', done, {
+                        once: true
+                    });
+                    img.addEventListener('error', done, {
+                        once: true
+                    });
                 });
             })).then(() => undefined);
         }
@@ -848,7 +903,8 @@
         }
 
         async function ensurePosterDataUrl(data) {
-            const cacheKey = `${data?.name ?? ''}::${data?.restaurantName ?? currentTenantName ?? ''}::${data?.qr ?? ''}::${data?.tableNumber ?? data?.table_number ?? ''}`;
+            const cacheKey =
+                `${data?.name ?? ''}::${data?.restaurantName ?? currentTenantName ?? ''}::${data?.qr ?? ''}::${data?.tableNumber ?? data?.table_number ?? ''}`;
 
             if (activePosterDataUrl && activePosterKey === cacheKey) {
                 await setPosterImageSource(activePosterDataUrl);
@@ -904,7 +960,7 @@
                 openQR({
                     name: btn.dataset.name,
                     qr: btn.dataset.qr,
-                    tableNumber: btn.dataset.tableNumber,
+                    tableNumber: btn.dataset.posterTableNumber || btn.dataset.tableNumber,
                     restaurantName: currentTenantName
                 });
             });
@@ -916,7 +972,7 @@
                 openQR({
                     name: img.dataset.name,
                     qr: img.dataset.qr,
-                    tableNumber: img.dataset.tableNumber,
+                    tableNumber: img.dataset.posterTableNumber || img.dataset.tableNumber,
                     restaurantName: currentTenantName
                 });
             });
@@ -953,12 +1009,25 @@
         if (printAllQrBtn) {
             printAllQrBtn.addEventListener('click', async () => {
                 const posterDataUrls = [];
+                const printableButtons = Array.from(viewButtons).filter((btn) => {
+                    const card = btn.closest('.table-card');
+                    return card && !card.classList.contains('hidden');
+                });
 
-                for (const btn of viewButtons) {
+                if (!printableButtons.length) {
+                    window.showToast?.({
+                        type: 'warning',
+                        message: 'No tables are available in the selected area / floor.',
+                        duration: 4500
+                    });
+                    return;
+                }
+
+                for (const btn of printableButtons) {
                     const data = {
                         name: btn.dataset.name,
                         qr: btn.dataset.qr,
-                        tableNumber: btn.dataset.tableNumber,
+                        tableNumber: btn.dataset.posterTableNumber || btn.dataset.tableNumber,
                         restaurantName: currentTenantName
                     };
                     const posterDataUrl = await ensurePosterDataUrl({
@@ -999,9 +1068,10 @@
         const drawerKotSelectorWrap = document.getElementById('drawerKotSelectorWrap');
         const drawerKotSelector = document.getElementById('drawerKotSelector');
         const drawerPrintKotLabel = document.getElementById('drawerPrintKotLabel');
-        const currentTenantName = @json(optional(auth()->user()->tenant)->company_name ?? 'FOOD PANDA');
-        const currentBranchName = @json(optional(auth()->user()->branch)->branch_name ?? 'HOT KITCHEN');
-        const EMPTY_ORDERS_ICON_HTML = @json(trim(view('core.components.table.partials.empty-orders-icon')->render()));
+        const currentTenantName = @json(optional(auth() -> user() -> tenant) -> company_name ?? 'FOOD PANDA');
+        const currentBranchName = @json(optional(auth() -> user() -> branch) -> branch_name ?? 'HOT KITCHEN');
+        const EMPTY_ORDERS_ICON_HTML = @json(trim(view('core.components.table.partials.empty-orders-icon') ->
+            render()));
         const ALERT_STORAGE_KEY = 'table_order_activity_v1';
         const WAITER_ALERT_STORAGE_KEY = 'table_waiter_call_activity_v1';
         window.currentOpenTable = null;
@@ -1177,7 +1247,9 @@
                 return rawLabel || 'Guest';
             };
             const resolveOrderType = (order) => String(order?.order_type ?? 'dine_in').trim() || 'dine_in';
-            const resolveOrderAt = (item, order) => item?.created_at || item?.createdAt || order?.ordered_at_iso || order?.ordered_at || order?.created_at || '';
+            const resolveOrderAt = (item, order) => item?.created_at || item?.createdAt || order?.ordered_at_iso ||
+                order
+                ?.ordered_at || order?.created_at || '';
 
             (Array.isArray(orders) ? orders : []).forEach((order, orderIndex) => {
                 (Array.isArray(order?.items) ? order.items : []).forEach((item, itemIndex) => {
@@ -1199,6 +1271,13 @@
                         orderId: Number(order?.id ?? 0) || null,
                         orderNumber: String(order?.order_number ?? '').trim(),
                         orderType: resolveOrderType(order),
+                        tableNumber: String(
+                            order?.table_display_number ??
+                            window.currentOpenTableDisplayNumber ??
+                            window.currentOpenTable ??
+                            order?.table_number ??
+                            ''
+                        ).trim(),
                         orderByLabel: resolveOrderByLabel(item, order),
                         orderAt: resolveOrderAt(item, order),
                     };
@@ -1221,8 +1300,11 @@
                     });
                     existing.itemCount += 1;
                     existing.qtyCount += safeQuantity;
-                    existing.printCount = Math.max(existing.printCount, Number.isFinite(itemPrintCount) ? itemPrintCount : 0);
-                    if (itemLastPrintedAt && (!existing.lastPrintedAt || itemLastPrintedAt > existing.lastPrintedAt)) {
+                    existing.printCount = Math.max(existing.printCount, Number.isFinite(
+                            itemPrintCount) ? itemPrintCount :
+                        0);
+                    if (itemLastPrintedAt && (!existing.lastPrintedAt || itemLastPrintedAt > existing
+                            .lastPrintedAt)) {
                         existing.lastPrintedAt = itemLastPrintedAt;
                     }
                     groupMap.set(kotNumber, existing);
@@ -1461,8 +1543,10 @@
 
                     current.itemCount += 1;
                     current.qtyCount += safeQuantity;
-                    current.printCount = Math.max(current.printCount, Number.isFinite(printCount) ? printCount : 0);
-                    if (lastPrintedAt && (!current.lastPrintedAt || lastPrintedAt > current.lastPrintedAt)) {
+                    current.printCount = Math.max(current.printCount, Number.isFinite(printCount) ?
+                        printCount : 0);
+                    if (lastPrintedAt && (!current.lastPrintedAt || lastPrintedAt > current
+                            .lastPrintedAt)) {
                         current.lastPrintedAt = lastPrintedAt;
                     }
                     kotMap.set(kotNumber, current);
@@ -1780,7 +1864,9 @@
             const waiterBell = card.querySelector('.waiter-call-bell');
             if (waiterBell) waiterBell.style.display = 'flex';
             window.updateWaiterTableCard?.(normalizedTableNum, JSON.parse(card.dataset.orders || '[]'),
-                card.dataset.status, { is_calling_waiter: true });
+                card.dataset.status, {
+                    is_calling_waiter: true
+                });
         };
 
         window.markTableAsBillRequested = function(tableNum) {
@@ -1792,7 +1878,9 @@
             const billBell = card.querySelector('.bill-request-bell');
             if (billBell) billBell.style.display = 'flex';
             window.updateWaiterTableCard?.(normalizedTableNum, JSON.parse(card.dataset.orders || '[]'),
-                card.dataset.status, { is_bill_requested: true });
+                card.dataset.status, {
+                    is_bill_requested: true
+                });
         };
 
         window.markTableAsAvailable = function(tableNum, clearSignals = false) {
@@ -1850,9 +1938,11 @@
             card.classList.remove('kitchen-ready-active');
         }
 
-        window.markTableAsOccupied = function(tableNum) {
+        window.markTableAsOccupied = function(tableNum, tableId = null) {
             const normalizedTableNum = normalizeTableNum(tableNum);
-            const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            const card = tableId
+                ? document.querySelector(`.table-card[data-id="${CSS.escape(String(tableId))}"]`)
+                : document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
             if (!card) return;
 
             card.dataset.status = 'occupied';
@@ -1938,7 +2028,8 @@
                 const hasMatchingBillingDraft = Boolean(
                     String(window.currentOpenTableId || '').trim() &&
                     window.currentBillingDraftPayload &&
-                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId ||
+                        '').trim()
                 );
                 window.setDrawerGenerateBillButtonState(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
             }
@@ -1976,6 +2067,9 @@
                 const params = new URLSearchParams();
                 if (normalizedBranchId) {
                     params.set('branch_id', normalizedBranchId);
+                }
+                if (Number(window.currentOpenTableId || 0) > 0) {
+                    params.set('table_id', String(Number(window.currentOpenTableId)));
                 }
 
                 const requestUrl = params.toString() ?
@@ -2017,9 +2111,12 @@
                 const hasMatchingBillingDraft = Boolean(
                     String(window.currentOpenTableId || '').trim() &&
                     window.currentBillingDraftPayload &&
-                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                    String(window.currentBillingDraftTableId || '').trim() === String(window
+                        .currentOpenTableId || '')
+                    .trim()
                 );
-                window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
+                window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable ||
+                    hasMatchingBillingDraft));
                 window.refreshBillingDraftForCurrentTable?.(true);
                 setDrawerSubtitle(formatOrderItemCount(0));
                 listArea.innerHTML =
@@ -2040,7 +2137,8 @@
                 const hasMatchingBillingDraft = Boolean(
                     String(window.currentOpenTableId || '').trim() &&
                     window.currentBillingDraftPayload &&
-                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId ||
+                        '').trim()
                 );
                 window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
                 listArea.innerHTML = `
@@ -2183,7 +2281,8 @@
                 const hasMatchingBillingDraft = Boolean(
                     String(window.currentOpenTableId || '').trim() &&
                     window.currentBillingDraftPayload &&
-                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId ||
+                        '').trim()
                 );
                 window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
                 setDrawerSubtitle(formatOrderItemCount(0));
@@ -2201,11 +2300,11 @@
                 return;
             }
 
+            window.setDrawerGenerateBillButtonState?.(true);
+            const groups = getKotGroupsFromOrders(orders);
+            if (!groups.length) {
+                setKotPrintButtonState(false);
                 window.setDrawerGenerateBillButtonState?.(true);
-                const groups = getKotGroupsFromOrders(orders);
-                if (!groups.length) {
-                    setKotPrintButtonState(false);
-                    window.setDrawerGenerateBillButtonState?.(true);
                 setDrawerSubtitle('0 KOT batches');
                 listArea.innerHTML = `
                     <div class="flex min-h-[240px] items-center justify-center px-4 py-10 text-center">
@@ -2220,7 +2319,8 @@
                 const hasMatchingBillingDraft = Boolean(
                     String(window.currentOpenTableId || '').trim() &&
                     window.currentBillingDraftPayload &&
-                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId || '').trim()
+                    String(window.currentBillingDraftTableId || '').trim() === String(window.currentOpenTableId ||
+                        '').trim()
                 );
                 window.setDrawerGenerateBillButtonState?.(Boolean(window.currentOpenTable || hasMatchingBillingDraft));
                 window.refreshBillingDraftForCurrentTable?.();
@@ -2289,6 +2389,7 @@
                 const printCount = Number(group.printCount ?? 0);
                 const hasPrinted = printCount > 0;
                 const paperOrderType = humanizeLabel(group.orderType ?? 'dine_in', 'Dine In');
+                const paperTableNumber = String(group.tableNumber ?? '').trim() || '--';
                 const paperOrderBy = String(group.orderByLabel ?? '').trim() || 'Guest';
                 const paperOrderAt = formatPrintDateTime(group.orderAt) || 'Now';
                 const printButtonClass = hasPrinted ?
@@ -2315,6 +2416,7 @@
                         </div>
                         <div class="space-y-1 text-[12px] leading-5">
                             <div>Type: ${escapeHtml(paperOrderType)}</div>
+                            <div>Table: ${escapeHtml(paperTableNumber)}</div>
                             <div>Order By: ${escapeHtml(paperOrderBy)}</div>
                             <div>Order At: ${escapeHtml(paperOrderAt)}</div>
                         </div>
@@ -2355,10 +2457,12 @@
         // Table Card Click
         document.querySelectorAll('.table-card').forEach(card => {
             card.addEventListener('click', (e) => {
-                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('img')) return;
+                if (e.target.closest('button') || e.target.closest('a') || e.target.closest('img'))
+                    return;
 
                 const tableNum = card.dataset.tableNumber;
                 window.currentOpenTable = tableNum;
+                window.currentOpenTableDisplayNumber = card.dataset.displayNumber || tableNum;
                 window.currentOpenTableId = card.dataset.id || null;
                 window.currentOpenTableBranchId = card.dataset.branchId || null;
                 window.currentBillingDraftPayload = null;
@@ -2472,6 +2576,7 @@
             overlay.classList.add('hidden');
             window.currentOpenTable = null;
             window.currentOpenTableId = null;
+            window.currentOpenTableDisplayNumber = null;
             window.currentOpenTableBranchId = null;
             window.currentOpenTableDrawerView = 'orders';
             syncDrawerViewTabs();

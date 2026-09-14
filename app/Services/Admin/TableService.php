@@ -3,6 +3,7 @@
 namespace App\Services\Admin;
 
 use App\Models\Table;
+use App\Models\Area;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -14,20 +15,37 @@ class TableService
     public function generateBulkTables(array $data, int $tenantId)
     {
         $branchId = $data['branch_id'];
+        $areaId   = $data['area_id'] ?? null;
         $count    = $data['table_count'];
         $start    = $data['start_number'];
         $capacity = $data['capacity'] ?? 4;
+
+
+        // Validate that the selected area belongs to this tenant and branch.
+        if ($areaId) {
+            Area::query()
+                ->where('id', $areaId)
+                ->where('tenant_id', $tenantId)
+                ->where('branch_id', $branchId)
+                ->firstOrFail();
+        }
 
         $tableNumbers = [];
 
         // Step 1: Generate all table numbers in memory
         for ($i = $start; $i < ($start + $count); $i++) {
-            $tableNumbers[] = 'T-' . str_pad($i, 2, '0', STR_PAD_LEFT);
+            // Store only the local number. Area code is a live display concern.
+            $tableNumbers[] = str_pad($i, 2, '0', STR_PAD_LEFT);
         }
 
         // Step 2: Fetch existing tables in ONE query (Fastest way)
         $existingTables = Table::where('tenant_id', $tenantId)
             ->where('branch_id', $branchId)
+            ->where(function ($query) use ($areaId) {
+                $areaId
+                    ? $query->where('area_id', $areaId)
+                    : $query->whereNull('area_id');
+            })
             ->whereIn('table_number', $tableNumbers)
             ->pluck('table_number')
             ->toArray();
@@ -39,6 +57,7 @@ class TableService
                 $newTables[] = [
                     'tenant_id'    => $tenantId,
                     'branch_id'    => $branchId,
+                    'area_id'      => $areaId,
                     'table_number' => $tableNumber,
                     'capacity'     => $capacity,
                     'status'       => 'available',
@@ -72,15 +91,23 @@ class TableService
      */
     public function updateTable(int $id, array $data, int $tenantId)
     {
-        // 1. Check for Duplicate Table Number in the same branch
+        $areaId = $data['area_id'] ?? null;
+        $tableNumber = trim((string) $data['table_number']);
+
+        // A local table number is unique inside its area (or General group).
         $exists = Table::where('tenant_id', $tenantId)
             ->where('branch_id', $data['branch_id'])
-            ->where('table_number', $data['table_number'])
+            ->where(function ($query) use ($areaId) {
+                $areaId
+                    ? $query->where('area_id', $areaId)
+                    : $query->whereNull('area_id');
+            })
+            ->where('table_number', $tableNumber)
             ->where('id', '!=', $id)
             ->exists();
 
         if ($exists) {
-            throw new \Exception('Table number already exists in this branch!');
+            throw new \Exception('Table number already exists in this area / floor!');
         }
 
         // 2. Update the Table
@@ -88,7 +115,8 @@ class TableService
 
         $updates = [
             'branch_id'    => $data['branch_id'],
-            'table_number' => $data['table_number'],
+            'area_id'      => $areaId,
+            'table_number' => $tableNumber,
             'capacity'     => $data['capacity'],
             'status'       => $data['status'],
         ];

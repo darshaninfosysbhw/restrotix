@@ -325,7 +325,7 @@
                     const isReady = itemStatus === 'ready';
                     const isServed = itemStatus === 'served' || (kitchenStatus === 'served' && !isReady);
                     await refreshKdsData({
-                        tableNumber: payload?.table_number ?? '',
+                        tableNumber: payload?.table_display_number ?? payload?.table_number ?? '',
                         kotNumber: payload?.kot_number ?? '',
                         batchKey: payload?.batch_key ?? '',
                         type: isReady || isServed ? 'ready' : 'order'
@@ -333,11 +333,11 @@
 
                     if (isReady) {
                         playKitchenReadySound();
-                        emitKdsToast('success', `${formatKdsTableLabel(payload?.table_number)}: Kitchen ready`);
+                        emitKdsToast('success', `${formatKdsTableLabel(payload?.table_display_number ?? payload?.table_number)}: Kitchen ready`);
                     }
 
                     if (isServed) {
-                        emitKdsToast('success', `${formatKdsTableLabel(payload?.table_number)}: Served`);
+                        emitKdsToast('success', `${formatKdsTableLabel(payload?.table_display_number ?? payload?.table_number)}: Served`);
                     }
                 })
                 @if (in_array(auth()->user()->role, ['admin', 'manager', 'waiter'], true))
