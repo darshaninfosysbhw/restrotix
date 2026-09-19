@@ -141,10 +141,9 @@ class BranchController extends Controller
         $tenant = $user->tenant;
         abort_unless($user && $user->tenant_id && (int) $branch->tenant_id === (int) $tenant->id, 403);
 
-        $canMaskIdentity = $tenant->canMaskIdentity();
         $validator = Validator::make(
             $request->all(),
-            $this->branchRules((int) $tenant->id, $branch, $canMaskIdentity)
+            $this->branchRules((int) $tenant->id, $branch)
         );
         if ($validator->fails()) {
             return redirect()->back()->withInput()->with('toast', [
@@ -157,8 +156,8 @@ class BranchController extends Controller
         }
 
         try {
-            Branch::unguarded(function () use ($branch, $tenant, $request, $canMaskIdentity) {
-                $branch->fill($this->branchPayload($tenant->id, $request, $canMaskIdentity));
+            Branch::unguarded(function () use ($branch, $tenant, $request) {
+                $branch->fill($this->branchPayload($tenant->id, $request));
                 $branch->save();
             });
 
@@ -207,7 +206,7 @@ class BranchController extends Controller
         }
     }
 
-    private function branchRules(int $tenantId, ?Branch $branch = null, bool $canMaskIdentity = false): array
+    private function branchRules(int $tenantId, ?Branch $branch = null): array
     {
         $uniqueBranchName = Rule::unique('branches', 'branch_name')
             ->where(fn($query) => $query->where('tenant_id', $tenantId));
@@ -232,15 +231,10 @@ class BranchController extends Controller
             'pan_vat_number' => ['nullable', 'string', 'max:50'],
         ];
 
-        if ($canMaskIdentity) {
-            $rules['mask_scope'] = ['required', Rule::in(['none', 'public_only', 'everywhere'])];
-            $rules['display_name'] = ['nullable', 'string', 'max:150'];
-        }
-
         return $rules;
     }
 
-    private function branchPayload(int $tenantId, Request $request, bool $canMaskIdentity = false): array
+    private function branchPayload(int $tenantId, Request $request): array
     {
         $context = $this->resolveCountryContext((string) $request->input('country_code', 'Ind'));
 
@@ -259,13 +253,6 @@ class BranchController extends Controller
             'tax_setting' => $request->input('tax_setting', 'exclusive'),
             'tax_rate' => $request->filled('tax_rate') ? $request->input('tax_rate') : 5.0,
         ];
-
-        if ($canMaskIdentity) {
-            $payload['mask_scope'] = $request->input('mask_scope', 'none');
-            $payload['display_name'] = $request->filled('display_name')
-                ? trim((string) $request->input('display_name'))
-                : null;
-        }
 
         if (Schema::hasColumn('branches', 'country_id')) {
             $payload['country_id'] = $context['country_id'];
