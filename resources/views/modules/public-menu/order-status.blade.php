@@ -581,8 +581,8 @@
         $branch = $table?->branch;
         $tenant = $branch?->tenant;
         $invoiceBranding = [
-            'restaurant_name' => (string) ($tenant?->company_name ?? 'Restaurant'),
-            'branch_name' => (string) ($branch?->branch_name ?? ''),
+            'restaurant_name' => (string) ($branch?->customer_brand_name ?? $tenant?->company_name ?? 'Restaurant'),
+            'branch_name' => (string) ($branch?->customer_branch_subtitle ?? ''),
             'branch_address' => trim((string) ($branch?->full_address ?: implode(', ', array_filter([
                 $branch?->city,
                 $branch?->state,

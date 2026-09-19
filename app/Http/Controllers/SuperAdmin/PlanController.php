@@ -81,6 +81,7 @@ class PlanController extends Controller
                     'features' => $this->normalizeFeatures($selectedFeatureSlugs, $featureSlugs),
                     'is_active' => $payload['status'] === 'Active',
                     'is_recommended' => $request->boolean('is_recommended'),
+                    'allow_identity_masking' => in_array('identity-masking', $selectedFeatureSlugs, true),
                 ]);
 
                 $this->syncPlanServices($plan, $selectedFeatureSlugs);
@@ -144,6 +145,7 @@ class PlanController extends Controller
                     'features' => $this->normalizeFeatures($selectedFeatureSlugs, $featureSlugs),
                     'is_active' => $payload['status'] === 'Active',
                     'is_recommended' => $isRecommended,
+                    'allow_identity_masking' => in_array('identity-masking', $selectedFeatureSlugs, true),
                 ]);
 
                 $this->syncPlanServices($plan, $selectedFeatureSlugs);

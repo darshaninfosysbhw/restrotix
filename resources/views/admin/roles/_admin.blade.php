@@ -22,7 +22,7 @@
         <select id="dashboardBranchFilter" name="dashboard_branch" class="min-w-0 max-w-full bg-gray-800 text-white border border-gray-700 rounded-lg px-3 py-2 text-sm">
             <option value="all" @selected(($dashboardBranchId ?? null) === null)>All Branches</option>
             @foreach ($dashboardBranches ?? [] as $dashboardBranch)
-                <option value="{{ $dashboardBranch->id }}" @selected(($dashboardBranchId ?? null) === (int) $dashboardBranch->id)>{{ $dashboardBranch->branch_name }}</option>
+                <option value="{{ $dashboardBranch->id }}" @selected(($dashboardBranchId ?? null) === (int) $dashboardBranch->id)>{{ $dashboardBranch->system_title }}</option>
             @endforeach
         </select>
         <button type="submit" class="bg-orange-500 hover:bg-orange-600 text-white rounded-lg px-3 py-2 text-sm">Apply</button>

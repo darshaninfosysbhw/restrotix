@@ -25,6 +25,7 @@ class PaymentGatewayService
 
     public function initiate(Table $table, Order $order): array
     {
+        $table->loadMissing('area');
         $paymentFlow = $this->orderStatusService->resolvePaymentFlow($table);
 
         if (!($paymentFlow['self_payment_enabled'] ?? false)) {
@@ -170,7 +171,7 @@ class PaymentGatewayService
         if ($qrPayload === '') {
             $qrPayload = sprintf(
                 'Table %s | Order %s | Rs %s',
-                $table->table_number,
+                $this->displayTableNumber($table),
                 $order->order_number,
                 number_format((float) $invoice->grand_total, 2, '.', '')
             );
@@ -229,9 +230,9 @@ class PaymentGatewayService
             'website_url' => route('public.menu.scan', ['qr_token' => $table->qr_token]),
             'amount' => (int) round(((float) $invoice->grand_total) * 100),
             'purchase_order_id' => 'ORD-' . $order->order_number . '-S' . $session->id,
-            'purchase_order_name' => 'Table ' . $table->table_number . ' Order ' . $order->order_number,
+            'purchase_order_name' => 'Table ' . $this->displayTableNumber($table) . ' Order ' . $order->order_number,
             'customer_info' => [
-                'name' => trim((string) ($table->branch?->branch_name ?? 'Restaurant Customer')),
+                'name' => trim((string) ($table->branch?->customer_brand_name ?? 'Restaurant Customer')),
                 'email' => (string) ($table->branch?->branch_email ?? ''),
                 'phone' => (string) ($table->branch?->contact_number ?? ''),
             ],
@@ -300,7 +301,7 @@ class PaymentGatewayService
             'redirect_url' => route('public.order.payment.return', ['qr_token' => $table->qr_token, 'session' => $session->id]),
             'properties' => [
                 'customer_id' => (string) $order->order_number,
-                'remarks' => 'Table ' . $table->table_number . ' payment',
+                'remarks' => 'Table ' . $this->displayTableNumber($table) . ' payment',
             ],
         ];
 
@@ -356,6 +357,7 @@ class PaymentGatewayService
             '{amount}' => (string) $invoice->grand_total,
             '{order_number}' => (string) $order->order_number,
             '{table_number}' => (string) $table->table_number,
+            '{table_display_number}' => $this->displayTableNumber($table),
             '{session_id}' => (string) $session->id,
         ]);
 
@@ -379,6 +381,13 @@ class PaymentGatewayService
             'gateway_slug' => $session->gateway_slug,
             'amount' => (float) $invoice->grand_total,
         ];
+    }
+
+    protected function displayTableNumber(Table $table): string
+    {
+        $displayNumber = trim((string) $table->display_number);
+
+        return $displayNumber !== '' ? $displayNumber : trim((string) $table->table_number);
     }
 
     protected function handleKhaltiReturn(PaymentSession $session, \Illuminate\Http\Request $request): array

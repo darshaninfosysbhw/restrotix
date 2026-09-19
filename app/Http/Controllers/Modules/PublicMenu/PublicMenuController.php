@@ -233,7 +233,9 @@ class PublicMenuController extends Controller
             : null;
         $tableDisplayNumber = $resolvedTable?->display_number ?? $tableNumber;
 
-        $branch = $branchId ? Branch::find($branchId) : Branch::where('tenant_id', $tenantId)->first();
+        $branch = $branchId
+            ? Branch::with('tenant')->find($branchId)
+            : Branch::with('tenant')->where('tenant_id', $tenantId)->first();
 
         $categories = $this->categoryService
             ->getAllCategories($tenantId)

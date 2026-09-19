@@ -22,7 +22,7 @@ class BranchPaymentGatewayController extends Controller
         $selfPaymentEnabled = (bool) ($tenant?->plan?->hasFeature('self_payment_enabled') ?? false);
         $branches = $tenant->branches()
             ->orderBy('branch_name')
-            ->get(['id', 'branch_name', 'branch_email', 'contact_number', 'city']);
+            ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name', 'branch_email', 'contact_number', 'city']);
 
         abort_unless($branches->isNotEmpty(), 404, 'No branches found for this tenant.');
 

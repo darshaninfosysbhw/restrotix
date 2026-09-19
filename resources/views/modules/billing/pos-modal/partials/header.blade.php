@@ -10,7 +10,7 @@
                     CHECKOUT
                 </h1>
                 <span class="text-slate-400">—</span>
-                <span class="text-sm font-semibold text-slate-600">Table {{ $tableNo }}</span>
+                <span id="billingCheckoutTable" class="text-sm font-semibold text-slate-600">Table N/A</span>
             </div>
         </div>
     </div>

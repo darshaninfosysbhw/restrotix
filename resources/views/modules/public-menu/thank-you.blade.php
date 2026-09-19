@@ -3,7 +3,7 @@
 @section('content')
     @php
         $isLightTheme = strtolower((string) ($publicMenuTheme ?? 'dark')) === 'light';
-        $restaurantName = trim((string) ($tenant?->company_name ?? 'Restaurant'));
+        $restaurantName = trim((string) ($table?->branch?->customer_brand_name ?? $tenant?->company_name ?? 'Restaurant'));
         $restaurantName = $restaurantName !== '' ? $restaurantName : 'Restaurant';
         // $tableNumber = trim((string) ($tableNumber ??
         $message = trim((string) data_get($paymentResult ?? [], 'message', 'Thank you for visiting.'));

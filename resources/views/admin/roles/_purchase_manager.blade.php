@@ -4,7 +4,7 @@
         <div>
             <h1 class="text-2xl font-bold text-white tracking-tight">Purchase Dashboard</h1>
             <p class="text-sm text-gray-400 font-medium">
-                Branch: <span class="text-orange-500 font-bold">{{ auth()->user()->branch_name ?? 'Main Branch' }}</span>
+                Branch: <span class="text-orange-500 font-bold">{{ auth()->user()->branch?->system_title ?? 'Main Branch' }}</span>
             </p>
         </div>
         <button

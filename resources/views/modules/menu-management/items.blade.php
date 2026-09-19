@@ -54,7 +54,7 @@
 
         $selectedBranchId = (string) old('branch_id', $isManager ? optional($branchOptions->first())->id : '');
         $selectedBranch = $branchOptions->firstWhere('id', (int) $selectedBranchId);
-        $selectedBranchName = $selectedBranch ? $selectedBranch->branch_name : 'Global Specific';
+        $selectedBranchName = $selectedBranch ? $selectedBranch->system_title : 'Global Specific';
 
         $selectedType = old('type', 'veg');
         $editItemIdFromSession = session('edit_item_id');
@@ -382,9 +382,9 @@
                                         </div>
                                     @endif
                                     @foreach ($branchOptions as $branch)
-                                        <div onclick="selectBranch('{{ $branch->id }}', '{{ e($branch->branch_name) }}')"
+                                        <div onclick="selectBranch('{{ $branch->id }}', '{{ e($branch->system_title) }}')"
                                             class="px-4 py-2.5 text-sm text-gray-300 hover:bg-orange-500/10 hover:text-orange-400 cursor-pointer border-t border-gray-800 transition">
-                                            {{ $branch->branch_name }}
+                                            {{ $branch->system_title }}
                                         </div>
                                     @endforeach
                                 </div>

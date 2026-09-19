@@ -30,7 +30,7 @@ class BranchSwitchController extends Controller
         return redirect()->back()->with('toast', [
             [
                 'type' => 'success',
-                'message' => 'Switched to ' . $branch->branch_name,
+                'message' => 'Switched to ' . $branch->system_title,
                 'duration' => 2500,
             ],
         ]);

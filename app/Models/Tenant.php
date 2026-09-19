@@ -24,6 +24,7 @@ class Tenant extends Model
         'billing_cycle',
         'subscription_ends_at', // Main Expiry Date
         'is_banned',
+        'custom_identity_masking',
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class Tenant extends Model
         'currency_id' => 'integer',
         'plan_id' => 'integer',
         'is_banned' => 'boolean',
+        'custom_identity_masking' => 'boolean',
     ];
 
     // --- Relationships ---
@@ -130,6 +132,27 @@ class Tenant extends Model
     {
         if (!$this->plan) return false;
         return $this->branches()->count() < $this->plan->max_branches;
+    }
+
+    public function canMaskIdentity(): bool
+    {
+        if (!is_null($this->custom_identity_masking)) {
+            return (bool) $this->custom_identity_masking;
+        }
+
+        if ((bool) ($this->plan?->allow_identity_masking ?? false)
+            || (bool) $this->plan?->hasFeature('identity-masking')) {
+            return true;
+        }
+
+        return $this->services()
+            ->where('slug', 'identity-masking')
+            ->wherePivot('status', 'active')
+            ->where(function ($query) {
+                $query->whereNull('tenant_service.expires_at')
+                    ->orWhere('tenant_service.expires_at', '>', now());
+            })
+            ->exists();
     }
 
 

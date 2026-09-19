@@ -16,7 +16,7 @@ class OrderStatusService
     public function resolveContext(string $qrToken): array
     {
         $table = Table::query()
-            ->with(['branch', 'area'])
+            ->with(['branch.tenant', 'area'])
             ->where('qr_token', $qrToken)
             ->where('is_active', true)
             ->firstOrFail();

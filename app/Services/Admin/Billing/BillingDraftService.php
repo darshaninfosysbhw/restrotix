@@ -21,11 +21,13 @@ class BillingDraftService
     public function saveForTable(Table $table, array $payload, ?User $user = null): BillingDraft
     {
         return DB::transaction(function () use ($table, $payload, $user) {
+            $table->loadMissing('area');
             $normalizedPayload = array_merge($payload, [
                 'tenant_id' => (int) $table->tenant_id,
                 'branch_id' => (int) $table->branch_id,
                 'table_id' => (int) $table->id,
                 'table_number' => (string) $table->table_number,
+                'table_display_number' => (string) $table->display_number,
                 'qr_token' => (string) ($table->qr_token ?? ($payload['qr_token'] ?? '')),
             ]);
 

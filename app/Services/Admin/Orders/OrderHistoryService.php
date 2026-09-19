@@ -113,6 +113,7 @@ class OrderHistoryService
             ->where('tenant_id', $tenantId)
             ->with([
                 'creator:id,name,email,phone_number',
+                'table.area:id,code',
                 'invoice:id,order_id,invoice_number,subtotal_before_discount,subtotal,item_discount_amount,overall_discount_amount,discount_amount,subtotal_after_item_discount,taxable_amount,tax_amount,grand_total,status,payment_mode,payment_method,paid_amount,customer_name_snapshot,table_number_snapshot,notes_snapshot,updated_at,created_at',
                 'paymentSessions:id,order_id,gateway_name,provider_reference,status,paid_at',
                 'items:id,order_id,item_name,price,quantity,total,status,notes,started_at,ready_at,served_at,rejected_at',
@@ -124,8 +125,24 @@ class OrderHistoryService
         if ($search !== '') {
             $query->where(function ($subQuery) use ($search) {
                 $needle = '%' . $search . '%';
+                $tableParts = array_map('trim', explode('-', $search, 2));
+                $areaCodeSearch = $tableParts[0] ?? '';
+                $localTableSearch = $tableParts[1] ?? '';
+
                 $subQuery->where('order_number', 'like', $needle)
                     ->orWhere('table_number', 'like', $needle)
+                    ->orWhereHas('table', function ($tableQuery) use ($needle, $areaCodeSearch, $localTableSearch) {
+                        $tableQuery->where('table_number', 'like', $needle)
+                            ->orWhereHas('area', fn ($areaQuery) => $areaQuery->where('code', 'like', $needle));
+
+                        if ($areaCodeSearch !== '' && $localTableSearch !== '') {
+                            $tableQuery->orWhere(function ($displayNumberQuery) use ($areaCodeSearch, $localTableSearch) {
+                                $displayNumberQuery
+                                    ->where('table_number', 'like', '%' . $localTableSearch . '%')
+                                    ->whereHas('area', fn ($areaQuery) => $areaQuery->where('code', 'like', '%' . $areaCodeSearch . '%'));
+                            });
+                        }
+                    })
                     ->orWhere('source', 'like', $needle)
                     ->orWhere('order_type', 'like', $needle)
                     ->orWhere('notes', 'like', $needle)
@@ -217,9 +234,9 @@ class OrderHistoryService
         return Branch::query()
             ->where('tenant_id', $tenantId)
             ->orderBy('branch_name')
-            ->get(['id', 'branch_name', 'city'])
+            ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name', 'city'])
             ->map(function (Branch $branch) {
-                $label = trim((string) $branch->branch_name);
+                $label = trim((string) $branch->system_title);
                 $city = trim((string) ($branch->city ?? ''));
 
                 if ($label === '') {

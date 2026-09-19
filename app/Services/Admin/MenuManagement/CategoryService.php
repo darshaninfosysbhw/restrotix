@@ -17,7 +17,7 @@ class CategoryService
             }))
             ->whereNull('parent_id')
             ->with([
-                'branch:id,branch_name',
+                'branch:id,tenant_id,branch_name,mask_scope,display_name',
                 'children' => fn($query) => $query
                     ->select([
                         'id',
@@ -34,7 +34,7 @@ class CategoryService
                     ->when($branchId !== null, fn ($query) => $query->where(function ($query) use ($branchId) {
                         $query->whereNull('branch_id')->orWhere('branch_id', $branchId);
                     }))
-                        ->with('branch:id,branch_name'),
+                        ->with('branch:id,tenant_id,branch_name,mask_scope,display_name'),
             ])
             ->orderBy('sort_order', 'asc');
     }
@@ -96,7 +96,7 @@ class CategoryService
             ->where('tenant_id', $tenantId)
             ->when($branchId !== null, fn ($query) => $query->where('id', $branchId))
             ->orderBy('branch_name')
-            ->get(['id', 'branch_name']);
+            ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name']);
     }
 
     public function getCategoryStats($tenantId, ?int $branchId = null)

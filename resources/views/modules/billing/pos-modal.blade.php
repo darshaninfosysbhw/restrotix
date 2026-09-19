@@ -1,5 +1,4 @@
 @php
-    $tableNo = 'T-01';
     $token = 'RT-MU93ER-29';
     $invoiceNo = 'INV-1045';
     $invoiceDate = '26 May 2025, 06:25 PM';

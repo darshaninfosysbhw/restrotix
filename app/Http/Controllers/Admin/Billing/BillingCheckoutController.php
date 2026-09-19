@@ -157,7 +157,7 @@ class BillingCheckoutController extends Controller
         $overallDiscountPercent = $subtotalBeforeDiscount > 0
             ? ($overallDiscountAmount / $subtotalBeforeDiscount) * 100
             : (float) ($validated['overall_discount_percent'] ?? 0);
-        $table = $order->table_id ? Table::query()->with('branch')->find($order->table_id) : null;
+        $table = $order->table_id ? Table::query()->with(['branch', 'area'])->find($order->table_id) : null;
         $taxContext = $this->resolveBillingTaxContext($table, $validated);
         $taxTotals = $this->calculateBillingTaxTotals(
             max($subtotalAfterItemDiscount - $overallDiscountAmount, 0),
@@ -246,7 +246,7 @@ class BillingCheckoutController extends Controller
                 'paid_amount' => $paidAmount,
                 'due_amount' => $dueAmount,
                 'customer_name_snapshot' => $customerName,
-                'table_number_snapshot' => (string) ($validated['table_number'] ?? $order->table_number ?? ''),
+                'table_number_snapshot' => (string) ($table?->display_number ?? $validated['table_number'] ?? $order->table_number ?? ''),
                 'cashier_user_id' => (int) $user->id,
                 'notes_snapshot' => $notesSnapshot ?: null,
                 'grand_total' => $grandTotal,
@@ -330,7 +330,7 @@ class BillingCheckoutController extends Controller
                     ->where('table_id', $order->table_id)
                     ->where('type', 'table_transfer')
                     ->whereIn('status', ['pending', 'accepted'])
-                    ->with(['table', 'handledByWaiter', 'targetWaiter'])
+                    ->with(['table.area', 'handledByWaiter', 'targetWaiter'])
                     ->get();
 
                 foreach ($tableTransfers as $tableTransfer) {
@@ -342,7 +342,9 @@ class BillingCheckoutController extends Controller
                         'id' => $tableTransfer->id,
                         'branch_id' => $tableTransfer->branch_id,
                         'table_id' => $tableTransfer->table_id,
-                        'table_number' => $tableTransfer->table?->table_number,
+                        'table_number' => $tableTransfer->table?->display_number,
+                        'table_raw_number' => $tableTransfer->table?->table_number,
+                        'table_display_number' => $tableTransfer->table?->display_number,
                         'from_waiter' => $tableTransfer->handledByWaiter?->name ?? 'Unknown waiter',
                         'handled_by_waiter_id' => $tableTransfer->handled_by_waiter_id,
                         'target_waiter_id' => $tableTransfer->target_waiter_id,
@@ -362,7 +364,7 @@ class BillingCheckoutController extends Controller
 
                 $releasedTable = $table instanceof Table
                     ? $table
-                    : Table::query()->with('branch')->find($order->table_id);
+                    : Table::query()->with(['branch', 'area'])->find($order->table_id);
 
                 if ($releasedTable instanceof Table) {
                     $this->tableAccessSessionService->releaseTable($releasedTable, 2);
@@ -407,7 +409,7 @@ class BillingCheckoutController extends Controller
             ];
         });
 
-        $table = $table ?? ($result['order']->table_id ? Table::query()->find($result['order']->table_id) : null);
+        $table = $table ?? ($result['order']->table_id ? Table::query()->with('area')->find($result['order']->table_id) : null);
         $printUrl = $table?->qr_token
             ? route('public.order.status.pdf', ['qr_token' => $table->qr_token, 'print' => 1, 'exclude_rejected' => 1], false)
             : null;
@@ -464,7 +466,7 @@ class BillingCheckoutController extends Controller
         $table = null;
         if (!empty($validated['table_id'])) {
             $table = Table::query()
-                ->with('branch.tenant')
+                ->with(['branch.tenant', 'area'])
                 ->where('tenant_id', (int) $user->tenant_id)
                 ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
                 ->find((int) $validated['table_id']);
@@ -472,7 +474,7 @@ class BillingCheckoutController extends Controller
 
         if (!$table && !empty($validated['qr_token'])) {
             $table = Table::query()
-                ->with('branch.tenant')
+                ->with(['branch.tenant', 'area'])
                 ->where('tenant_id', (int) $user->tenant_id)
                 ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
                 ->where('qr_token', (string) $validated['qr_token'])
@@ -481,7 +483,7 @@ class BillingCheckoutController extends Controller
 
         if (!$table) {
             $table = Table::query()
-                ->with('branch.tenant')
+                ->with(['branch.tenant', 'area'])
                 ->where('tenant_id', (int) $user->tenant_id)
                 ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
                 ->where('table_number', (string) $validated['table_number'])
@@ -560,8 +562,8 @@ class BillingCheckoutController extends Controller
         $taxableAmount = (float) $taxTotals['taxable_amount'];
         $grandTotal = (float) $taxTotals['grand_total'];
         $changeAmount = max((float) ($validated['change_amount'] ?? max($tenderAmount - $grandTotal, 0)), 0);
-        $restaurantName = (string) ($table?->branch?->tenant?->company_name ?? 'Restaurant');
-        $branchName = (string) ($table?->branch?->branch_name ?? '');
+        $restaurantName = (string) ($table?->branch?->customer_brand_name ?? 'Restaurant');
+        $branchName = (string) ($table?->branch?->customer_branch_subtitle ?? '');
         $branchAddress = trim((string) ($table?->branch?->full_address ?: implode(', ', array_filter([
             $table?->branch?->city,
             $table?->branch?->state,
@@ -573,7 +575,7 @@ class BillingCheckoutController extends Controller
         $summary = [
             'invoice_number' => '##',
             'invoice_date' => now()->format('d M Y, h:i A'),
-            'table' => (string) ($validated['table_number'] ?? $table?->table_number ?? 'N/A'),
+            'table' => (string) ($table?->display_number ?? $validated['table_number'] ?? 'N/A'),
             'customer_name' => trim((string) ($validated['customer_name_snapshot'] ?? 'Cash Customer')) ?: 'Cash Customer',
             'subtotal' => $subtotalBeforeDiscount,
             'item_discount_amount' => $itemDiscountAmount,
@@ -616,7 +618,7 @@ class BillingCheckoutController extends Controller
             'orderItems' => $displayItems,
         ])->setPaper($this->thermalReceiptPaper((int) collect($displayItems)->sum(fn(array $item) => 1 + count($item['addons'] ?? []))), 'portrait')->setOption('defaultFont', 'DejaVu Sans');
 
-        $safeTableNumber = preg_replace('/[^A-Za-z0-9_-]+/', '-', (string) ($validated['table_number'] ?? 'table'));
+        $safeTableNumber = preg_replace('/[^A-Za-z0-9_-]+/', '-', (string) ($table?->display_number ?? $validated['table_number'] ?? 'table'));
 
         $fileName = 'estimate-invoice-' . $safeTableNumber . '.pdf';
 

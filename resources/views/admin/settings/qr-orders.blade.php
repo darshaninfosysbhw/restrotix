@@ -4,7 +4,7 @@
     <div class="flex-1 overflow-y-auto p-6 bg-gray-900 space-y-6">
         <div class="bg-gray-800 border border-gray-700 rounded-xl p-5 md:p-6 max-w-2xl">
             <h1 class="text-2xl font-bold text-white mt-1">QR Order Settings</h1>
-            <p class="text-sm text-gray-400 mt-2 break-words">Branch: {{ $branch->branch_name }}</p>
+            <p class="text-sm text-gray-400 mt-2 break-words">Branch: {{ $branch->system_title }}</p>
             <form data-qr-order-settings method="POST" action="{{ route('admin.settings.qr-orders.update') }}" class="mt-5 space-y-4">
                 @csrf
                 @method('PUT')

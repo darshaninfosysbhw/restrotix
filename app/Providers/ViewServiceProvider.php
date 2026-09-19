@@ -32,7 +32,7 @@ class ViewServiceProvider extends ServiceProvider
 
                 $availableBranches = $tenant->branches()
                     ->orderBy('branch_name')
-                    ->get(['id', 'branch_name']);
+                    ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name']);
                 $canSwitchBranches = in_array(strtolower((string) $user->role), ['admin', 'superadmin'], true)
                     && (int) ($tenant->plan->max_branches ?? 1) > 1;
                 $activeBranch = $availableBranches->firstWhere('id', (int) session('active_branch_id'));

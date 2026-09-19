@@ -231,8 +231,9 @@
                     playSound(orderSound);
 
                     const tableNum = String(e.orderData.table_number);
+                    const tableDisplayNum = String(e.orderData.table_display_number || tableNum);
                     const tableId = Number(e.orderData.table_id || 0) || null;
-                    emitTableToast('success', `${formatTableToastLabel(tableNum)}: New order received`);
+                    emitTableToast('success', `${formatTableToastLabel(tableDisplayNum)}: New order received`);
                     const isCurrentTableOpen = tableId
                         ? String(window.currentOpenTableId || '') === String(tableId)
                         : window.currentOpenTable === tableNum;
@@ -264,7 +265,8 @@
                     playWaiterCallSound();
 
                     const tableNum = String(e.callData.table_number);
-                    emitTableToast('warning', `${formatTableToastLabel(tableNum)}: Waiter called`);
+                    const tableDisplayNum = String(e.callData.table_display_number || tableNum);
+                    emitTableToast('warning', `${formatTableToastLabel(tableDisplayNum)}: Waiter called`);
                     const card = document.querySelector(`.table-card[data-table-number="${tableNum}"]`);
                     if (card) {
                         card.classList.add('ring-2', 'ring-blue-500');
@@ -283,9 +285,10 @@
                     const payload = e?.requestData || e?.billData || e?.callData || e || {};
                     const tableNum = String(payload.table_number ?? payload.tableNum ?? payload
                         .table_number ?? '');
+                    const tableDisplayNum = String(payload.table_display_number || tableNum);
                     if (!tableNum) return;
 
-                    emitTableToast('info', `${formatTableToastLabel(tableNum)}: Bill requested`);
+                    emitTableToast('info', `${formatTableToastLabel(tableDisplayNum)}: Bill requested`);
 
                     const card = document.querySelector(`.table-card[data-table-number="${tableNum}"]`);
                     if (card) {
@@ -320,6 +323,7 @@
                 .listen('KitchenStatusUpdated', async (e) => {
                     const payload = e?.kitchenData || {};
                     const tableNum = String(payload.table_number ?? '');
+                    const tableDisplayNum = String(payload.table_display_number || tableNum);
                     const kitchenStatus = String(payload.kitchen_status ?? '').toLowerCase();
                     const itemStatus = String(payload.item_status ?? '').toLowerCase();
                     if (!tableNum) return;
@@ -342,7 +346,7 @@
                     }
 
                     if (isServedEvent) {
-                        emitTableToast('success', `${formatTableToastLabel(tableNum)}: Served`);
+                        emitTableToast('success', `${formatTableToastLabel(tableDisplayNum)}: Served`);
                     }
 
                     if (window.currentOpenTable === tableNum && typeof window.refreshFromServer ===
@@ -1089,6 +1093,9 @@
             }
 
             const billingTableNumber = String(
+                restoreSource?.table_display_number ||
+                order?.table_display_number ||
+                window.currentOpenTableDisplayNumber ||
                 restoreSource?.table_number ||
                 order?.table_number ||
                 window.currentOpenTable ||
@@ -1096,6 +1103,7 @@
             ).trim();
 
             setText('billingInvoiceNo', '##');
+            setText('billingCheckoutTable', billingTableNumber ? `Table ${billingTableNumber}` : 'Table N/A');
             setText('billingDineInTable', billingTableNumber ? `Table ${billingTableNumber}` : 'Table N/A');
             setText('billingInvoiceDate', formatDateTime(order?.created_at));
             setText('billingCustomerName', 'Cash Customer');

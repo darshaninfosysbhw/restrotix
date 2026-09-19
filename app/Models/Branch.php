@@ -16,6 +16,8 @@ class Branch extends Model
     protected $fillable = [
         'tenant_id',
         'branch_name',
+        'mask_scope',
+        'display_name',
         'contact_number',
         'branch_email',
         'country_id',
@@ -48,6 +50,45 @@ class Branch extends Model
     public function getEffectiveTaxRateAttribute(): float
     {
         return $this->is_vat_registered ? max(0, (float) $this->tax_rate) : 0.0;
+    }
+
+    public function getCustomerTitleAttribute(): string
+    {
+        if (in_array($this->mask_scope, ['public_only', 'everywhere'], true)
+            && $this->tenant?->canMaskIdentity()) {
+            return $this->display_name ?: 'Guest Check';
+        }
+
+        return (string) $this->branch_name;
+    }
+
+    public function getSystemTitleAttribute(): string
+    {
+        if ($this->mask_scope === 'everywhere' && $this->tenant?->canMaskIdentity()) {
+            return $this->display_name ?: (string) $this->branch_name;
+        }
+
+        return (string) $this->branch_name;
+    }
+
+    public function getIsCustomerIdentityMaskedAttribute(): bool
+    {
+        return in_array($this->mask_scope, ['public_only', 'everywhere'], true)
+            && $this->tenant?->canMaskIdentity();
+    }
+
+    public function getCustomerBrandNameAttribute(): string
+    {
+        if ($this->is_customer_identity_masked) {
+            return $this->customer_title;
+        }
+
+        return trim((string) ($this->tenant?->company_name ?? '')) ?: $this->customer_title;
+    }
+
+    public function getCustomerBranchSubtitleAttribute(): string
+    {
+        return $this->is_customer_identity_masked ? '' : (string) $this->branch_name;
     }
 
     // Relationships

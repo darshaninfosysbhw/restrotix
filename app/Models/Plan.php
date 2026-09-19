@@ -25,6 +25,7 @@ class Plan extends Model
         'trial_days',
         'is_active',
         'is_recommended',
+        'allow_identity_masking',
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class Plan extends Model
         'trial_days' => 'integer',
         'is_active' => 'boolean',
         'is_recommended' => 'boolean',
+        'allow_identity_masking' => 'boolean',
         'features' => 'array',
     ];
 

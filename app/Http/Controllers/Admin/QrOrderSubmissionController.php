@@ -22,9 +22,9 @@ class QrOrderSubmissionController extends Controller
         $branchId = $this->branchId($request);
 
         return response()->json(QrOrderSubmission::where('tenant_id', $request->user()->tenant_id)
-            ->where('branch_id', $branchId)->where('status', 'pending')->with(['table:id,table_number', 'branch.currency'])->oldest()->get()
+            ->where('branch_id', $branchId)->where('status', 'pending')->with(['table:id,area_id,table_number', 'table.area:id,code', 'branch.currency'])->oldest()->get()
             ->map(fn ($submission) => [
-                'id' => $submission->id, 'table_number' => $submission->table?->table_number,
+                'id' => $submission->id, 'table_number' => $submission->table?->display_number,
                 'total' => $submission->total, 'quantity' => $submission->quantity,
                 'currency' => $submission->branch?->currency?->symbol ?? '',
                 'items' => collect($submission->payload['items'])->map(fn ($item) => ['name' => $item['name'], 'quantity' => $item['quantity'], 'variant' => $item['variant_name'] ?? '', 'notes' => $item['notes'] ?? '', 'addons' => $item['addons'] ?? []]),

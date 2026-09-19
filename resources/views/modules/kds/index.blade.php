@@ -312,7 +312,7 @@
                     playOrderSound();
 
                     await refreshKdsData({
-                        tableNumber: e?.orderData?.table_number ?? '',
+                        tableNumber: e?.orderData?.table_display_number ?? e?.orderData?.table_number ?? '',
                         kotNumber: e?.orderData?.kot_number ?? '',
                         batchKey: e?.orderData?.batch_key ?? '',
                         type: 'order'
@@ -345,7 +345,7 @@
                     playWaiterCallSound();
 
                     await refreshKdsData({
-                        tableNumber: e?.callData?.table_number ?? '',
+                        tableNumber: e?.callData?.table_display_number ?? e?.callData?.table_number ?? '',
                         type: 'waiter'
                     });
                 })

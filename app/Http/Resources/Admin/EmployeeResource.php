@@ -27,7 +27,7 @@ class EmployeeResource extends JsonResource
             'role' => (string) ($this->role ?? ''),
             'role_label' => ucwords(str_replace('_', ' ', (string) ($this->role ?? ''))),
             'branch_id' => $this->branch_id,
-            'branch_name' => (string) (optional($this->branch)->branch_name ?? '-'),
+            'branch_name' => (string) (optional($this->branch)->system_title ?? '-'),
             'email' => (string) ($this->email ?? '-'),
             'phone_number' => (string) ($this->phone_number ?? '-'),
             'pin_code' => (string) (optional($detail)->pin_code ?? ''),

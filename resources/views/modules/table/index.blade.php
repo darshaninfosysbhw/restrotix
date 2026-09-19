@@ -207,7 +207,7 @@
                                     </option>
                                     @foreach ($branches as $branch)
                                         <option value="{{ $branch->id }}" class="bg-gray-800 text-white py-2">
-                                            {{ $branch->branch_name }}
+                                            {{ $branch->system_title }}
                                         </option>
                                     @endforeach
                                 </select>

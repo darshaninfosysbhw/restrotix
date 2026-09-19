@@ -11,7 +11,7 @@ class ItemService
     public function getItemsQuery($tenantId)
     {
         return MenuItem::where('tenant_id', $tenantId)
-            ->with(['category:id,name', 'branch:id,branch_name', 'variants', 'addons'])
+            ->with(['category:id,name', 'branch:id,tenant_id,branch_name,mask_scope,display_name', 'variants', 'addons'])
             ->orderBy('sort_order', 'asc');
     }
 

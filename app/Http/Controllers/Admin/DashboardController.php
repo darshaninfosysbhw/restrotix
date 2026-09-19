@@ -42,14 +42,14 @@ class DashboardController extends Controller
 
         if ($isOwner) {
             $dashboardBranches = Branch::query()->where('tenant_id', $tenantId)
-                ->orderBy('branch_name')->get(['id', 'branch_name']);
+                ->orderBy('branch_name')->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name']);
             $selection = $request->validate([
                 'dashboard_branch' => ['nullable', 'string', 'regex:/^(all|[1-9][0-9]*)$/'],
             ])['dashboard_branch'] ?? 'all';
             $dashboardBranchId = $selection === 'all' ? null : (int) $selection;
             $selectedBranch = $dashboardBranches->firstWhere('id', $dashboardBranchId);
             abort_if($dashboardBranchId !== null && !$selectedBranch, 403);
-            $dashboardBranchLabel = $selectedBranch?->branch_name ?? 'All Branches';
+            $dashboardBranchLabel = $selectedBranch?->system_title ?? 'All Branches';
         }
 
         $dashboardData = $dashboardService->buildDashboardPayload(

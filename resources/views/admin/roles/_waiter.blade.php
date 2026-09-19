@@ -4,7 +4,7 @@
         <div>
             <h1 class="text-2xl font-bold text-white">Waiter Service Panel</h1>
             <p class="text-sm text-gray-400">Floor activity for <span
-                    class="text-orange-500 font-semibold">{{ auth()->user()->branch_name ?? 'Main Dining Area' }}</span>
+                    class="text-orange-500 font-semibold">{{ auth()->user()->branch?->system_title ?? 'Main Dining Area' }}</span>
             </p>
         </div>
         <div class="flex items-center gap-3">

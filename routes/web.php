@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\BranchSwitchController;
 use App\Http\Controllers\Admin\Employee\EmployeeController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\Settings\MenuSettingsController;
+use App\Http\Controllers\Admin\Settings\IdentityMaskingSettingsController;
 use App\Http\Controllers\Auth\CheckoutController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
@@ -225,6 +226,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/settings/qr-orders', [\App\Http\Controllers\Admin\Settings\QrOrderSettingsController::class, 'index'])->middleware('role:admin,manager')->name('admin.settings.qr-orders.index');
         Route::put('/settings/qr-orders', [\App\Http\Controllers\Admin\Settings\QrOrderSettingsController::class, 'update'])->middleware('role:admin,manager')->name('admin.settings.qr-orders.update');
         Route::put('/settings/menu/{branch}', [MenuSettingsController::class, 'update'])->name('admin.settings.menu.update');
+        Route::get('/settings/identity-masking', [IdentityMaskingSettingsController::class, 'index'])
+            ->middleware('role:admin')
+            ->name('admin.settings.identity-masking.index');
+        Route::put('/settings/identity-masking/{branch}', [IdentityMaskingSettingsController::class, 'update'])
+            ->middleware('role:admin')
+            ->name('admin.settings.identity-masking.update');
 
         Route::get('/employee', [EmployeeController::class, 'index'])->name('admin.employee.index');
         Route::post('/employee/store', [EmployeeController::class, 'store'])->name('admin.employee.store');

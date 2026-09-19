@@ -34,7 +34,7 @@
             <div class="flex items-center space-x-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                 <i class="fas fa-store text-[10px] text-orange-500"></i>
                 <span class="text-[10px] md:text-xs font-bold text-orange-500 uppercase tracking-wider truncate">
-                    {{ auth()->user()->branch?->branch_name ?? 'No branch assigned' }}
+                    {{ auth()->user()->branch?->system_title ?? 'No branch assigned' }}
                 </span>
             </div>
 

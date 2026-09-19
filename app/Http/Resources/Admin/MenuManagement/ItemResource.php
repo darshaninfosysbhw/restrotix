@@ -38,7 +38,7 @@ class ItemResource extends JsonResource
 
             // 🌳 Relations & Sub-Arrays (Binding with Alpine View)
             'category_name'  => $this->category->name ?? 'Uncategorized',
-            'branch_name'    => $this->branch->branch_name ?? 'All Branches',
+            'branch_name'    => $this->branch?->system_title ?? 'All Branches',
 
             'variants' => $this->variants->map(function ($v) {
                 return [

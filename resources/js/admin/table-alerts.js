@@ -35,7 +35,7 @@ document.addEventListener('click', async (event) => {
         if (typeof window.showToast === 'function') {
             window.showToast({
                 type: 'success',
-                message: `Table ${card.dataset.tableNumber}: ${isCall ? 'Waiter call accepted.' : 'Bill request cleared.'}`,
+                message: `Table ${card.dataset.displayNumber || card.dataset.tableNumber}: ${isCall ? 'Waiter call accepted.' : 'Bill request cleared.'}`,
                 duration: 3500,
             });
         }

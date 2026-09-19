@@ -51,7 +51,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
                         <p class="text-xs text-gray-400 uppercase tracking-wide">Selected Branch</p>
-                        <p class="text-2xl font-bold text-white mt-1">{{ $selectedBranch->branch_name ?? '—' }}</p>
+                        <p class="text-2xl font-bold text-white mt-1">{{ $selectedBranch?->system_title ?? '—' }}</p>
                         <p class="text-sm text-gray-400 mt-1">{{ $selectedBranch->city ?? 'Branch city not set' }}</p>
                     </div>
                     <div class="bg-gray-800 border border-gray-700 rounded-xl p-4">
@@ -75,7 +75,7 @@
                                 @foreach ($branches as $branch)
                                     <option value="{{ $branch->id }}"
                                         {{ (int) $selectedBranch->id === (int) $branch->id ? 'selected' : '' }}>
-                                        {{ $branch->branch_name }}{{ $branch->city ? ' - ' . $branch->city : '' }}
+                                        {{ $branch->system_title }}{{ $branch->city ? ' - ' . $branch->city : '' }}
                                     </option>
                                 @endforeach
                             </select>

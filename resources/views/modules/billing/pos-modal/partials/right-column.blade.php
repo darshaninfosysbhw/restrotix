@@ -762,8 +762,9 @@
                 }
 
                 const snapshot = buildSnapshot(window.billingEstimateInvoiceData || {});
-                const tableNumber = String(window.currentOpenTable || document.getElementById(
-                    'billingDineInTable')?.textContent?.replace(/^Table/i, '')?.trim() || '').trim();
+                const tableNumber = String(
+                    window.currentOpenTable || window.billingCurrentOrderPayload?.table_number || ''
+                ).trim();
                 const currentCard = tableNumber ? document.querySelector(
                     `.table-card[data-table-number="${tableNumber}"]`) : null;
                 const taxConfig = resolveTaxConfig(tableNumber);
@@ -834,8 +835,9 @@
 
             const buildBillingDraftPayload = () => {
                 const snapshot = buildSnapshot(window.billingEstimateInvoiceData || {});
-                const tableNumber = String(window.currentOpenTable || document.getElementById(
-                    'billingDineInTable')?.textContent?.replace(/^Table/i, '')?.trim() || '').trim();
+                const tableNumber = String(
+                    window.currentOpenTable || window.billingCurrentOrderPayload?.table_number || ''
+                ).trim();
                 const currentCard = tableNumber ? document.querySelector(
                     `.table-card[data-table-number="${tableNumber}"]`) : null;
                 const taxConfig = resolveTaxConfig(tableNumber);
@@ -900,6 +902,7 @@
                     branch_id: currentOrder.branch_id || null,
                     table_id: tableId,
                     table_number: tableNumber,
+                    table_display_number: String(window.currentOpenTableDisplayNumber || currentCard?.dataset?.displayNumber || tableNumber),
                     qr_token: qrToken,
                     order_number: currentOrder.order_number || currentOrder.order_no || null,
                     order_by_label: currentOrder.order_by_label || currentOrder.order_by_label_name || currentOrder.order_by || 'Guest',
@@ -995,10 +998,7 @@
             const buildEstimatePdfPayload = () => {
                 const snapshot = buildSnapshot(window.billingEstimateInvoiceData || {});
                 const tableNumber = String(
-                    window.currentOpenTable ||
-                    document.getElementById('billingDineInTable')?.textContent?.replace(/^Table/i, '')
-                    ?.trim() ||
-                    ''
+                    window.currentOpenTable || window.billingCurrentOrderPayload?.table_number || ''
                 ).trim();
                 const currentCard = tableNumber ? document.querySelector(
                     `.table-card[data-table-number="${tableNumber}"]`) : null;

@@ -4,7 +4,7 @@
         <div>
             <h1 class="text-2xl font-bold text-white">Audit Control Center</h1>
             <p class="text-sm text-gray-400">Compliance overview for <span
-                    class="text-orange-500 font-semibold">{{ auth()->user()->branch_name ?? 'All Active Branches' }}</span>
+                    class="text-orange-500 font-semibold">{{ auth()->user()->branch?->system_title ?? 'All Active Branches' }}</span>
             </p>
         </div>
         <div class="flex items-center gap-3">

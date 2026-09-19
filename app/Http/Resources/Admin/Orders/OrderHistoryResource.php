@@ -24,7 +24,7 @@ class OrderHistoryResource extends JsonResource
                 ->first()
             : null;
 
-        $tableNumber = trim((string) ($invoice?->table_number_snapshot ?? $order->table_number ?? ''));
+        $tableNumber = trim((string) ($order->table?->display_number ?? $invoice?->table_number_snapshot ?? $order->table_number ?? ''));
         $customerName = trim((string) ($invoice?->customer_name_snapshot ?? ''));
 
         if ($customerName === '') {

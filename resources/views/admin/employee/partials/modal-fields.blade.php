@@ -55,7 +55,7 @@
             <select name="branch_id"
                 class="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500">
                 @foreach ($branches as $branch)
-                    <option value="{{ $branch->id }}">{{ $branch->branch_name }}</option>
+                    <option value="{{ $branch->id }}">{{ $branch->system_title }}</option>
                 @endforeach
             </select>
         </div>

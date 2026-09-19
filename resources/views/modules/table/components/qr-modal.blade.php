@@ -34,7 +34,7 @@
                                 </option>
                                 @foreach ($branches as $branch)
                                 <option value="{{ $branch->id }}" class="bg-gray-800 text-white py-2">
-                                    {{ $branch->branch_name }}
+                                    {{ $branch->system_title }}
                                 </option>
                                 @endforeach
                             </select>
@@ -544,8 +544,8 @@
         let activePosterKey = '';
         let posterRequestToken = 0;
         const posterTemplateUrl = @json(asset('images/RestoTix.png'));
-        const currentTenantName = @json(trim((string)(optional(auth() -> user() -> tenant) -> company_name ??
-            'FOOD PANDA')));
+        const currentTenantName = @json(trim((string) (($activeBranch?->customer_brand_name ?? auth()->user()?->branch?->customer_brand_name)
+            ?? auth()->user()?->tenant?->company_name ?? 'FOOD PANDA')));
 
         if (!qrModal || !qrBox || !qrCloseBtn || !qrPosterImage || !posterLoadingState || !downloadBtn ||
             !printSingleBtn || !printSheet) {
@@ -1068,8 +1068,10 @@
         const drawerKotSelectorWrap = document.getElementById('drawerKotSelectorWrap');
         const drawerKotSelector = document.getElementById('drawerKotSelector');
         const drawerPrintKotLabel = document.getElementById('drawerPrintKotLabel');
-        const currentTenantName = @json(optional(auth() -> user() -> tenant) -> company_name ?? 'FOOD PANDA');
-        const currentBranchName = @json(optional(auth() -> user() -> branch) -> branch_name ?? 'HOT KITCHEN');
+        const currentTenantName = @json((($activeBranch?->mask_scope ?? auth()->user()?->branch?->mask_scope) === 'everywhere')
+            ? ($activeBranch?->system_title ?? auth()->user()?->branch?->system_title ?? 'FOOD PANDA')
+            : (auth()->user()?->tenant?->company_name ?? 'FOOD PANDA'));
+        const currentBranchName = @json($activeBranch?->system_title ?? auth()->user()?->branch?->system_title ?? 'HOT KITCHEN');
         const EMPTY_ORDERS_ICON_HTML = @json(trim(view('core.components.table.partials.empty-orders-icon') ->
             render()));
         const ALERT_STORAGE_KEY = 'table_order_activity_v1';

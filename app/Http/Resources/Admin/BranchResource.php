@@ -39,6 +39,8 @@ class BranchResource extends JsonResource
             'id' => (int) $this->id,
             'code' => 'BR-' . str_pad((string) $this->id, 3, '0', STR_PAD_LEFT),
             'name' => (string) ($this->branch_name ?? '-'),
+            'mask_scope' => (string) ($this->mask_scope ?? 'none'),
+            'display_name' => (string) ($this->display_name ?? ''),
             'branch_email' => (string) ($this->branch_email ?? ''),
             'country_code' => $countryCode,
             'city' => (string) ($this->city ?? '-'),

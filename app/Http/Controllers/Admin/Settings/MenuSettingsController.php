@@ -16,7 +16,7 @@ class MenuSettingsController extends Controller
 
         $branches = $tenant->branches()
             ->latest()
-            ->get(['id', 'branch_name', 'city', 'branch_menu_theme', 'updated_at']);
+            ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name', 'city', 'branch_menu_theme', 'updated_at']);
 
         return view('admin.settings.menu-settings', [
             'branches' => $branches,

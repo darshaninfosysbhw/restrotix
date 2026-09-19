@@ -17,7 +17,8 @@ class SetBranchContext
         }
 
         $tenant = $user->tenant()->with('plan')->first();
-        $branches = $tenant?->branches()->orderBy('branch_name')->get(['id', 'branch_name']) ?? collect();
+        $branches = $tenant?->branches()->orderBy('branch_name')
+            ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name']) ?? collect();
         $isAdmin = in_array(strtolower((string) $user->role), ['admin', 'superadmin'], true);
         $canSwitchBranches = $isAdmin && (int) ($tenant?->plan?->max_branches ?? 1) > 1;
 

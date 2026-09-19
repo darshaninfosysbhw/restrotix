@@ -36,7 +36,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                         <span class="flex-1 min-w-0 text-left">
                             <span class="block text-[9px] uppercase tracking-[0.14em] text-gray-500 font-bold leading-none mb-1">Branch</span>
                             <span data-branch-label class="block truncate text-xs md:text-sm font-semibold leading-none">
-                                {{ $activeBranch?->branch_name ?? 'Select branch' }}
+                                {{ $activeBranch?->system_title ?? 'Select branch' }}
                             </span>
                         </span>
                         <i data-branch-chevron class="fas fa-chevron-down text-[10px] text-gray-400 transition-transform"></i>
@@ -49,13 +49,13 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                         </div>
                         @foreach ($availableBranches as $branch)
                             <button type="button" role="option" data-branch-option="{{ $branch->id }}"
-                                data-branch-name="{{ $branch->branch_name }}"
+                                data-branch-name="{{ $branch->system_title }}"
                                 aria-selected="{{ (int) ($activeBranch?->id ?? 0) === (int) $branch->id ? 'true' : 'false' }}"
                                 class="w-full flex items-center gap-3 px-3.5 py-3 text-left text-xs text-gray-300 hover:bg-gray-800 hover:text-white transition-colors {{ (int) ($activeBranch?->id ?? 0) === (int) $branch->id ? 'bg-orange-500/10 text-orange-300' : '' }}">
                                 <span class="w-7 h-7 rounded-lg flex items-center justify-center {{ (int) ($activeBranch?->id ?? 0) === (int) $branch->id ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-500' }}">
                                     <i class="fas fa-store text-[11px]"></i>
                                 </span>
-                                <span class="flex-1 min-w-0 truncate font-semibold">{{ $branch->branch_name }}</span>
+                                <span class="flex-1 min-w-0 truncate font-semibold">{{ $branch->system_title }}</span>
                                 <i class="fas fa-check text-[11px] text-orange-400 {{ (int) ($activeBranch?->id ?? 0) === (int) $branch->id ? '' : 'hidden' }}"></i>
                             </button>
                         @endforeach
@@ -65,7 +65,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                 <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-lg border border-gray-700">
                     <i class="fas fa-building text-orange-400 text-xs"></i>
                     <span class="text-[10px] md:text-sm text-gray-300 font-semibold truncate">
-                        {{ $activeBranch?->branch_name ?? 'No branch assigned' }}
+                        {{ $activeBranch?->system_title ?? 'No branch assigned' }}
                     </span>
                 </div>
             @else
@@ -73,7 +73,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                     class="flex items-center space-x-2 px-3 py-1 bg-orange-500/10 border border-orange-500/20 rounded-lg">
                     <i class="fas fa-store text-[10px] text-orange-500"></i>
                     <span class="text-[10px] md:text-xs font-bold text-orange-500 uppercase tracking-wider truncate">
-                        {{ auth()->user()->branch?->branch_name ?? 'Main Outlet' }}
+                        {{ auth()->user()->branch?->system_title ?? 'Main Outlet' }}
                     </span>
                 </div>
             @endif
@@ -268,7 +268,11 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
             $notificationBranches = \App\Models\Branch::query()
                 ->where('tenant_id', auth()->user()->tenant_id)
                 ->whereKey((int) session('active_branch_id', auth()->user()->branch_id ?? 0))
-                ->get(['id', 'branch_name']);
+                ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name'])
+                ->map(fn ($branch) => [
+                    'id' => (int) $branch->id,
+                    'name' => (string) $branch->system_title,
+                ]);
         @endphp
         const notificationBranches = @json($notificationBranches->values());
         const currentUserId = Number(@json(auth()->id()));
@@ -378,7 +382,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
             const branchId = Number(branch.id);
             if (branchId <= 0) return;
             const addNotification = (id, title, message, icon = 'fa-bell') => {
-                storeNotification(`${branchId}:${id}`, title, `${branch.branch_name}: ${message}`, icon);
+                storeNotification(`${branchId}:${id}`, title, `${branch.name}: ${message}`, icon);
             };
             window.Echo.private(`orders.branch.${branchId}`)
                 .listen('NewOrderReceived', event => {
@@ -455,7 +459,7 @@ $panelPrefix = ($userRole === 'manager') ? 'manager' : 'admin';
                     const data = event?.kitchenData || {};
                     const status = data.item_status || data.kitchen_status;
                     if (!status || !data.table_number) return;
-                    addNotification(`kitchen:${data.id || data.item_id || data.table_number}:${Date.now()}`, 'Kitchen update', `Table ${data.table_number}: ${status}.`, 'fa-kitchen-set');
+                    addNotification(`kitchen:${data.id || data.item_id || data.table_number}:${Date.now()}`, 'Kitchen update', `Table ${data.table_display_number || data.table_number}: ${status}.`, 'fa-kitchen-set');
                 });
         });
 

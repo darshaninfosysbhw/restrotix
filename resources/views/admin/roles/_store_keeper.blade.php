@@ -4,7 +4,7 @@
         <div>
             <h1 class="text-2xl font-bold text-white">Store Keeper Dashboard</h1>
             <p class="text-sm text-gray-400">Inventory monitoring for <span
-                    class="text-orange-500 font-semibold">{{ auth()->user()->branch_name ?? 'Central Store' }}</span>
+                    class="text-orange-500 font-semibold">{{ auth()->user()->branch?->system_title ?? 'Central Store' }}</span>
             </p>
         </div>
         <div class="flex items-center gap-3">

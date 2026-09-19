@@ -44,7 +44,7 @@ class CategoryResource extends JsonResource
             'code_label' => $this->code ?? 'N/A',
             'slug'       => $this->slug,
             'image_url'  => $imageUrl,
-            'branch_name' => $this->branch?->branch_name,
+            'branch_name' => $this->branch?->system_title,
             'is_active'  => (bool) $this->is_active,
             'sort_order' => $this->sort_order,
             // Recursive loading for Sub-categories as resolved array payload

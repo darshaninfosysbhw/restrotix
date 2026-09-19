@@ -53,6 +53,7 @@ class OrderItemActionController extends Controller
 
             if ($order) {
                 $this->syncOrderStatus($order);
+                $order->loadMissing('table.area');
                 $pickupAlert = app(KitchenPickupAlertService::class)->completePickupForServed(
                     $order,
                     (int) ($item->kot_number ?? 0),
@@ -62,6 +63,7 @@ class OrderItemActionController extends Controller
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => $order->id,
                     'table_number' => (string) $order->table_number,
+                    'table_display_number' => $order->table?->display_number ?? $order->table_number,
                     'branch_id' => (int) $order->branch_id,
                     'kitchen_status' => $order->kitchen_status,
                     'item_status' => 'served',
@@ -123,6 +125,7 @@ class OrderItemActionController extends Controller
 
             if ($order) {
                 $this->syncOrderStatus($order);
+                $order->loadMissing('table.area');
 
                 KitchenNotificationLog::create([
                     'tenant_id' => $order->tenant_id,
@@ -139,6 +142,7 @@ class OrderItemActionController extends Controller
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => (int) $order->id,
                     'table_number' => (string) ($order->table_number ?? ''),
+                    'table_display_number' => $order->table?->display_number ?? $order->table_number,
                     'branch_id' => (int) ($order->branch_id ?? 0),
                     'kitchen_status' => (string) ($order->kitchen_status ?? 'pending'),
                     'item_status' => 'rejected',

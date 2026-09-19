@@ -299,6 +299,8 @@ class TableController extends Controller
             'branch_id' => $transfer->branch_id,
             'table_id' => $transfer->table_id,
             'table_number' => $transfer->table?->display_number,
+            'table_raw_number' => $transfer->table?->table_number,
+            'table_display_number' => $transfer->table?->display_number,
             'from_waiter' => $transfer->handledByWaiter?->name ?? 'Unknown waiter',
             'handled_by_waiter_id' => $transfer->handled_by_waiter_id,
             'target_waiter_id' => $transfer->target_waiter_id,
@@ -387,6 +389,7 @@ class TableController extends Controller
 
         $branchId = (int) session('active_branch_id', $user->branch_id ?? 0);
         $table = Table::query()
+            ->with('area:id,code')
             ->where('tenant_id', $user->tenant_id)
             ->where('branch_id', $branchId)
             ->where(function ($query) use ($validated, $tableNumber) {
@@ -415,7 +418,7 @@ class TableController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => "Table {$table->table_number} is now available.",
+            'message' => "Table {$table->display_number} is now available.",
         ]);
     }
 
@@ -529,8 +532,13 @@ class TableController extends Controller
             return trim($brand) !== '' ? trim($brand) : $fallback;
         };
 
-        $restaurantName = $cleanReceiptBrand(data_get($table, 'tenant.company_name'), 'FOOD PANDA');
-        $branchName = $cleanReceiptBrand(data_get($table, 'branch.branch_name'), 'HOT KITCHEN');
+        $restaurantName = $cleanReceiptBrand(
+            $table->branch?->mask_scope === 'everywhere'
+                ? $table->branch?->system_title
+                : data_get($table, 'tenant.company_name'),
+            'FOOD PANDA'
+        );
+        $branchName = $cleanReceiptBrand($table->branch?->system_title, 'HOT KITCHEN');
         $showBranchName = strcasecmp($restaurantName, $branchName) !== 0;
         $kotBatchCreatedAt = $orders
             ->flatMap(function (Order $order) use ($targetKotNumber) {

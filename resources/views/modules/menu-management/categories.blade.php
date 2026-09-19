@@ -459,7 +459,7 @@
                                         @foreach ($branches as $branch)
                                             <option value="{{ $branch->id }}"
                                                 {{ (old('branch_id') ?: ($isManager ? $branchId : null)) == $branch->id ? 'selected' : '' }}>
-                                                {{ $branch->branch_name }}
+                                                {{ $branch->system_title }}
                                             </option>
                                         @endforeach
                                     </select>

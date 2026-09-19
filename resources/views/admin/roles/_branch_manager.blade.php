@@ -74,7 +74,7 @@
                         @forelse ($recentOrders as $order)
                             <tr class="branch-order-row border-b border-gray-800/50 hover:bg-gray-700/50 transition-colors">
                                 <td class="truncate px-1 py-4 font-bold text-white">#ORD-{{ substr((string) ($order->order_number ?: $order->id), -4) }}</td>
-                                <td class="truncate px-1 py-4 text-center">{{ $order->table_number ?: 'Takeaway' }}</td>
+                                <td class="truncate px-1 py-4 text-center">{{ $order->table?->display_number ?? ($order->table_number ?: 'Takeaway') }}</td>
                                 <td class="px-1 py-4 text-center">
                                     <span
                                         class="whitespace-nowrap rounded border border-orange-500/20 bg-orange-500/10 px-1 py-0.5 text-[9px] font-bold text-orange-500">

@@ -4,7 +4,7 @@
         <div>
             <h1 class="text-2xl font-bold text-white">Sales Command Center</h1>
             <p class="text-sm text-gray-400">Performance snapshot for <span
-                    class="text-orange-500 font-semibold">{{ auth()->user()->branch_name ?? 'Main Outlet' }}</span></p>
+                    class="text-orange-500 font-semibold">{{ auth()->user()->branch?->system_title ?? 'Main Outlet' }}</span></p>
         </div>
         <div class="flex items-center gap-3">
             <span class="px-3 py-1 bg-green-900/30 text-green-400 rounded-full text-xs font-bold animate-pulse">● Sales

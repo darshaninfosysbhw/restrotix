@@ -8,7 +8,10 @@
     $restaurantName = trim((string) ($tenant?->company_name ?? 'RestoAdmin'));
     $restaurantName = $restaurantName !== '' ? $restaurantName : 'RestoAdmin';
 
-    $branchName = trim((string) ($user?->branch?->branch_name ?? 'Main Outlet'));
+    $branchName = trim((string) ($user?->branch?->system_title ?? 'Main Outlet'));
+    if (($user?->branch?->mask_scope ?? 'none') === 'everywhere' && $branchName !== '') {
+        $restaurantName = $branchName;
+    }
     $branchName = $branchName !== '' ? $branchName : 'Main Outlet';
 
     $restaurantLogoPath = trim((string) ($tenant?->logo ?? ''));
@@ -427,6 +430,19 @@
 
                                QR Order Settings
                            </a>
+
+                        @endif
+
+                        @if ($userRole === 'admin')
+                            <a
+                                href="{{ route('admin.settings.identity-masking.index') }}"
+                                class="block py-2 text-sm transition-colors duration-200
+                                {{ request()->routeIs('admin.settings.identity-masking.*')
+                                    ? 'text-orange-500 font-medium'
+                                    : 'text-gray-400 hover:text-orange-500' }}">
+
+                                Identity Masking
+                            </a>
                         @endif
 
 

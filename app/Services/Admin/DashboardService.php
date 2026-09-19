@@ -56,10 +56,11 @@ class DashboardService
         $recentOrders = Order::query()
             ->where('tenant_id', $tenantId)
             ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+            ->with(['table:id,area_id,table_number', 'table.area:id,code'])
             ->latest('ordered_at')
             ->latest('id')
             ->take(5)
-            ->get(['id', 'order_number', 'table_number', 'status', 'grand_total']);
+            ->get(['id', 'order_number', 'table_id', 'table_number', 'status', 'grand_total']);
 
         $tablesQuery = Table::query()
             ->where('tenant_id', $tenantId)
@@ -108,7 +109,7 @@ class DashboardService
         $branches = Branch::query()
             ->where('tenant_id', $tenantId)
             ->when($branchId, fn ($query) => $query->whereKey($branchId))
-            ->get(['id', 'branch_name']);
+            ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name']);
 
         $currentBranchRevenue = (clone $currentMonthInvoices)
             ->selectRaw('branch_id, SUM(grand_total) as total_revenue')
@@ -197,7 +198,7 @@ class DashboardService
 
         $topScanRow = (clone $baseQuery)
             ->whereNotNull('table_access_session_id')
-            ->selectRaw('table_id, COUNT(DISTINCT table_access_session_id) as total_scans')
+            ->selectRaw('table_id, MAX(qr_token) as qr_token, COUNT(DISTINCT table_access_session_id) as total_scans')
             ->groupBy('table_id')
             ->orderByDesc('total_scans')
             ->first();
@@ -206,12 +207,25 @@ class DashboardService
         $topTableScans = 0;
 
         if ($topScanRow) {
-            $tableNumber = Table::query()
+            $topTable = Table::query()
+                ->with('area:id,code')
+                ->where('tenant_id', $tenantId)
                 ->whereKey((int) $topScanRow->table_id)
                 ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
-                ->value('table_number');
+                ->first(['id', 'area_id', 'table_number']);
 
-            $topTableLabel = $tableNumber ? 'Table ' . $tableNumber : 'Table #' . (int) $topScanRow->table_id;
+            if (!$topTable && trim((string) ($topScanRow->qr_token ?? '')) !== '') {
+                $topTable = Table::query()
+                    ->with('area:id,code')
+                    ->where('tenant_id', $tenantId)
+                    ->where('qr_token', (string) $topScanRow->qr_token)
+                    ->when($branchId, fn ($query) => $query->where('branch_id', $branchId))
+                    ->first(['id', 'area_id', 'table_number']);
+            }
+
+            $topTableLabel = $topTable
+                ? 'Table ' . $topTable->display_number
+                : 'Archived Table';
             $topTableScans = (int) ($topScanRow->total_scans ?? 0);
         }
 
@@ -236,7 +250,7 @@ class DashboardService
             ->where('tenant_id', $tenantId)
             ->when($branchId, fn ($query) => $query->whereKey($branchId))
             ->orderBy('branch_name')
-            ->get(['id', 'branch_name', 'full_address', 'city', 'state', 'pincode', 'latitude', 'longitude']);
+            ->get(['id', 'tenant_id', 'branch_name', 'mask_scope', 'display_name', 'full_address', 'city', 'state', 'pincode', 'latitude', 'longitude']);
 
         $invoiceBaseQuery = OrderInvoice::query()
             ->where('tenant_id', $tenantId)
@@ -278,7 +292,7 @@ class DashboardService
 
                 return [
                     'id' => (int) $branch->id,
-                    'name' => (string) $branch->branch_name,
+                    'name' => (string) $branch->system_title,
                     'address' => $address !== '' ? $address : 'Location not added',
                     'map_url' => $mapQuery !== '' ? 'https://www.google.com/maps/search/?api=1&query=' . rawurlencode($mapQuery) : null,
                     'orders_display' => number_format((int) ($currentBranchRevenue->get($branch->id)?->invoice_count ?? 0)),

@@ -23,7 +23,7 @@ class OrderStatusController extends Controller
     public function orderStatus(Request $request, string $qr_token)
     {
         $table = Table::query()
-            ->with(['branch', 'area'])
+            ->with(['branch.tenant', 'area'])
             ->where('qr_token', $qr_token)
             ->where('is_active', true)
             ->firstOrFail();
@@ -137,7 +137,7 @@ class OrderStatusController extends Controller
     public function paymentReturn(Request $request, string $qr_token)
     {
         $table = Table::query()
-            ->with('branch')
+            ->with(['branch.tenant', 'area'])
             ->where('qr_token', $qr_token)
             ->firstOrFail();
 
@@ -182,7 +182,7 @@ class OrderStatusController extends Controller
     public function thankYou(Request $request, string $qr_token)
     {
         $table = Table::query()
-            ->with('branch')
+            ->with(['branch.tenant', 'area'])
             ->where('qr_token', $qr_token)
             ->firstOrFail();
 
@@ -311,10 +311,10 @@ class OrderStatusController extends Controller
                 'tax_label' => $taxLabel,
                 'tax_rate_percent' => $taxRatePercent,
                 'invoice_date' => optional($order->created_at)->format('d M Y, h:i A') ?? now()->format('d M Y, h:i A'),
-                'restaurant_name' => (string) ($tenant?->company_name ?? 'Restaurant'),
+                'restaurant_name' => (string) ($branch?->customer_brand_name ?? $tenant?->company_name ?? 'Restaurant'),
                 'is_vat_registered' => (bool) ($branch?->is_vat_registered ?? false),
                 'tax_registration' => (string) ($branch?->pan_vat_number ?? ''),
-                'branch_name' => (string) ($branch?->branch_name ?? ''),
+                'branch_name' => (string) ($branch?->customer_branch_subtitle ?? ''),
                 'branch_address' => trim((string) ($branch?->full_address ?: implode(', ', array_filter([
                     $branch?->city,
                     $branch?->state,
@@ -444,7 +444,7 @@ class OrderStatusController extends Controller
     private function resolveInvoiceContext(string $qr_token): array
     {
         $table = Table::query()
-            ->with('branch')
+            ->with(['branch.tenant', 'area'])
             ->where('qr_token', $qr_token)
             ->where('is_active', true)
             ->firstOrFail();

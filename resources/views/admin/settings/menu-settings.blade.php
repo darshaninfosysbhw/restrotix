@@ -26,7 +26,7 @@
                     <div class="flex items-start justify-between gap-3">
                         <div>
                             <p class="text-xs uppercase tracking-[0.2em] text-gray-400">Branch</p>
-                            <h2 class="text-xl font-bold text-white mt-1">{{ $branch->branch_name }}</h2>
+                            <h2 class="text-xl font-bold text-white mt-1">{{ $branch->system_title }}</h2>
                             <p class="text-sm text-gray-400 mt-1">{{ $branch->city ?: 'No city set' }}</p>
                         </div>
                         <span class="px-2.5 py-1 rounded-full text-xs border border-white/10 text-gray-300 bg-white/5">

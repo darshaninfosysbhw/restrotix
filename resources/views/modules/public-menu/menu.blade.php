@@ -140,7 +140,7 @@
             })
             ->values();
 
-        $tenantName = $tenant->company_name ?? 'Menu';
+        $tenantName = trim((string) ($branch?->customer_brand_name ?? $tenant->company_name ?? 'Menu')) ?: 'Menu';
         $tableLabel = ($tableDisplayNumber ?? $tableNumber) && ($tableDisplayNumber ?? $tableNumber) !== 'N/A'
             ? '#' . ($tableDisplayNumber ?? $tableNumber)
             : 'N/A';

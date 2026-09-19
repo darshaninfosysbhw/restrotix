@@ -49,12 +49,14 @@ class BillingDraftController extends Controller
         ]);
 
         $table = Table::query()
+            ->with('area')
             ->where('tenant_id', (int) $user->tenant_id)
             ->findOrFail((int) $validated['table_id']);
 
         $payload = array_merge((array) $validated['payload'], [
             'table_id' => (int) $table->id,
             'table_number' => (string) $table->table_number,
+            'table_display_number' => (string) $table->display_number,
         ]);
 
         $draft = $this->billingDraftService->saveForTable($table, $payload, $user);
@@ -83,16 +85,22 @@ class BillingDraftController extends Controller
 
     private function presentDraft($draft): array
     {
+        $draft->loadMissing('table.area');
+        $tableDisplayNumber = (string) ($draft->table?->display_number ?? $draft->table_number);
+
         return [
             'id' => (int) $draft->id,
             'tenant_id' => (int) $draft->tenant_id,
             'branch_id' => (int) $draft->branch_id,
             'table_id' => (int) $draft->table_id,
             'table_number' => (string) $draft->table_number,
+            'table_display_number' => $tableDisplayNumber,
             'order_id' => $draft->order_id ? (int) $draft->order_id : null,
             'held_by_user_id' => $draft->held_by_user_id ? (int) $draft->held_by_user_id : null,
             'held_at' => $draft->held_at?->toIso8601String(),
-            'payload' => $draft->payload_json ?? [],
+            'payload' => array_merge($draft->payload_json ?? [], [
+                'table_display_number' => $tableDisplayNumber,
+            ]),
         ];
     }
 }
