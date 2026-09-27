@@ -106,6 +106,18 @@
                 Generate Bill
             @endif
         </button>
+        <div id="drawerPaidActions" class="hidden space-y-3">
+            <div class="flex items-center justify-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm font-bold text-emerald-300">
+                <i class="fas fa-circle-check" aria-hidden="true"></i>
+                <span>Bill Paid - <span id="drawerPaidAmount">Rs. 0.00</span></span>
+            </div>
+            @if (in_array(auth()->user()->role, ['admin', 'manager', 'cashier', 'waiter'], true))
+                <button id="drawerVacateTableBtn" type="button"
+                    class="w-full rounded-lg bg-emerald-500 px-4 py-3 font-bold text-white shadow-lg transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-60">
+                    <i class="fas fa-broom mr-1.5" aria-hidden="true"></i> Clear and Free Table
+                </button>
+            @endif
+        </div>
         <button id="drawerReleaseTableBtn" type="button"
             class="hidden w-full text-center border border-red-500/50 text-red-400 bg-red-500/10 hover:bg-red-500 hover:text-white font-semibold py-2.5 rounded-lg transition cursor-pointer">
             <i class="fas fa-ban mr-1.5"></i> Void &amp; Release Table
@@ -323,14 +335,28 @@
                 .listen('KitchenStatusUpdated', async (e) => {
                     const payload = e?.kitchenData || {};
                     const tableNum = String(payload.table_number ?? '');
+                    const tableId = Number(payload.table_id || 0) || null;
                     const tableDisplayNum = String(payload.table_display_number || tableNum);
                     const kitchenStatus = String(payload.kitchen_status ?? '').toLowerCase();
                     const itemStatus = String(payload.item_status ?? '').toLowerCase();
+                    const eventType = String(payload.event_type ?? '').toLowerCase();
+                    const tableStatus = String(payload.table_status ?? '').toLowerCase();
                     if (!tableNum) return;
+
+                    if (eventType === 'table_freed' || tableStatus === 'available') {
+                        window.updateWaiterTableCard?.(tableNum, [], 'available', {
+                            is_calling_waiter: false,
+                            is_bill_requested: false,
+                        }, tableId);
+                    }
+
+                    if (eventType === 'payment_settled' || eventType === 'table_freed') {
+                        await window.refreshWaiterTableCard?.(tableNum, null, tableStatus || null, {}, tableId);
+                    }
 
                     if ((itemStatus === 'preparing' || kitchenStatus === 'preparing') &&
                         typeof window.markTableAsKitchenPreparing === 'function') {
-                        window.markTableAsKitchenPreparing(tableNum);
+                        window.markTableAsKitchenPreparing(tableNum, tableId);
                     }
 
                     const isReadyEvent = itemStatus === 'ready';
@@ -338,7 +364,7 @@
 
                     if ((isReadyEvent || isServedEvent) &&
                         typeof window.markTableAsKitchenReady === 'function') {
-                        window.markTableAsKitchenReady(tableNum);
+                        window.markTableAsKitchenReady(tableNum, tableId);
                     }
 
                     if (isReadyEvent) {
@@ -362,6 +388,10 @@
         const billingModalCloseBtn = document.getElementById('billingPosCloseBtn');
         const drawerGenerateBillBtn = document.getElementById('drawerGenerateBillBtn');
         const drawerReleaseTableBtn = document.getElementById('drawerReleaseTableBtn');
+        const drawerPaidActions = document.getElementById('drawerPaidActions');
+        const drawerPaidAmount = document.getElementById('drawerPaidAmount');
+        const drawerVacateTableBtn = document.getElementById('drawerVacateTableBtn');
+        const drawerAddItemBtn = document.getElementById('drawerAddItemBtn');
         const transferTableBtn = document.getElementById('transferTableBtn');
         const billingModalClosers = document.querySelectorAll('[data-billing-modal-close]');
         const billingOrdersBaseUrl = @json('/admin/get-table-orders');
@@ -373,8 +403,11 @@
             'opacity-60',
         ];
         const releaseTableUrl = @json(route('admin.tables.release-order'));
+        const vacateTableUrlTemplate = @json(route('tables.vacate', ['table' => '__TABLE__']));
 
         const syncDrawerActionButtons = (ordersOrItems = []) => {
+            const orders = Array.isArray(ordersOrItems) ? ordersOrItems : [];
+            const paidOrder = orders.find((order) => String(order?.payment_status || '').toLowerCase() === 'paid');
             const records = (Array.isArray(ordersOrItems) ? ordersOrItems : []).flatMap((entry) => {
                 return Array.isArray(entry?.items) ? entry.items : [entry];
             });
@@ -384,12 +417,76 @@
             });
             const shouldReleaseTable = records.length > 0 && activeValidItems.length === 0;
 
-            drawerGenerateBillBtn?.classList.toggle('hidden', shouldReleaseTable);
-            drawerReleaseTableBtn?.classList.toggle('hidden', !shouldReleaseTable);
+            if (paidOrder) {
+                const amount = Number(paidOrder.grand_total || paidOrder.paid_amount || 0);
+                const currency = String(document.querySelector(
+                    `.table-card[data-id="${CSS.escape(String(window.currentOpenTableId || ''))}"]`
+                )?.dataset?.currencySymbol || 'Rs.').trim();
+                if (drawerPaidAmount) {
+                    drawerPaidAmount.textContent = `${currency} ${amount.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                    })}`;
+                }
+            }
+
+            drawerPaidActions?.classList.toggle('hidden', !paidOrder);
+            drawerAddItemBtn?.classList.toggle('hidden', Boolean(paidOrder));
+            drawerGenerateBillBtn?.classList.toggle('hidden', Boolean(paidOrder) || shouldReleaseTable);
+            drawerReleaseTableBtn?.classList.toggle('hidden', Boolean(paidOrder) || !shouldReleaseTable);
+
+            const card = document.querySelector(
+                `.table-card[data-id="${CSS.escape(String(window.currentOpenTableId || ''))}"]`
+            );
+            card?.querySelector('.table-paid-badge')?.classList.toggle('hidden', !paidOrder);
         };
 
         window.syncDrawerActionButtons = syncDrawerActionButtons;
         syncDrawerActionButtons([]);
+
+        if (drawerVacateTableBtn) {
+            drawerVacateTableBtn.addEventListener('click', async () => {
+                const tableId = Number(window.currentOpenTableId || 0);
+                const tableNumber = String(window.currentOpenTableDisplayNumber || window.currentOpenTable || '').trim();
+                if (!tableId) return;
+                if (!window.confirm(`Clear and free Table ${tableNumber}?`)) return;
+
+                const defaultLabel = '<i class="fas fa-broom mr-1.5" aria-hidden="true"></i> Clear and Free Table';
+                try {
+                    drawerVacateTableBtn.disabled = true;
+                    drawerVacateTableBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1.5"></i> Vacating...';
+                    const response = await fetch(vacateTableUrlTemplate.replace('__TABLE__', String(tableId)), {
+                        method: 'POST',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                            'X-Requested-With': 'XMLHttpRequest',
+                        },
+                    });
+                    const result = await response.json();
+                    if (!response.ok || result?.status !== 'success') {
+                        throw new Error(result?.message || 'Unable to vacate table.');
+                    }
+
+                    window.markTableAsAvailable?.(window.currentOpenTable, true);
+                    emitTableToast('success', result.message || `Table ${tableNumber} is now available.`);
+                    document.getElementById('closeDrawer')?.click();
+                    await window.refreshWaiterTableCard?.(
+                        window.currentOpenTable,
+                        window.currentOpenTableBranchId,
+                        null,
+                        {},
+                        tableId
+                    );
+                } catch (error) {
+                    console.error('Table vacate failed:', error);
+                    emitTableToast('error', error.message || 'Unable to vacate table.');
+                } finally {
+                    drawerVacateTableBtn.disabled = false;
+                    drawerVacateTableBtn.innerHTML = defaultLabel;
+                }
+            });
+        }
 
         if (drawerReleaseTableBtn) {
             drawerReleaseTableBtn.addEventListener('click', async () => {
@@ -1147,7 +1244,7 @@
                 detail: invoiceSnapshot,
             }));
 
-            const paymentStatus = String(order?.payment_status || 'pending').toLowerCase();
+            const paymentStatus = String(order?.payment_status || 'unpaid').toLowerCase();
             const restorePaymentMode = String(restoreSource?.payment_mode || '').toLowerCase();
             const paymentMode = isDraftRestore && ['paid', 'unpaid', 'partial'].includes(restorePaymentMode)
                 ? restorePaymentMode
@@ -1259,6 +1356,14 @@
                     return true;
                 }
 
+                const drawerOrders = Array.isArray(window.currentOpenTableOrders)
+                    ? window.currentOpenTableOrders
+                    : [];
+                if (drawerOrders.length > 0) {
+                    renderBillingModal(drawerOrders[0]);
+                    return true;
+                }
+
                 const branchId = Number(window.currentOpenTableBranchId || 0);
                 const queryParams = new URLSearchParams();
                 if (branchId > 0) queryParams.set('branch_id', String(branchId));
@@ -1279,9 +1384,6 @@
                 const orders = await response.json();
                 const order = Array.isArray(orders) ? orders[0] : orders;
                 if (!order) {
-                    if (typeof window.markTableAsAvailable === 'function') {
-                        window.markTableAsAvailable(tableNumber);
-                    }
                     window.currentOpenTableOrders = [];
                     syncGenerateBillButtonState();
                     return false;
@@ -1366,7 +1468,6 @@
             }
         });
 
-        const drawerAddItemBtn = document.getElementById('drawerAddItemBtn');
         if (drawerAddItemBtn) {
             drawerAddItemBtn.addEventListener('click', () => {
                 const tableNumber = window.currentOpenTable || '';

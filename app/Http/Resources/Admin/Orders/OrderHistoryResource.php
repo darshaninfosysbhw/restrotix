@@ -32,7 +32,7 @@ class OrderHistoryResource extends JsonResource
         }
 
         $subtext = trim((string) ($creator?->phone_number ?? ''));
-        if ($subtext === '' && !empty($creator?->email)) {
+        if ($subtext === '' && ! empty($creator?->email)) {
             $subtext = (string) $creator->email;
         }
 
@@ -45,6 +45,7 @@ class OrderHistoryResource extends JsonResource
         $grandTotal = (float) ($invoice?->grand_total ?? $order->grand_total ?? max($subtotalBeforeDiscount + $taxAmount, 0));
         $paidAmount = (float) ($invoice?->paid_amount ?? $order->paid_amount ?? 0);
         $paidAt = $paymentSession?->paid_at ?? $invoice?->updated_at ?? $order->updated_at;
+        $tableReleasedAt = $order->table_released_at;
 
         return [
             'order_no' => (string) ($order->order_number ?? $invoice?->invoice_number ?? 'N/A'),
@@ -76,6 +77,11 @@ class OrderHistoryResource extends JsonResource
                 'payment_status_class' => $this->resolvePaymentClass($orderStatus, $paymentStatus, $paidAmount, $grandTotal),
                 'amount_paid' => $this->formatMoney($paidAmount, $currencySymbol),
                 'paid_at' => $this->formatDateTime($paidAt),
+                'table_release_status' => $tableReleasedAt ? 'Released' : 'Not Released',
+                'table_released_at' => $this->formatDateTime($tableReleasedAt),
+                'table_released_by' => $tableReleasedAt
+                    ? (string) ($order->tableReleasedBy?->name ?? 'System')
+                    : '—',
                 'transaction_id' => trim((string) ($paymentSession?->provider_reference ?? $invoice?->invoice_number ?? $order->order_number ?? '—')),
                 'note' => trim((string) ($invoice?->notes_snapshot ?? $order->notes ?? '')),
                 'timeline' => $this->buildTimeline($order, $invoice, $paymentSession),
@@ -134,8 +140,8 @@ class OrderHistoryResource extends JsonResource
 
         return match ($paymentStatus) {
             'paid' => 'Paid',
-            'partially_paid' => 'Partially Paid',
-            'unpaid', 'pending' => 'Pending',
+            'partially_paid', 'partial' => 'Partially Paid',
+            'unpaid', 'pending' => 'Unpaid',
             default => $paidAmount >= $grandTotal && $grandTotal > 0 ? 'Paid' : ucfirst($paymentStatus ?: 'Pending'),
         };
     }
@@ -148,7 +154,7 @@ class OrderHistoryResource extends JsonResource
 
         return match ($paymentStatus) {
             'paid' => 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400',
-            'partially_paid' => 'border-sky-500/20 bg-sky-500/10 text-sky-400',
+            'partially_paid', 'partial' => 'border-sky-500/20 bg-sky-500/10 text-sky-400',
             'unpaid', 'pending' => 'border-amber-500/20 bg-amber-500/10 text-amber-400',
             default => $paidAmount >= $grandTotal && $grandTotal > 0
                 ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'
@@ -214,6 +220,10 @@ class OrderHistoryResource extends JsonResource
             $this->appendTimelineEvent($events, 'Cancelled', $cancelledAt, 60);
         }
 
+        if ($order->table_released_at) {
+            $this->appendTimelineEvent($events, 'Table Released', $order->table_released_at, 60);
+        }
+
         usort($events, function (array $left, array $right): int {
             $leftTime = $left['timestamp']?->timestamp ?? 0;
             $rightTime = $right['timestamp']?->timestamp ?? 0;
@@ -235,7 +245,7 @@ class OrderHistoryResource extends JsonResource
 
     private function appendTimelineEvent(array &$events, string $label, $timestamp, int $sequence): void
     {
-        if (!$timestamp) {
+        if (! $timestamp) {
             return;
         }
 
@@ -266,7 +276,7 @@ class OrderHistoryResource extends JsonResource
 
         $needsSpace = preg_match('/[A-Za-z]/', $symbol) === 1;
 
-        return $symbol . ($needsSpace ? ' ' : '') . $formattedAmount;
+        return $symbol.($needsSpace ? ' ' : '').$formattedAmount;
     }
 
     private function formatDateTime($value): string

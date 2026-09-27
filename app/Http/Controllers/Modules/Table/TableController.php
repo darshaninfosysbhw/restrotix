@@ -3,29 +3,33 @@
 namespace App\Http\Controllers\Modules\Table;
 
 use App\Events\TableTransferRequestUpdated;
+use App\Events\KitchenStatusUpdated;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\Admin\TableResource;
+use App\Models\Area;
+use App\Models\Branch;
 use App\Models\KotPrintLog;
 use App\Models\Order;
 use App\Models\Table;
-use App\Models\Area;
 use App\Models\TableServiceRequest;
-use App\Models\User;
-use App\Models\Branch;
-use App\Services\Admin\TableService; // Service ko import kiya
+use App\Models\User; // Service ko import kiya
+use App\Services\Admin\TableService;
+use App\Services\PublicMenu\TableAccessSessionService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
-use SimpleSoftwareIO\QrCode\Facades\QrCode;
-use App\Http\Resources\Admin\TableResource;
 
 class TableController extends Controller
 {
     protected $tableService;
 
     // Constructor mein Service ko inject kar diya (Dependency Injection)
-    public function __construct(TableService $tableService)
-    {
+    public function __construct(
+        TableService $tableService,
+        protected TableAccessSessionService $tableAccessSessionService
+    ) {
         $this->tableService = $tableService;
     }
 
@@ -59,13 +63,15 @@ class TableController extends Controller
         ")
             ->first();
 
-
         $tableModels = Table::where('tenant_id', $tenantId)
             ->where('branch_id', $activeBranchId)
             ->with(['branch', 'area', 'orders' => function ($q) {
                 // Sirf wo orders jo abhi tak finish nahi huye
                 // $q->whereIn('status', ['pending', 'preparing', 'ready', 'served'])
-                $q->where('status', 'running')
+                $q->where(function ($orders) {
+                    $orders->where('status', 'running')
+                        ->orWhere('payment_status', 'paid');
+                })
                     ->with(['items.orderItemAddons.masterAddon']);
             }])
             ->orderBy('table_number', 'asc')
@@ -92,13 +98,12 @@ class TableController extends Controller
             $table->setAttribute('transfer_state', $transfer ? $this->transferPayload($transfer) : null);
         });
 
-         $areas = Area::query()
-        ->where('tenant_id', $tenantId)
-        ->where('branch_id', $activeBranchId)
-        ->where('is_active', true)
-        ->orderBy('name')
-        ->get();
-
+        $areas = Area::query()
+            ->where('tenant_id', $tenantId)
+            ->where('branch_id', $activeBranchId)
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
 
         // 🔥 CHANGE: resource applied
         $data = [
@@ -124,17 +129,28 @@ class TableController extends Controller
             ->where('tenant_id', $tenantId)
             ->where('branch_id', (int) session('active_branch_id', $user->branch_id ?? 0))
             ->with(['orders' => function ($query) {
-                $query->where('status', 'running')
-                    ->select(['id', 'table_id', 'ordered_at', 'created_at', 'grand_total'])
+                $query->where(function ($orders) {
+                    $orders->where('status', 'running')
+                        ->orWhere('payment_status', 'paid');
+                })
+                    ->select(['id', 'table_id', 'status', 'payment_status', 'ordered_at', 'created_at', 'grand_total'])
                     ->with(['items:id,order_id,quantity']);
             }])
             ->get(['id', 'table_number', 'status', 'is_calling_waiter', 'is_bill_requested']);
 
         return response()->json($tables->map(function ($table) {
-            $orders = $table->orders->map(fn($order) => [
+            $sourceOrders = $table->orders->sortByDesc('id');
+            $activeOrders = $sourceOrders->where('status', 'running')->values();
+            if ($activeOrders->isEmpty() && (string) $table->status === 'occupied') {
+                $settledOrder = $sourceOrders->firstWhere('payment_status', 'paid');
+                $activeOrders = $settledOrder ? collect([$settledOrder]) : collect();
+            }
+
+            $orders = $activeOrders->map(fn ($order) => [
                 'grand_total' => (float) $order->grand_total,
+                'payment_status' => (string) $order->payment_status,
                 'ordered_at_iso' => optional($order->ordered_at ?? $order->created_at)->toIso8601String(),
-                'items' => $order->items->map(fn($item) => [
+                'items' => $order->items->map(fn ($item) => [
                     'quantity' => (int) $item->quantity,
                 ])->values(),
             ])->values();
@@ -385,7 +401,7 @@ class TableController extends Controller
         ]);
 
         $tableNumber = trim((string) ($validated['table_number'] ?? ''));
-        abort_unless(!empty($validated['table_id']) || $tableNumber !== '', 422);
+        abort_unless(! empty($validated['table_id']) || $tableNumber !== '', 422);
 
         $branchId = (int) session('active_branch_id', $user->branch_id ?? 0);
         $table = Table::query()
@@ -393,7 +409,7 @@ class TableController extends Controller
             ->where('tenant_id', $user->tenant_id)
             ->where('branch_id', $branchId)
             ->where(function ($query) use ($validated, $tableNumber) {
-                if (!empty($validated['table_id'])) {
+                if (! empty($validated['table_id'])) {
                     $query->whereKey((int) $validated['table_id']);
                 }
                 if ($tableNumber !== '') {
@@ -422,17 +438,102 @@ class TableController extends Controller
         ]);
     }
 
+    public function vacate(Request $request, Table $table)
+    {
+        $user = $request->user();
+        abort_unless($user && in_array($user->role, ['admin', 'manager', 'cashier', 'waiter'], true), 403);
+
+        $branchId = $user->role === 'admin'
+            ? (int) session('active_branch_id', $user->branch_id ?? 0)
+            : (int) ($user->branch_id ?? 0);
+
+        abort_unless(
+            (int) $table->tenant_id === (int) $user->tenant_id
+            && (int) $table->branch_id === $branchId,
+            404
+        );
+
+        $paidOrder = $table->orders()
+            ->latest('id')
+            ->first();
+
+        if ((string) $table->status !== 'occupied' || ! $paidOrder || (string) $paidOrder->payment_status !== 'paid') {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'This table does not have a settled bill to vacate.',
+            ], 422);
+        }
+
+        DB::transaction(function () use ($table, $paidOrder, $user) {
+            $paidOrder->update([
+                'table_released_at' => now(),
+                'table_released_by' => (int) $user->id,
+            ]);
+
+            $table->update([
+                'status' => 'available',
+                'is_calling_waiter' => false,
+                'is_bill_requested' => false,
+            ]);
+
+            $this->tableAccessSessionService->closeTableSessions($table);
+
+            TableServiceRequest::query()
+                ->where('table_id', $table->id)
+                ->whereIn('status', ['pending', 'accepted'])
+                ->update([
+                    'status' => 'completed',
+                    'completed_at' => now(),
+                ]);
+        });
+
+        broadcast(new KitchenStatusUpdated([
+            'order_id' => (int) $paidOrder->id,
+            'table_id' => (int) $table->id,
+            'table_number' => (string) $table->table_number,
+            'table_display_number' => (string) $table->display_number,
+            'table_status' => 'available',
+            'branch_id' => (int) $table->branch_id,
+            'event_type' => 'table_freed',
+        ]))->toOthers();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Table {$table->display_number} is now available.",
+            'data' => [
+                'table_id' => (int) $table->id,
+                'table_status' => 'available',
+                'order_id' => (int) $paidOrder->id,
+            ],
+        ]);
+    }
+
     public function kotPdf(Request $request, string $table_number)
     {
         $user = Auth::user();
         $tenantId = (int) ($user?->tenant_id ?? 0);
         $requestedOrderId = $request->filled('order_id') ? (int) $request->query('order_id') : null;
         $requestedKotNumber = $request->filled('kot_number') ? (int) $request->query('kot_number') : null;
-        $requestedBranchId = $request->filled('branch_id') ? (int) $request->query('branch_id') : null;
+        $requestedTableId = $request->filled('table_id') ? (int) $request->query('table_id') : null;
+        $requestedBranchId = $request->filled('branch_id')
+            ? (int) $request->query('branch_id')
+            : (int) session('active_branch_id', $user?->branch_id ?? 0);
         $tableNumber = trim((string) $table_number);
-        $resolvedTableId = null;
+        $table = Table::query()
+            ->with(['branch', 'tenant', 'area'])
+            ->where('tenant_id', $tenantId)
+            ->when($requestedBranchId > 0, fn ($query) => $query->where('branch_id', $requestedBranchId))
+            ->when(
+                $requestedTableId,
+                fn ($query) => $query->whereKey($requestedTableId),
+                fn ($query) => $query->where('table_number', $tableNumber)
+            )
+            ->firstOrFail();
+        $resolvedTableId = (int) $table->id;
         $ordersQuery = Order::query()
             ->where('tenant_id', $tenantId)
+            ->where('branch_id', (int) $table->branch_id)
+            ->where('table_number', (string) $table->table_number)
             ->with(['items.orderItemAddons.masterAddon', 'items.creator', 'creator']);
 
         if ($requestedOrderId) {
@@ -445,10 +546,17 @@ class TableController extends Controller
             $orders = collect([$primaryOrder]);
         } else {
             $orders = (clone $ordersQuery)
-                ->where('table_number', $tableNumber)
                 ->where('status', 'running')
                 ->latest()
                 ->get();
+
+            if ($orders->isEmpty() && (string) $table->status === 'occupied') {
+                $settledOrder = (clone $ordersQuery)
+                    ->where('payment_status', 'paid')
+                    ->latest('id')
+                    ->first();
+                $orders = $settledOrder ? collect([$settledOrder]) : collect();
+            }
         }
 
         $targetKotNumber = $requestedKotNumber;
@@ -483,19 +591,6 @@ class TableController extends Controller
                 $orders = $filteredOrders;
             }
         }
-
-        $table = Table::query()
-            ->with(['branch', 'tenant', 'area'])
-            ->where('tenant_id', $tenantId)
-            ->when(
-                $resolvedTableId,
-                fn ($query) => $query->whereKey($resolvedTableId),
-                fn ($query) => $query->where('table_number', $tableNumber)
-            )
-            ->when($requestedBranchId, function ($query) use ($requestedBranchId) {
-                $query->where('branch_id', $requestedBranchId);
-            })
-            ->firstOrFail();
 
         $primaryOrder = $orders->first();
 
@@ -551,11 +646,12 @@ class TableController extends Controller
             })
             ->filter()
             ->first();
-        $items = $orders->flatMap(function (Order $order) use ($targetKotNumber) {
+        $items = $orders->flatMap(function (Order $order) {
             return $order->items
                 ->filter(function ($item) {
                     $status = strtolower(trim((string) ($item->status ?? '')));
-                    return !in_array($status, ['rejected', 'cancelled'], true);
+
+                    return ! in_array($status, ['rejected', 'cancelled'], true);
                 })
                 ->map(function ($item) {
                     $addons = collect($item->orderItemAddons ?? [])
@@ -565,25 +661,25 @@ class TableController extends Controller
                                 ?? data_get($addon, 'masterAddon.name', '')
                             ?? $addon->name
                             ?? 'Addon'
-                        ));
+                            ));
 
-                        return [
-                            'name' => $addonName,
-                            'quantity' => max((int) ($addon->quantity ?? 1), 1),
-                        ];
-                    })
-                    ->filter(fn (array $addon) => trim((string) ($addon['name'] ?? '')) !== '')
-                    ->values()
-                    ->all();
+                            return [
+                                'name' => $addonName,
+                                'quantity' => max((int) ($addon->quantity ?? 1), 1),
+                            ];
+                        })
+                        ->filter(fn (array $addon) => trim((string) ($addon['name'] ?? '')) !== '')
+                        ->values()
+                        ->all();
 
-                return [
-                    'quantity' => max((int) ($item->quantity ?? 1), 1),
-                    'name' => trim((string) ($item->item_name ?? 'Item')),
-                    'notes' => trim((string) ($item->notes ?? '')),
-                    'addons' => $addons,
-                    'order_by_label' => trim((string) data_get($item, 'order_by_label', '')) ?: 'Guest',
-                    'created_at' => optional($item->created_at)->toIso8601String(),
-                ];
+                    return [
+                        'quantity' => max((int) ($item->quantity ?? 1), 1),
+                        'name' => trim((string) ($item->item_name ?? 'Item')),
+                        'notes' => trim((string) ($item->notes ?? '')),
+                        'addons' => $addons,
+                        'order_by_label' => trim((string) data_get($item, 'order_by_label', '')) ?: 'Guest',
+                        'created_at' => optional($item->created_at)->toIso8601String(),
+                    ];
                 });
         })->filter(fn (array $item) => trim((string) ($item['name'] ?? '')) !== '')->values();
 
@@ -627,21 +723,20 @@ class TableController extends Controller
         ])->setPaper($this->thermalReceiptPaperForKot((int) $items->count(), $items->all()), 'portrait')
             ->setOption('defaultFont', 'DejaVu Sans');
 
-        $fileName = 'kot-' . preg_replace('/[^A-Za-z0-9_-]+/', '-', $table->display_number) . '.pdf';
+        $fileName = 'kot-'.preg_replace('/[^A-Za-z0-9_-]+/', '-', $table->display_number).'.pdf';
 
         return $request->boolean('print')
             ? $pdf->stream($fileName)
             : $pdf->download($fileName);
     }
 
-
     public function bulkStore(Request $request)
     {
         $request->validate([
-            'branch_id'    => 'required',
-            'area_id'      => 'nullable|integer|exists:areas,id',
-            'capacity'     => 'required|integer|min:1',
-            'table_count'  => 'required|integer|min:1',
+            'branch_id' => 'required',
+            'area_id' => 'nullable|integer|exists:areas,id',
+            'capacity' => 'required|integer|min:1',
+            'table_count' => 'required|integer|min:1',
             'start_number' => 'required|integer|min:1',
         ]);
 
@@ -675,11 +770,11 @@ class TableController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'branch_id'    => 'required',
-            'area_id'      => 'nullable|integer|exists:areas,id',
+            'branch_id' => 'required',
+            'area_id' => 'nullable|integer|exists:areas,id',
             'table_number' => 'required|string',
-            'capacity'     => 'required|integer|min:1',
-            'status'       => 'required|in:available,occupied,reserved,out_of_service',
+            'capacity' => 'required|integer|min:1',
+            'status' => 'required|in:available,occupied,reserved,out_of_service',
         ]);
 
         try {

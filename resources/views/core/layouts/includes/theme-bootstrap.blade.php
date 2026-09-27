@@ -1,7 +1,7 @@
 <script>
     (function() {
         try {
-            var savedTheme = localStorage.getItem('restochain-theme');
+            var savedTheme = localStorage.getItem('restrotix-theme') || localStorage.getItem('restochain-theme');
             var isLightTheme = savedTheme !== 'dark';
             document.body.classList.toggle('light-theme', isLightTheme);
             document.body.classList.toggle('dark', !isLightTheme);

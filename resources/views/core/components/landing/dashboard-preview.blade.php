@@ -2,7 +2,7 @@
     <section id="dashboard" class="py-16 sm:py-20 bg-gray-900" data-dashboard-preview>
         <div class="container mx-auto px-4 sm:px-6">
             <div class="text-center mb-12 sm:mb-16">
-                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">RestoChain RAP: Super
+                <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">Restrotix RAP: Super
                     Admin Dashboard</h2>
                 <p class="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto">Centralized control for multi-branch
                     restaurant chains. Everything you need in one place.</p>
@@ -68,7 +68,7 @@
                                     <i class="fas fa-user text-gray-300 text-sm sm:text-base"></i>
                                 </div>
                                 <p class="text-white font-medium text-sm sm:text-base">Super Admin</p>
-                                <p class="text-xs text-gray-400">restochain@example.com</p>
+                                <p class="text-xs text-gray-400">admin@restrotix.com</p>
                             </div>
                         </div>
                     </div>

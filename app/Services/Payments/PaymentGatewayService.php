@@ -2,6 +2,7 @@
 
 namespace App\Services\Payments;
 
+use App\Events\KitchenStatusUpdated;
 use App\Models\BranchPaymentGateway;
 use App\Models\Order;
 use App\Models\OrderInvoice;
@@ -594,12 +595,27 @@ class PaymentGatewayService
             $table = $session->table;
             if ($table) {
                 $table->update([
-                    'status' => 'available',
+                    'status' => 'occupied',
                     'is_calling_waiter' => false,
                     'is_bill_requested' => false,
                 ]);
             }
         });
+
+        $session->loadMissing('table.area');
+        $table = $session->table;
+        if ($table) {
+            broadcast(new KitchenStatusUpdated([
+                'order_id' => (int) $session->order_id,
+                'table_id' => (int) $table->id,
+                'table_number' => (string) $table->table_number,
+                'table_display_number' => (string) $table->display_number,
+                'table_status' => 'occupied',
+                'payment_status' => 'paid',
+                'branch_id' => (int) $table->branch_id,
+                'event_type' => 'payment_settled',
+            ]))->toOthers();
+        }
     }
 
     protected function markCancelled(PaymentSession $session, array $result): void

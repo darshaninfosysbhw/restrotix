@@ -9,7 +9,7 @@
                 <div>
                     <span
                         class="inline-flex items-center gap-2 rounded-full border border-orange-300/50 bg-orange-400/10 px-3.5 py-1.5 text-sm font-medium text-orange-100">
-                        <i class="fas fa-sparkles text-xs"></i>RestoChain SaaS
+                        <i class="fas fa-sparkles text-xs"></i>Restrotix SaaS
                     </span>
                     <h1 class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight">
                         Empowering the Culinary World
@@ -83,7 +83,7 @@
                         From One Operational Pain Point To A Connected Marketplace Ecosystem
                     </h2>
                     <p class="mt-5 text-gray-600 leading-relaxed">
-                        RestoChain started with one goal: remove the operational friction between branch teams, management,
+                        Restrotix started with one goal: remove the operational friction between branch teams, management,
                         and suppliers. What began as a control layer for multi-branch execution has evolved into a complete
                         ecosystem where procurement, billing, performance, and decisions flow in one direction.
                     </p>

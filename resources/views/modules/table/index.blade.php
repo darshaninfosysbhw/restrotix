@@ -1068,9 +1068,6 @@
 
             function renderOrdersToDrawer(tableNum, orders) {
                 if (!orders || orders.length === 0) {
-                    if (typeof window.markTableAsAvailable === 'function') {
-                        window.markTableAsAvailable(tableNum);
-                    }
                     listArea.innerHTML = renderEmptyOrdersState();
                     return;
                 }

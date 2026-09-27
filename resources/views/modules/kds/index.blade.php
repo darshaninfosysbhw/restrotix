@@ -303,6 +303,12 @@
 
             updateTimers();
             setInterval(updateTimers, 60000);
+            setInterval(() => {
+                if (!document.hidden) refreshKdsData();
+            }, 10000);
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) refreshKdsData();
+            });
 
             // 🔥 Realtime (PRIVATE CHANNEL FIXED)
             if (!window.Echo || currentBranchId <= 0) return;

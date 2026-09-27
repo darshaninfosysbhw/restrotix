@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 class TableAccessSessionService
 {
     private const DEFAULT_SESSION_MINUTES = 30;
+
     private const TABLE_GRACE_MINUTES = 2;
 
     public function bootstrapFromScan(Table $table, Request $request): TableAccessSession
@@ -127,6 +128,22 @@ class TableAccessSessionService
             ]);
     }
 
+    public function closeTableSessions(Table $table): int
+    {
+        $now = now();
+
+        return TableAccessSession::query()
+            ->where('table_id', (int) $table->id)
+            ->whereIn('status', ['active', 'grace'])
+            ->update([
+                'status' => 'expired',
+                'grace_expires_at' => null,
+                'expires_at' => $now,
+                'last_activity_at' => $now,
+                'updated_at' => $now,
+            ]);
+    }
+
     public function expireStaleSessionsForTable(Table $table): int
     {
         $now = now();
@@ -203,6 +220,6 @@ class TableAccessSessionService
 
     private function generateSessionToken(): string
     {
-        return 'TAS-' . (string) Str::ulid();
+        return 'TAS-'.(string) Str::ulid();
     }
 }

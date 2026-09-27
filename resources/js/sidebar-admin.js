@@ -19,14 +19,14 @@
         }
     }
     if (themeToggleBtn && themeIcon) {
-        const savedTheme = localStorage.getItem('restochain-theme');
+        const savedTheme = localStorage.getItem('restrotix-theme') || localStorage.getItem('restochain-theme');
         const isLightTheme = savedTheme !== 'dark';
         applyThemeState(isLightTheme);
         setIconBasedOnTheme();
         themeToggleBtn.addEventListener('click', function () {
             const isLightThemeNow = document.body.classList.toggle('light-theme');
             document.body.classList.toggle('dark', !isLightThemeNow);
-            localStorage.setItem('restochain-theme', isLightThemeNow ? 'light' : 'dark');
+            localStorage.setItem('restrotix-theme', isLightThemeNow ? 'light' : 'dark');
             setIconBasedOnTheme();
         });
     }

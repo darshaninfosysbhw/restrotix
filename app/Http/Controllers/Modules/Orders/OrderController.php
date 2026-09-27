@@ -3,20 +3,19 @@
 namespace App\Http\Controllers\Modules\Orders;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Branch;
 use App\Models\MenuItem;
 use App\Models\MenuItemAddon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemAddon;
-use App\Models\TableAccessSession;
 use App\Models\Table;
+use App\Models\TableAccessSession;
+use App\Services\PublicMenu\TableAccessSessionService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Events\NewOrderReceived;
-use Illuminate\Support\Facades\Auth;
-use App\Services\PublicMenu\TableAccessSessionService;
 
 class OrderController extends Controller
 {
@@ -32,24 +31,24 @@ class OrderController extends Controller
         $initialTransactionLevel = DB::transactionLevel();
         // 🌟 FIX 1: unique_key aur addons ke inner attributes ko nullable/optional kiya taaki Waiter/POS panel na toote
         $request->validate([
-            'items'                    => 'required|array|min:1',
-            'items.*.id'               => 'required',
-            'items.*.unique_key'       => 'nullable|string', // Changed from required to nullable
-            'items.*.name'             => 'required|string',
-            'items.*.price'            => 'required|numeric',
-            'items.*.quantity'         => 'required|integer|min:1|max:999',
+            'items' => 'required|array|min:1',
+            'items.*.id' => 'required',
+            'items.*.unique_key' => 'nullable|string', // Changed from required to nullable
+            'items.*.name' => 'required|string',
+            'items.*.price' => 'required|numeric',
+            'items.*.quantity' => 'required|integer|min:1|max:999',
             'items.*.addons.*.quantity' => 'nullable|integer|min:1|max:999',
-            'items.*.variant_name'     => 'nullable|string',
-            'items.*.notes'            => 'nullable|string',
-            'items.*.addons'           => 'nullable|array',
-            'table_id'                 => 'nullable|integer|exists:tables,id',
-            'session_token'            => 'nullable|string|max:255',
-            'client_latitude'          => 'nullable|numeric|between:-90,90',
-            'client_longitude'         => 'nullable|numeric|between:-180,180',
-            'order_type'               => 'required|string',
-            'source'                   => 'nullable|in:waiter,qr,web,pos',
-            'request_key'              => 'nullable|uuid',
-            'overall_instructions'     => 'nullable|string'
+            'items.*.variant_name' => 'nullable|string',
+            'items.*.notes' => 'nullable|string',
+            'items.*.addons' => 'nullable|array',
+            'table_id' => 'nullable|integer|exists:tables,id',
+            'session_token' => 'nullable|string|max:255',
+            'client_latitude' => 'nullable|numeric|between:-90,90',
+            'client_longitude' => 'nullable|numeric|between:-180,180',
+            'order_type' => 'required|string',
+            'source' => 'nullable|in:waiter,qr,web,pos',
+            'request_key' => 'nullable|uuid',
+            'overall_instructions' => 'nullable|string',
         ]);
 
         $kotNumberLockAcquired = false;
@@ -59,8 +58,8 @@ class OrderController extends Controller
             $user = Auth::user();
             $approvedSubmission = $request->attributes->get('approved_qr_submission');
             $isApprovedQr = $approvedSubmission instanceof \App\Models\QrOrderSubmission;
-            $isStaffOrder = !$isApprovedQr && $user && in_array($user->role, ['admin', 'manager', 'waiter', 'cashier', 'sales_manager'], true)
-                && $request->input('source') !== 'qr' && !$request->filled('session_token');
+            $isStaffOrder = ! $isApprovedQr && $user && in_array($user->role, ['admin', 'manager', 'waiter', 'cashier', 'sales_manager'], true)
+                && $request->input('source') !== 'qr' && ! $request->filled('session_token');
             $contextTable = null;
             $tableSession = null;
 
@@ -86,7 +85,7 @@ class OrderController extends Controller
                     ->first();
             }
 
-            if (!$contextTable && !$isStaffOrder) {
+            if (! $contextTable && ! $isStaffOrder) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Unable to resolve table context for this order.',
@@ -99,7 +98,7 @@ class OrderController extends Controller
                 abort_unless((int) $contextTable->branch_id === $allowedBranch, 403);
             }
 
-            if (!$isStaffOrder && !$isApprovedQr && $contextTable) {
+            if (! $isStaffOrder && ! $isApprovedQr && $contextTable) {
                 $sessionToken = trim((string) $request->input('session_token', ''));
                 $latestSession = $this->tableAccessSessionService->getLatestSessionForTable($contextTable);
                 $coolingDownMessage = 'This table is resetting. Please scan again after a few minutes.';
@@ -120,7 +119,7 @@ class OrderController extends Controller
 
                 $tableSession = $this->tableAccessSessionService->findValidSessionForTable($contextTable, $sessionToken);
 
-                if (!$tableSession) {
+                if (! $tableSession) {
                     if ($latestSession?->isCoolingDown()) {
                         return response()->json([
                             'success' => false,
@@ -165,7 +164,7 @@ class OrderController extends Controller
                 }
             }
 
-            if (!$isStaffOrder && !$isApprovedQr) {
+            if (! $isStaffOrder && ! $isApprovedQr) {
                 abort_unless($contextTable->is_active, 422, 'This table is unavailable.');
                 $request->merge(['source' => 'qr', 'order_type' => 'dine_in']);
                 $service = app(\App\Services\QrOrderSubmissionService::class);
@@ -173,15 +172,20 @@ class OrderController extends Controller
                 if ($contextTable->branch->auto_accept_qr_orders && $submission->status === 'pending') {
                     $submission = $service->handle($submission, null, true);
                 }
+
                 return response()->json(['success' => true, 'pending_confirmation' => $submission->status === 'pending',
-                    'submission_id' => $submission->id, 'message' => $submission->status === 'pending' ? 'Awaiting restaurant confirmation.' : 'Order ' . $submission->status . '.',
+                    'submission_id' => $submission->id, 'message' => $submission->status === 'pending' ? 'Awaiting restaurant confirmation.' : 'Order '.$submission->status.'.',
                     'redirect_url' => route('qr-submissions.status', $submission->public_token)]);
             }
             $request->merge(['source' => $isStaffOrder ? ($request->input('source') ?: 'waiter') : 'qr']);
 
-            if (!$isApprovedQr) $kotNumberLockAcquired = $this->acquireKotNumberLock();
+            if (! $isApprovedQr) {
+                $kotNumberLockAcquired = $this->acquireKotNumberLock();
+            }
             DB::beginTransaction();
-            if ($contextTable) Table::whereKey($contextTable->id)->lockForUpdate()->firstOrFail();
+            if ($contextTable) {
+                Table::whereKey($contextTable->id)->lockForUpdate()->firstOrFail();
+            }
 
             $tenantId = $contextTable
                 ? (int) ($contextTable->tenant_id ?? $contextTable->branch?->tenant_id ?? 0)
@@ -216,27 +220,27 @@ class OrderController extends Controller
             }
 
             // 🚀 STEP 2: Naya Order Invoice Create Karo agar Running nahi hai
-            if (!$order) {
+            if (! $order) {
                 $order = Order::create([
-                    'tenant_id'       => $tenantId,
-                    'branch_id'       => $branchId,
-                    'table_id'        => $tableId ?: null,
-                    'order_number'    => 'ORD-' . strtoupper(uniqid()),
-                    'table_number'    => $tableNumber,
-                    'order_type'      => $request->order_type ?? 'dine_in',
-                    'subtotal'        => 0,
+                    'tenant_id' => $tenantId,
+                    'branch_id' => $branchId,
+                    'table_id' => $tableId ?: null,
+                    'order_number' => 'ORD-'.strtoupper(uniqid()),
+                    'table_number' => $tableNumber,
+                    'order_type' => $request->order_type ?? 'dine_in',
+                    'subtotal' => 0,
                     'discount_amount' => 0,
-                    'tax_amount'      => 0,
-                    'grand_total'     => 0,
-                    'status'          => 'running',
-                    'payment_status'  => 'pending',
-                    'notes'           => $request->overall_instructions,
-                    'source'          => $request->source ?? 'qr',
-                    'created_by'      => $isStaffOrder ? Auth::id() : null,
+                    'tax_amount' => 0,
+                    'grand_total' => 0,
+                    'status' => 'running',
+                    'payment_status' => 'unpaid',
+                    'notes' => $request->overall_instructions,
+                    'source' => $request->source ?? 'qr',
+                    'created_by' => $isStaffOrder ? Auth::id() : null,
                 ]);
             } else {
                 if ($request->filled('overall_instructions')) {
-                    $order->notes = $order->notes ? $order->notes . ' | ' . $request->overall_instructions : $request->overall_instructions;
+                    $order->notes = $order->notes ? $order->notes.' | '.$request->overall_instructions : $request->overall_instructions;
                 }
                 $order->save();
             }
@@ -261,14 +265,14 @@ class OrderController extends Controller
                 $resolvedMenuItemId = $this->resolveMenuItemIdForOrderItem($item, $incomingMenuItemId);
 
                 // 🌟 FIX 2: Fallback Engine - Agar unique_key missing hai (Waiter/POS Panel), to default string banao
-                $uniqueKey = $item['unique_key'] ?? ($item['id'] . '_0_0_none');
+                $uniqueKey = $item['unique_key'] ?? ($item['id'].'_0_0_none');
 
                 $keyParts = explode('_', $uniqueKey);
-                $variantId = (isset($keyParts[1]) && $keyParts[1] !== '0') ? (int)$keyParts[1] : null;
-                $itemNote = !empty($item['notes']) ? $item['notes'] : null;
+                $variantId = (isset($keyParts[1]) && $keyParts[1] !== '0') ? (int) $keyParts[1] : null;
+                $itemNote = ! empty($item['notes']) ? $item['notes'] : null;
                 $compiledName = trim((string) ($item['name'] ?? ''));
-                if (!empty($item['variant_name'])) {
-                    $compiledName .= ' (' . $item['variant_name'] . ')';
+                if (! empty($item['variant_name'])) {
+                    $compiledName .= ' ('.$item['variant_name'].')';
                 }
 
                 $potentialDuplicates = OrderItem::where('order_id', $order->id)
@@ -276,7 +280,7 @@ class OrderController extends Controller
                     ->where('menu_item_variant_id', $variantId)
                     ->where('notes', $itemNote)
                     ->when(
-                        !empty($resolvedMenuItemId),
+                        ! empty($resolvedMenuItemId),
                         function ($query) use ($resolvedMenuItemId) {
                             $query->where('menu_item_id', $resolvedMenuItemId);
                         },
@@ -293,14 +297,15 @@ class OrderController extends Controller
 
                 foreach ($potentialDuplicates as $candidate) {
                     $candidateTokens = $candidate->orderItemAddons->map(function ($addon) {
-                        return $addon->menu_item_addon_id . '-' . $addon->quantity;
+                        return $addon->menu_item_addon_id.'-'.$addon->quantity;
                     })->sort()->values()->toArray();
 
                     $incomingTokens = collect($item['addons'] ?? [])->map(function ($addon) {
                         // Safe extraction backing up waiter app payload key maps
                         $addonId = $addon['id'] ?? ($addon['menu_item_addon_id'] ?? null);
                         $addonQty = $addon['quantity'] ?? 1;
-                        return $addonId . '-' . $addonQty;
+
+                        return $addonId.'-'.$addonQty;
                     })->filter()->sort()->values()->toArray();
 
                     if ($candidateTokens === $incomingTokens) {
@@ -366,18 +371,18 @@ class OrderController extends Controller
                         'estimated_preparation_minutes' => $resolvedMenuItemId
                             ? MenuItem::where('tenant_id', $order->tenant_id)->find($resolvedMenuItemId)?->preparation_time
                             : null,
-                        'order_id'             => $order->id,
-                        'source'               => $itemSource !== '' ? $itemSource : 'manual',
-                        'created_by'           => $itemCreatedBy,
-                        'kot_number'           => $kotNumber,
-                        'menu_item_id'         => $resolvedMenuItemId,
+                        'order_id' => $order->id,
+                        'source' => $itemSource !== '' ? $itemSource : 'manual',
+                        'created_by' => $itemCreatedBy,
+                        'kot_number' => $kotNumber,
+                        'menu_item_id' => $resolvedMenuItemId,
                         'menu_item_variant_id' => $variantId,
-                        'item_name'            => $compiledName,
-                        'price'                => $item['price'],
-                        'quantity'             => $item['quantity'],
-                        'total'                => ($item['price'] * $item['quantity']) + $incomingAddonsSum,
-                        'notes'                => $itemNote,
-                        'status'               => 'new'
+                        'item_name' => $compiledName,
+                        'price' => $item['price'],
+                        'quantity' => $item['quantity'],
+                        'total' => ($item['price'] * $item['quantity']) + $incomingAddonsSum,
+                        'notes' => $itemNote,
+                        'status' => 'new',
                     ]);
 
                     if (isset($item['addons']) && is_array($item['addons'])) {
@@ -392,11 +397,11 @@ class OrderController extends Controller
 
                             if ($incomingAddonId) {
                                 OrderItemAddon::create([
-                                    'order_item_id'      => $orderItem->id,
+                                    'order_item_id' => $orderItem->id,
                                     'menu_item_addon_id' => $incomingAddonId,
-                                    'addon_name'         => $addon['name'],
-                                    'price'              => $addonPrice,
-                                    'quantity'           => $addonQty
+                                    'addon_name' => $addon['name'],
+                                    'price' => $addonPrice,
+                                    'quantity' => $addonQty,
                                 ]);
                             }
                         }
@@ -420,8 +425,8 @@ class OrderController extends Controller
             }
 
             $order->update([
-                'subtotal'    => $newSubtotal,
-                'tax_amount'  => round($taxAmount, 2),
+                'subtotal' => $newSubtotal,
+                'tax_amount' => round($taxAmount, 2),
                 'grand_total' => round($grandTotal, 2),
             ]);
 
@@ -440,20 +445,24 @@ class OrderController extends Controller
 
             // 🚀 STEP 6: Broadcast Event to Live KDS Monitors / Kitchen Panels
             $newOrderEvent = new \App\Events\NewOrderReceived([
-                'table_id'     => $order->table_id,
+                'table_id' => $order->table_id,
                 'table_number' => $order->table_number,
                 'table_display_number' => $contextTable?->display_number ?? $order->table_number,
                 'order_number' => $order->order_number,
-                'order_id'     => $order->id,
-                'kot_number'   => $kotNumber,
-                'batch_key'    => $order->id . ':' . $kotNumber,
-                'items_count'  => $submittedQuantityCount,
+                'order_id' => $order->id,
+                'kot_number' => $kotNumber,
+                'batch_key' => $order->id.':'.$kotNumber,
+                'items_count' => $submittedQuantityCount,
                 'line_items_count' => $submittedLineCount,
-                'tenant_id'    => $order->tenant_id,
-                'branch_id'    => $order->branch_id,
+                'tenant_id' => $order->tenant_id,
+                'branch_id' => $order->branch_id,
             ]);
             DB::afterCommit(function () use ($newOrderEvent) {
-                try { broadcast($newOrderEvent); } catch (\Throwable $exception) { report($exception); }
+                try {
+                    broadcast($newOrderEvent);
+                } catch (\Throwable $exception) {
+                    report($exception);
+                }
             });
 
             DB::commit();
@@ -469,26 +478,31 @@ class OrderController extends Controller
             }
 
             return response()->json([
-                'success'  => true,
-                'message'  => 'Order processed successfully across all platform sources',
+                'success' => true,
+                'message' => 'Order processed successfully across all platform sources',
                 'order_id' => $order->id,
                 'kot_number' => $kotNumber,
                 'redirect_url' => $redirectUrl,
             ]);
         } catch (\Illuminate\Validation\ValidationException|\Symfony\Component\HttpKernel\Exception\HttpException $e) {
-            while (DB::transactionLevel() > $initialTransactionLevel) DB::rollBack();
+            while (DB::transactionLevel() > $initialTransactionLevel) {
+                DB::rollBack();
+            }
             throw $e;
         } catch (\Exception $e) {
-            while (DB::transactionLevel() > $initialTransactionLevel) DB::rollBack();
+            while (DB::transactionLevel() > $initialTransactionLevel) {
+                DB::rollBack();
+            }
             Log::error('Order store failed', [
                 'message' => $e->getMessage(),
                 'request' => $request->all(),
                 'user_id' => Auth::id(),
             ]);
+
             return response()->json([
                 'success' => false,
                 'message' => 'Something went wrong inside backend engine transaction layer',
-                'error'   => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         } finally {
             if ($kotNumberLockAcquired) {
@@ -511,7 +525,9 @@ class OrderController extends Controller
 
     private function acquireKotNumberLock(): bool
     {
-        if (DB::getDriverName() !== 'mysql') return false;
+        if (DB::getDriverName() !== 'mysql') {
+            return false;
+        }
         $result = DB::selectOne('SELECT GET_LOCK(?, 10) AS lock_status', ['restochain_kot_number_generation']);
 
         if ((int) ($result->lock_status ?? 0) !== 1) {

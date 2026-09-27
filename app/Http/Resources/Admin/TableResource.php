@@ -16,11 +16,11 @@ class TableResource extends JsonResource
         // 1. QR Code URL (For scanning by customers)
         $appUrl = rtrim((string) config('app.url'), '/');
         $menuPath = route('public.menu.scan', ['qr_token' => $this->qr_token], false);
-        $menuUrl = $appUrl . $menuPath;
+        $menuUrl = $appUrl.$menuPath;
         $qrData = $menuUrl;
 
         // 2. Generate Base64 SVG
-        $qrBase64 = 'data:image/svg+xml;base64,' . base64_encode(
+        $qrBase64 = 'data:image/svg+xml;base64,'.base64_encode(
             QrCode::size(80)
                 ->margin(1)
                 ->generate($qrData)
@@ -28,25 +28,34 @@ class TableResource extends JsonResource
 
         $activeOrders = collect();
         if ($this->relationLoaded('orders')) {
-            $activeOrders = $this->orders->map(function ($order) {
+            $orders = $this->orders->sortByDesc('id');
+            $activeOrders = $orders->where('status', 'running')->values();
+
+            if ($activeOrders->isEmpty() && (string) $this->status === 'occupied') {
+                $settledOrder = $orders->firstWhere('payment_status', 'paid');
+                $activeOrders = $settledOrder ? collect([$settledOrder]) : collect();
+            }
+
+            $activeOrders = $activeOrders->map(function ($order) {
                 return [
-                    'id'           => $order->id,
+                    'id' => $order->id,
                     'order_number' => $order->order_number,
-                    'status'       => $order->status,
-                    'grand_total'  => (float) $order->grand_total,
-                    'ordered_at'   => optional($order->ordered_at ?? $order->created_at)->format('h:i A'),
+                    'status' => $order->status,
+                    'payment_status' => $order->payment_status,
+                    'grand_total' => (float) $order->grand_total,
+                    'ordered_at' => optional($order->ordered_at ?? $order->created_at)->format('h:i A'),
                     'ordered_at_timestamp' => optional($order->ordered_at ?? $order->created_at)?->timestamp,
 
                     // 🌟 FIX: Items transform kar ke nested orderItemAddons pass kiye
-                    'items'        => $order->items->map(function ($item) {
+                    'items' => $order->items->map(function ($item) {
                         return [
-                            'id'                => $item->id,
-                            'item_name'         => $item->item_name,
-                            'quantity'          => (int) $item->quantity,
-                            'price'             => (float) $item->price,
-                            'total'             => (float) $item->total,
-                            'status'            => $item->status,
-                            'notes'             => $item->notes,
+                            'id' => $item->id,
+                            'item_name' => $item->item_name,
+                            'quantity' => (int) $item->quantity,
+                            'price' => (float) $item->price,
+                            'total' => (float) $item->total,
+                            'status' => $item->status,
+                            'notes' => $item->notes,
 
                             // 🔥 Explicitly pass Addons Array to Frontend JS Drawer
                             'order_item_addons' => $item->orderItemAddons->map(function ($addon) {
@@ -54,16 +63,17 @@ class TableResource extends JsonResource
                                 if ($addonPrice <= 0) {
                                     $addonPrice = max((float) ($addon->masterAddon?->price ?? 0), 0);
                                 }
+
                                 return [
-                                    'id'         => $addon->id,
+                                    'id' => $addon->id,
                                     'addon_name' => $addon->addon_name ?? $addon->masterAddon?->name ?? '',
-                                    'price'      => $addonPrice,
-                                    'quantity'   => (int) $addon->quantity,
+                                    'price' => $addonPrice,
+                                    'quantity' => (int) $addon->quantity,
                                     'applied_discount' => (float) ($addon->applied_discount ?? 0),
                                 ];
                             })->values()->all(),
                         ];
-                    })->values()->all()
+                    })->values()->all(),
                 ];
             });
         }
@@ -82,33 +92,33 @@ class TableResource extends JsonResource
             : 'Tax';
 
         return [
-            'id'             => (int) $this->id,
-            'table_number'   => (string) $this->table_number,
+            'id' => (int) $this->id,
+            'table_number' => (string) $this->table_number,
             'display_number' => $this->display_number,
-            'display_name'   => 'Table ' . $this->display_number,
-            'capacity'       => (int) ($this->capacity ?? 0),
-            'status'         => $computedStatus,
-            'status_label'   => ucfirst(str_replace('_', ' ', $computedStatus)),
+            'display_name' => 'Table '.$this->display_number,
+            'capacity' => (int) ($this->capacity ?? 0),
+            'status' => $computedStatus,
+            'status_label' => ucfirst(str_replace('_', ' ', $computedStatus)),
             'is_calling_waiter' => (bool) $this->is_calling_waiter,
             'is_bill_requested' => (bool) $this->is_bill_requested,
             'transfer_state' => $this->transfer_state,
 
             // UI Visuals
-            'status_color'   => $this->getStatusColor($computedStatus),
+            'status_color' => $this->getStatusColor($computedStatus),
             'qr_code_inline' => $qrBase64,
 
-            'qr_token'       => (string) ($this->qr_token ?? ''),
-            'menu_url'       => $menuUrl,
-            'branch_id'      => (int) $this->branch_id,
-            'area_id'        => $this->area_id ? (int) $this->area_id : null,
-            'area_name'      => $this->area?->name,
-            'area_code'      => $this->area?->code,
+            'qr_token' => (string) ($this->qr_token ?? ''),
+            'menu_url' => $menuUrl,
+            'branch_id' => (int) $this->branch_id,
+            'area_id' => $this->area_id ? (int) $this->area_id : null,
+            'area_name' => $this->area?->name,
+            'area_code' => $this->area?->code,
             'branch_tax_setting' => $branchTaxSetting,
             'branch_tax_rate' => $branchTaxRatePercent,
             'branch_tax_label' => $branchTaxLabelName,
-            'created_at'     => optional($this->created_at)->format('Y-m-d'),
+            'created_at' => optional($this->created_at)->format('Y-m-d'),
 
-            'active_orders'  => $this->whenLoaded('orders', fn() => $activeOrders),
+            'active_orders' => $this->whenLoaded('orders', fn () => $activeOrders),
         ];
     }
 
@@ -118,11 +128,11 @@ class TableResource extends JsonResource
     private function getStatusColor($status): string
     {
         return match ($status) {
-            'available'          => 'green',
-            'reserved'           => 'yellow',
+            'available' => 'green',
+            'reserved' => 'yellow',
             'booked', 'occupied' => 'red',
-            'out_of_service'     => 'gray',
-            default              => 'gray'
+            'out_of_service' => 'gray',
+            default => 'gray'
         };
     }
 }

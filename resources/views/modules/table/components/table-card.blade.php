@@ -5,6 +5,8 @@
             return collect($order['items'] ?? [])->sum(fn($item) => max((int) ($item['quantity'] ?? 1), 1));
         });
         $totalOrderAmount = (float) $activeOrders->sum('grand_total');
+        $isPaidOccupied = ($table['status'] ?? '') === 'occupied'
+            && $activeOrders->contains(fn ($order) => ($order['payment_status'] ?? '') === 'paid');
         $currencySymbol = auth()->user()->branch?->currency?->symbol
             ?? auth()->user()->tenant?->currency?->symbol
             ?? session('currency_symbol', 'Rs.');
@@ -85,6 +87,10 @@
                 <span
                     class="new-order-badge hidden text-[10px] px-2 py-1 rounded-full border border-orange-400 bg-orange-100 text-orange-700 dark:border-orange-500/60 dark:bg-orange-500/20 dark:text-orange-300 font-semibold">
                     New
+                </span>
+                <span
+                    class="table-paid-badge {{ $isPaidOccupied ? '' : 'hidden' }} text-[10px] px-2 py-1 rounded-full border border-emerald-500/60 bg-emerald-500/15 text-emerald-300 font-bold tracking-wide">
+                    <i class="fas fa-circle-check mr-1" aria-hidden="true"></i> PAID
                 </span>
             </div>
         @if (!in_array(auth()->user()->role, ['admin', 'manager'], true))
@@ -214,7 +220,7 @@
                 </button>
 
                 <a data-waiter-add-items href="{{ route('order.index', ['table' => $table['table_number'], 'table_id' => $table['id']]) }}"
-                    class="{{ $activeOrders->isNotEmpty() && empty($table['is_calling_waiter']) && empty($table['is_bill_requested']) ? '' : 'hidden' }} rounded-md border border-orange-500/40 px-2 py-1.5 text-center text-[11px] font-semibold text-orange-400 hover:bg-orange-500/10">
+                    class="{{ $activeOrders->isNotEmpty() && !$isPaidOccupied && empty($table['is_calling_waiter']) && empty($table['is_bill_requested']) ? '' : 'hidden' }} rounded-md border border-orange-500/40 px-2 py-1.5 text-center text-[11px] font-semibold text-orange-400 hover:bg-orange-500/10">
                     <i class="fas fa-plus-circle mr-1"></i> Add Items
                 </a>
 
@@ -278,6 +284,9 @@
 
                 const safeOrders = Array.isArray(orders) ? orders : [];
                 const hasOrders = safeOrders.length > 0;
+                const hasPaidOrder = safeOrders.some(order =>
+                    String(order?.payment_status || '').trim().toLowerCase() === 'paid'
+                );
                 const currentStatus = String(status || card.dataset.status || 'available').toLowerCase();
                 const effectiveStatus = hasOrders && currentStatus === 'available' ? 'occupied' : currentStatus;
                 const isCallingWaiter = flags.is_calling_waiter ?? (card.dataset.isCallingWaiter === '1');
@@ -296,6 +305,7 @@
                 const amount = summary?.querySelector('.waiter-order-amount');
                 const items = summary?.querySelector('.waiter-order-items');
                 const statusPill = card.querySelector('.table-status-pill');
+                const paidBadge = card.querySelector('.table-paid-badge');
                 const viewOrder = card.querySelector('.waiter-view-order');
                 const addItems = card.querySelector('[data-waiter-add-items]');
                 const startOrder = card.querySelector('[data-waiter-start-order]');
@@ -332,7 +342,7 @@
                 if (capacity) capacity.style.display = hasOrders ? 'none' : 'block';
                 divider?.classList.remove('hidden');
                 viewOrder?.classList.toggle('hidden', !hasOrders);
-                addItems?.classList.toggle('hidden', !hasOrders || isCallingWaiter || isBillRequested);
+                addItems?.classList.toggle('hidden', !hasOrders || hasPaidOrder || isCallingWaiter || isBillRequested);
                 startOrder?.classList.toggle('hidden', hasOrders || effectiveStatus !== 'available');
                 acceptCall?.classList.toggle('hidden', !isCallingWaiter);
                 printEstimate?.classList.toggle('hidden', !isBillRequested || !hasOrders);
@@ -350,6 +360,9 @@
                     amount.textContent = `${symbol} ${formatAmount(totalAmount)}`;
                 }
                 if (items) items.textContent = `${totalItems} ${totalItems === 1 ? 'Item' : 'Items'}`;
+
+                const isPaidOccupied = effectiveStatus === 'occupied' && hasPaidOrder;
+                paidBadge?.classList.toggle('hidden', !isPaidOccupied);
 
                 const statusStyles = {
                     available: ['bg-green-500/20 text-green-400', 'Available'],
@@ -527,7 +540,8 @@
                     }
                 };
 
-                window.setInterval(refreshAllWaiterCards, 60000);
+                refreshAllWaiterCards();
+                window.setInterval(refreshAllWaiterCards, 15000);
             }
         })();
     </script>

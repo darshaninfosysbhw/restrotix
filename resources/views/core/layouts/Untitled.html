@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>RestoChain ERP - Multi-Branch Restaurant Management</title>
+    <title>Restrotix - Multi-Branch Restaurant Management</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
@@ -869,7 +869,7 @@
                     themeIcon.classList.add('fa-sun');
                 }
             }
-            const savedTheme = localStorage.getItem('restochain-theme');
+            const savedTheme = localStorage.getItem('restrotix-theme') || localStorage.getItem('restochain-theme');
             if (savedTheme === 'light') {
                 document.body.classList.add('light-theme');
             } else {
@@ -878,7 +878,7 @@
             setIconBasedOnTheme();
             themeToggleBtn.addEventListener('click', function () {
                 document.body.classList.toggle('light-theme');
-                localStorage.setItem('restochain-theme', document.body.classList.contains('light-theme') ?
+                localStorage.setItem('restrotix-theme', document.body.classList.contains('light-theme') ?
                     'light' : 'dark');
                 setIconBasedOnTheme();
             });

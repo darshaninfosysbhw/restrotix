@@ -12,6 +12,7 @@ class Order extends Model
 
     protected $casts = [
         'ordered_at' => 'datetime',
+        'table_released_at' => 'datetime',
     ];
 
     protected $fillable = [
@@ -26,6 +27,8 @@ class Order extends Model
         'tax_amount',
         'grand_total',
         'paid_amount',
+        'table_released_at',
+        'table_released_by',
         'status',
         'kitchen_status',
         'payment_status',
@@ -52,6 +55,11 @@ class Order extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function tableReleasedBy()
+    {
+        return $this->belongsTo(User::class, 'table_released_by');
     }
 
     public function invoice()

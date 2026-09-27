@@ -33,7 +33,7 @@ class QrOrderApprovalTest extends TestCase
         ]]);
         $definitions = [
             'tenants' => ['company_name'], 'users' => ['tenant_id', 'branch_id', 'name', 'role'],
-            'branches' => ['tenant_id', 'branch_name', 'tax_setting', 'tax_rate', 'latitude', 'longitude', 'country_id', 'currency_id', 'deleted_at'],
+            'branches' => ['tenant_id', 'branch_name', 'tax_setting', 'tax_rate', 'is_vat_registered', 'latitude', 'longitude', 'country_id', 'currency_id', 'deleted_at'],
             'tables' => ['tenant_id', 'branch_id', 'table_number', 'qr_token', 'status', 'is_active'],
             'table_access_sessions' => ['tenant_id', 'branch_id', 'table_id', 'session_token', 'status', 'expires_at', 'grace_expires_at'],
             'menu_items' => ['tenant_id', 'branch_id', 'name', 'base_price', 'sale_price', 'is_available', 'is_active', 'has_variants', 'deleted_at'],
@@ -62,7 +62,7 @@ class QrOrderApprovalTest extends TestCase
         (require database_path('migrations/2026_09_07_140000_create_qr_order_submissions.php'))->up();
         Schema::table('menu_items', fn (Blueprint $table) => $table->unsignedSmallInteger('preparation_time')->nullable());
         Schema::table('order_items', fn (Blueprint $table) => $table->unsignedSmallInteger('estimated_preparation_minutes')->nullable());
-        DB::table('branches')->insert(['id' => 1, 'tenant_id' => 1, 'branch_name' => 'Main', 'tax_setting' => 'exclusive', 'tax_rate' => 10]);
+        DB::table('branches')->insert(['id' => 1, 'tenant_id' => 1, 'branch_name' => 'Main', 'tax_setting' => 'exclusive', 'tax_rate' => 10, 'is_vat_registered' => false]);
         DB::table('tables')->insert(['id' => 1, 'tenant_id' => 1, 'branch_id' => 1, 'table_number' => 'T-03', 'qr_token' => 'QR-TEST', 'status' => 'available', 'is_active' => '1']);
         DB::table('table_access_sessions')->insert(['id' => 1, 'tenant_id' => 1, 'branch_id' => 1, 'table_id' => 1, 'session_token' => 'session', 'status' => 'active', 'expires_at' => now()->addHour()]);
         DB::table('menu_items')->insert(['id' => 1, 'tenant_id' => 1, 'branch_id' => 1, 'name' => 'Coffee', 'base_price' => 100, 'is_available' => '1', 'is_active' => '1', 'has_variants' => '0']);
@@ -149,7 +149,7 @@ class QrOrderApprovalTest extends TestCase
         $this->assertSame(0, Order::count());
         $this->assertSame(0, OrderItem::count());
         $this->assertSame(0, DB::table('order_invoices')->count());
-        $this->assertSame('220.00', QrOrderSubmission::first()->total);
+        $this->assertSame('200.00', QrOrderSubmission::first()->total);
         Event::assertNotDispatched(NewOrderReceived::class);
     }
 
@@ -164,7 +164,7 @@ class QrOrderApprovalTest extends TestCase
         $this->assertSame($accepted->kot_number, $again->kot_number);
         $this->assertSame(1, Order::count());
         $this->assertSame(1, OrderItem::count());
-        $this->assertSame(220.0, (float) Order::first()->grand_total);
+        $this->assertSame(200.0, (float) Order::first()->grand_total);
         $this->assertSame('qr', OrderItem::first()->source);
         $this->assertNull(OrderItem::first()->created_by);
         Event::assertDispatchedTimes(NewOrderReceived::class, 1);

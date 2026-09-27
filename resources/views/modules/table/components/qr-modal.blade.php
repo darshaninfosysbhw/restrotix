@@ -1229,6 +1229,14 @@
                 return '';
             }
 
+            const settledOrder = orders.find((order) => {
+                return String(order?.payment_status ?? '').trim().toLowerCase() === 'paid';
+            });
+
+            if (settledOrder) {
+                return 'PAID';
+            }
+
             return orders
                 .map((order) => String(order?.status ?? '').trim())
                 .find(Boolean) || '';
@@ -1669,6 +1677,11 @@
                 params.set('branch_id', String(safeBranchId));
             }
 
+            const safeTableId = Number(window.currentOpenTableId ?? 0);
+            if (Number.isFinite(safeTableId) && safeTableId > 0) {
+                params.set('table_id', String(safeTableId));
+            }
+
             if (outputMode !== 'download') {
                 params.set('print', '1');
             }
@@ -1908,6 +1921,7 @@
                 kitchenBadge.classList.add('hidden');
                 kitchenBadge.textContent = 'Kitchen';
             }
+            card.querySelector('.table-paid-badge')?.classList.add('hidden');
 
             statusPill.className =
                 'table-status-pill text-xs px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400';
@@ -1919,9 +1933,11 @@
             syncTableStatsFromCards();
         };
 
-        function setKitchenStatusBadge(tableNum, className, label) {
+        function setKitchenStatusBadge(tableNum, className, label, tableId = null) {
             const normalizedTableNum = normalizeTableNum(tableNum);
-            const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            const card = tableId
+                ? document.querySelector(`.table-card[data-id="${CSS.escape(String(tableId))}"]`)
+                : document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
             if (!card) return;
 
             const kitchenBadge = card.querySelector('.kitchen-status-badge');
@@ -1933,9 +1949,11 @@
             kitchenBadge.classList.remove('hidden');
         }
 
-        function clearKitchenReadyState(tableNum) {
+        function clearKitchenReadyState(tableNum, tableId = null) {
             const normalizedTableNum = normalizeTableNum(tableNum);
-            const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            const card = tableId
+                ? document.querySelector(`.table-card[data-id="${CSS.escape(String(tableId))}"]`)
+                : document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
             if (!card) return;
             card.classList.remove('kitchen-ready-active');
         }
@@ -1965,17 +1983,19 @@
             syncTableStatsFromCards();
         };
 
-        window.markTableAsKitchenPreparing = function(tableNum) {
-            setKitchenStatusBadge(tableNum, 'border-blue-500/50 bg-blue-500/20 text-blue-300', 'Preparing');
-            clearKitchenReadyState(tableNum);
+        window.markTableAsKitchenPreparing = function(tableNum, tableId = null) {
+            setKitchenStatusBadge(tableNum, 'border-blue-500/50 bg-blue-500/20 text-blue-300', 'Preparing', tableId);
+            clearKitchenReadyState(tableNum, tableId);
         };
 
-        window.markTableAsKitchenReady = function(tableNum) {
+        window.markTableAsKitchenReady = function(tableNum, tableId = null) {
             const normalizedTableNum = normalizeTableNum(tableNum);
             setKitchenStatusBadge(normalizedTableNum, 'border-green-500/50 bg-green-500/20 text-green-300',
-                'Ready');
+                'Ready', tableId);
 
-            const card = document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
+            const card = tableId
+                ? document.querySelector(`.table-card[data-id="${CSS.escape(String(tableId))}"]`)
+                : document.querySelector(`.table-card[data-table-number="${normalizedTableNum}"]`);
             if (!card) return;
             card.classList.add('kitchen-ready-active');
         };
@@ -2133,9 +2153,6 @@
                 resetDrawerKotSelectionState();
                 setKotPrintButtonState(false);
                 setDrawerSubtitle(formatOrderItemCount(0));
-                if (typeof window.markTableAsAvailable === 'function') {
-                    window.markTableAsAvailable(tableNum);
-                }
                 const hasMatchingBillingDraft = Boolean(
                     String(window.currentOpenTableId || '').trim() &&
                     window.currentBillingDraftPayload &&

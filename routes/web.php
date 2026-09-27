@@ -7,12 +7,12 @@ use App\Http\Controllers\Admin\Billing\BillingDraftController;
 use App\Http\Controllers\Admin\Branch\BranchController;
 use App\Http\Controllers\Admin\Branch\BranchPaymentGatewayController;
 // ---Super Admin CONTROLLERS LINKS---
-use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\BranchSwitchController;
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\Employee\EmployeeController;
 use App\Http\Controllers\Admin\ProfileController;
-use App\Http\Controllers\Admin\Settings\MenuSettingsController;
 use App\Http\Controllers\Admin\Settings\IdentityMaskingSettingsController;
+use App\Http\Controllers\Admin\Settings\MenuSettingsController;
 use App\Http\Controllers\Auth\CheckoutController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\HomeController;
@@ -29,6 +29,7 @@ use App\Http\Controllers\Modules\Orders\OrderItemActionController;
 use App\Http\Controllers\Modules\Orders\PosController;
 use App\Http\Controllers\Modules\PublicMenu\OrderStatusController;
 use App\Http\Controllers\Modules\PublicMenu\PublicMenuController;
+use App\Http\Controllers\Modules\Table\AreaController;
 use App\Http\Controllers\Modules\Table\TableController;
 use App\Http\Controllers\SuperAdmin\CurrencyController;
 use App\Http\Controllers\SuperAdmin\ImpersonateController;
@@ -39,10 +40,9 @@ use App\Http\Controllers\SuperAdmin\SuperAdminProfileController;
 use App\Http\Controllers\SuperAdmin\TenantController;
 use App\Http\Controllers\Waiter\KitchenPickupAlertController;
 use App\Models\KotPrintLog;
-use App\Http\Controllers\Modules\Table\AreaController;
-
-// -------------------------Modules Controllers----------------------
 use App\Models\Order;
+// -------------------------Modules Controllers----------------------
+use App\Models\Table;
 use Illuminate\Support\Facades\Route;
 
 // =====================================================================================================
@@ -77,10 +77,24 @@ Route::view('/ui/order-flow-demo', 'core.components.order-flow.index')
 Route::view('/ui/order-flow', 'core.components.order-flow.index')
     ->name('ui.order-flow');
 
+Route::post('/tables/{table}/vacate', [TableController::class, 'vacate'])
+    ->middleware(['auth', 'role:admin,manager,cashier,waiter', 'check.subscription'])
+    ->name('tables.vacate');
+
 Route::get('/admin/get-table-orders/{table_number}', function ($tableNumber) {
     $tenantId = auth()->user()->tenant_id;
     $requestedBranchId = (int) session('active_branch_id', auth()->user()->branch_id ?? 0) ?: null;
     $tableId = request()->integer('table_id') ?: null;
+
+    $table = Table::query()
+        ->where('tenant_id', $tenantId)
+        ->when($requestedBranchId, fn ($query) => $query->where('branch_id', $requestedBranchId))
+        ->when(
+            $tableId,
+            fn ($query) => $query->whereKey($tableId),
+            fn ($query) => $query->where('table_number', $tableNumber)
+        )
+        ->firstOrFail();
 
     $ordersQuery = Order::where('tenant_id', $tenantId)
         ->when(
@@ -88,15 +102,18 @@ Route::get('/admin/get-table-orders/{table_number}', function ($tableNumber) {
             fn ($query) => $query->where('table_id', $tableId),
             fn ($query) => $query->where('table_number', $tableNumber)
         )
-        // Active table drawer should show currently running orders
-        ->where('status', 'running')
         ->when($requestedBranchId, function ($query) use ($requestedBranchId) {
             $query->where('branch_id', $requestedBranchId);
         })
         ->with(['items.orderItemAddons.masterAddon', 'items.creator', 'creator'])
         ->latest();
 
-    $orders = $ordersQuery->get();
+    $orders = (clone $ordersQuery)->where('status', 'running')->get();
+
+    if ($orders->isEmpty() && $table->status === 'occupied') {
+        $settledOrder = (clone $ordersQuery)->where('payment_status', 'paid')->first();
+        $orders = $settledOrder ? collect([$settledOrder]) : collect();
+    }
 
     $kotPrintCounts = KotPrintLog::query()
         ->selectRaw('kot_number, COUNT(*) as print_count, MAX(created_at) as last_printed_at')
@@ -133,7 +150,7 @@ Route::get('/admin/get-table-orders/{table_number}', function ($tableNumber) {
 
         return $data;
     })->values());
-})->name('admin.tables.get_orders');
+})->middleware(['auth', 'check.subscription'])->name('admin.tables.get_orders');
 
 // ------CHECKOUT ROUTE------
 Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout');
@@ -201,9 +218,9 @@ Route::middleware(['auth'])->group(function () {
         })->name('superadmin.paymentGateway.index');
     });
 
-    // 2. RESTAURANT ADMIN/STAFF PANEL (Branch Level) 
-    Route::prefix('admin')->middleware(['check.subscription'])->group(function (){
-     
+    // 2. RESTAURANT ADMIN/STAFF PANEL (Branch Level)
+    Route::prefix('admin')->middleware(['check.subscription'])->group(function () {
+
         // DASHBOARD & PROFILE
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
         Route::post('/switch-branch', [BranchSwitchController::class, 'switch'])->name('admin.branch.switch');
@@ -348,7 +365,7 @@ Route::middleware(['auth'])->group(function () {
                 return view('modules.accounts.ledger');
             })->name('accounts.ledger');
         });
-        
+
         // D. Marketing
         Route::middleware(['role:admin,sales_manager', 'check.service:marketing'])->prefix('marketing')->group(function () {
             Route::get('/', function () {
@@ -357,9 +374,8 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
+    Route::prefix('manager')->middleware(['auth', 'role:manager', 'check.subscription'])->name('manager.')->group(function () {
 
-    Route::prefix('manager')->middleware(['auth', 'role:manager','check.subscription'])->name('manager.')->group(function (){
-     
         // DASHBOARD & PROFILE
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::post('/switch-branch', [BranchSwitchController::class, 'switch'])->name('branch.switch');
@@ -370,7 +386,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
 
         Route::get('/employee', [EmployeeController::class, 'index'])->name('employee.index');
-    
+
         // Menu Managemnt
         Route::get('/menu/item', [ItemController::class, 'index'])->name('menu.items');
         Route::get('/media-library', [MediaLibraryController::class, 'index'])
@@ -391,7 +407,6 @@ Route::middleware(['auth'])->group(function () {
         // 🍕 Menu Items (New)
         Route::get('menu/items', [ItemController::class, 'index'])->name('menu.items.index');
         Route::patch('menu/items/status/{id}', [ItemController::class, 'toggleStatus'])->name('menu.items.toggle-status');
-
 
         Route::get('/kds', [KdsController::class, 'index'])->name('kds.index');
         Route::get('/kds/notifications', [KitchenNotificationController::class, 'index'])->name('kds.notifications.index');
@@ -421,7 +436,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/billing/checkout', [BillingCheckoutController::class, 'store'])->name('billing.checkout.store');
         Route::post('/billing/estimate/pdf', [BillingCheckoutController::class, 'estimatePdf'])->name('billing.estimate.pdf');
 
-          // Area
+        // Area
         Route::get('areas', [AreaController::class, 'index'])->name('areas.index');
         Route::post('areas', [AreaController::class, 'store'])->name('areas.store');
         Route::match(['put', 'patch'], 'areas/{area}', [AreaController::class, 'update'])->name('areas.update');
@@ -430,8 +445,8 @@ Route::middleware(['auth'])->group(function () {
 
     });
 
-    Route::prefix('chef')->middleware(['auth', 'role:chef', 'check.subscription'])->name('chef.')->group(function (){
-         Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
+    Route::prefix('chef')->middleware(['auth', 'role:chef', 'check.subscription'])->name('chef.')->group(function () {
+        Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password.update');
         Route::get('/kds', [KdsController::class, 'index'])->name('kds.index');
@@ -450,7 +465,7 @@ Route::middleware(['auth'])->group(function () {
 
     // 🔥 WAITER ROUTES
     Route::prefix('waiter')->middleware(['auth', 'role:waiter'])->group(function () {
-         Route::get('/profile', [ProfileController::class, 'show'])->name('waiter.profile');
+        Route::get('/profile', [ProfileController::class, 'show'])->name('waiter.profile');
         Route::put('/profile', [ProfileController::class, 'update'])->name('waiter.profile.update');
         Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('waiter.profile.password.update');
         Route::get('/kitchen-pickup-alerts', [KitchenPickupAlertController::class, 'index'])
@@ -473,6 +488,8 @@ Route::middleware(['auth'])->group(function () {
 
         // ❗ waiter ke paas limited actions hone chahiye
         Route::get('/tables/{table}/orders', [TableController::class, 'getOrders'])->name('waiter.tables.orders');
+        Route::post('/billing/estimate/pdf', [BillingCheckoutController::class, 'estimatePdf'])
+            ->name('waiter.billing.estimate.pdf');
 
         //
         Route::get('/', [PosController::class, 'index'])->name('order.index');

@@ -1,3 +1,11 @@
+@php
+    $billingEstimatePdfUrl = match (auth()->user()->role) {
+        'waiter' => route('waiter.billing.estimate.pdf', [], false),
+        'manager' => route('manager.billing.estimate.pdf', [], false),
+        default => route('admin.billing.estimate.pdf', [], false),
+    };
+@endphp
+
 <div class="relative flex h-full min-h-0 flex-col lg:overflow-hidden">
     <div
         class="billing-pos-no-scrollbar flex min-h-0 flex-1 flex-col space-y-4 overflow-y-auto py-4 pr-4 pl-0 pb-6 sm:py-5 sm:pr-5 sm:pl-0 lg:py-6 lg:pr-6 lg:pl-0">
@@ -222,6 +230,16 @@
                     <p class="text-[12px] font-semibold text-slate-700">Net sales amount</p>
                     <p id="billingNetSalesAmount" class="text-sm font-extrabold leading-none text-slate-950">Rs 0.00</p>
                 </div>
+                <label id="billingReleaseTableControl"
+                    class="flex cursor-pointer items-start gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 transition hover:border-orange-300 hover:bg-orange-50/50">
+                    <input type="checkbox" id="billingReleaseTable" checked
+                        class="peer sr-only">
+                    <span aria-hidden="true"
+                        class="relative mt-0.5 h-5 w-9 shrink-0 rounded-full bg-slate-300 transition peer-checked:bg-orange-500 peer-focus-visible:ring-2 peer-focus-visible:ring-orange-500 peer-focus-visible:ring-offset-2 after:absolute after:left-0.5 after:top-0.5 after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm after:transition-transform peer-checked:after:translate-x-4"></span>
+                    <span>
+                        <span class="block text-xs font-semibold text-slate-800">Clear and Free Table</span>
+                        <span class="mt-0.5 block text-[11px] leading-4 text-slate-500">Customer is leaving</span>                    </span>
+                </label>
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                     <button type="button" id="billingConfirmPrintBtn"
                         class="h-8 rounded-sm border border-slate-200 bg-slate-50 px-1 text-[13px] font-semibold text-slate-900 transition hover:bg-slate-100 cursor-pointer"
@@ -264,6 +282,7 @@
             const holdBillingBtn = document.getElementById('billingHoldBtn');
             const confirmPrintBtn = document.getElementById('billingConfirmPrintBtn');
             const confirmCheckoutBtn = document.getElementById('billingConfirmCheckoutBtn');
+            const releaseTableInput = document.getElementById('billingReleaseTable');
             const estimateDownloadBtn = document.getElementById('billingDownloadEstimateBtn');
             const estimatePrintBtn = document.getElementById('billingPrintEstimateBtn');
             if (!invoiceBody || !itemCountEl || !itemTotalEl || !itemDiscountEl || !subTotalEl || !
@@ -709,7 +728,7 @@
             const tenderInput = document.getElementById('billingTenderAmount');
             const saveBillingUrl = @json(route('admin.billing.checkout.store', [], false));
             const saveBillingDraftUrl = @json(route('admin.billing.drafts.store', [], false));
-            const estimatePdfUrl = @json(route('admin.billing.estimate.pdf', [], false));
+            const estimatePdfUrl = @json($billingEstimatePdfUrl);
             const getCurrentBillingMode = () => String(window.billingPaymentMode || 'paid').toLowerCase();
             const getSelectedPaymentMethod = () => String(window.billingPaymentMethod || '').trim();
             const getTenderAmountValue = () => pickNumber(
@@ -798,6 +817,7 @@
                         qr_token: qrToken,
                         payment_mode: paymentMode,
                         payment_method: paymentMethod,
+                        release_table: Boolean(releaseTableInput?.checked),
                         item_count: snapshot.itemCount,
                         total_qty: snapshot.totalQty,
                         subtotal_before_discount: snapshot.itemBaseTotal,
@@ -909,7 +929,7 @@
                     created_at: currentOrder.created_at || null,
                     ordered_at: currentOrder.ordered_at || currentOrder.ordered_at_iso || null,
                     status: currentOrder.status || 'running',
-                    payment_status: currentOrder.payment_status || 'pending',
+                    payment_status: currentOrder.payment_status || 'unpaid',
                     payment_mode: billingState.payment_mode,
                     payment_method: billingState.payment_method,
                     discount_mode: billingState.discount_mode,
@@ -1550,8 +1570,11 @@
                         window.currentBillingDraftPayload = null;
                         window.currentBillingDraftTableId = null;
                         window.requestBillingEstimateInvoiceSync?.();
-                        if (window.currentOpenTable && typeof window.markTableAsAvailable === 'function') {
+                        if (result?.table_released && window.currentOpenTable && typeof window.markTableAsAvailable === 'function') {
                             window.markTableAsAvailable(window.currentOpenTable, true);
+                        }
+                        if (releaseTableInput) {
+                            releaseTableInput.checked = true;
                         }
                         closeBillingModal();
                         if (window.currentOpenTable && typeof window.refreshFromServer === 'function') {
@@ -1587,8 +1610,11 @@
                         window.currentBillingDraftPayload = null;
                         window.currentBillingDraftTableId = null;
                         window.requestBillingEstimateInvoiceSync?.();
-                        if (window.currentOpenTable && typeof window.markTableAsAvailable === 'function') {
+                        if (result?.table_released && window.currentOpenTable && typeof window.markTableAsAvailable === 'function') {
                             window.markTableAsAvailable(window.currentOpenTable, true);
+                        }
+                        if (releaseTableInput) {
+                            releaseTableInput.checked = true;
                         }
                         if (result?.print_url) {
                             printPdfInHiddenFrame(result.print_url);

@@ -70,7 +70,7 @@
                                     LIVE
                                 </div>
                             </div>
-                            <p class="text-center font-semibold mt-2 text-sm sm:text-base">RestoChain Hub</p>
+                            <p class="text-center font-semibold mt-2 text-sm sm:text-base">Restrotix Hub</p>
                         </div>
 
                         <!-- Connecting Lines -->

@@ -8,7 +8,6 @@ use App\Models\Order;
 use App\Models\OrderInvoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Carbon;
 
 class OrderHistoryService
@@ -35,13 +34,13 @@ class OrderHistoryService
         $orderModels = $ordersPaginator->getCollection();
 
         $orders = collect(OrderHistoryResource::collection($orderModels)->resolve($request));
-        $orderRows = $orders->map(fn(array $row) => Arr::except($row, ['detail']))->values()->all();
+        $orderRows = $orders->map(fn (array $row) => Arr::except($row, ['detail']))->values()->all();
         $orderDetails = $orders->mapWithKeys(function (array $row) {
             return [(string) ($row['order_no'] ?? '') => $row['detail'] ?? []];
-        })->filter(fn($detail, string $key) => $key !== '')->all();
+        })->filter(fn ($detail, string $key) => $key !== '')->all();
 
         $selectedOrderKey = (string) ($filters['order'] ?? '');
-        if ($selectedOrderKey === '' || !isset($orderDetails[$selectedOrderKey])) {
+        if ($selectedOrderKey === '' || ! isset($orderDetails[$selectedOrderKey])) {
             $selectedOrderKey = (string) ($orderRows[0]['order_no'] ?? '');
         }
 
@@ -100,6 +99,9 @@ class OrderHistoryService
                     'amount' => $row['amount'] ?? '—',
                     'status' => $row['status'] ?? '—',
                     'paid' => $row['paid'] ?? '—',
+                    'table_release_status' => $row['detail']['table_release_status'] ?? 'Not Released',
+                    'table_released_at' => $row['detail']['table_released_at'] ?? '—',
+                    'table_released_by' => $row['detail']['table_released_by'] ?? '—',
                     'time' => $row['time'] ?? '—',
                     'detail' => $row['detail'] ?? [],
                 ];
@@ -113,6 +115,7 @@ class OrderHistoryService
             ->where('tenant_id', $tenantId)
             ->with([
                 'creator:id,name,email,phone_number',
+                'tableReleasedBy:id,name',
                 'table.area:id,code',
                 'invoice:id,order_id,invoice_number,subtotal_before_discount,subtotal,item_discount_amount,overall_discount_amount,discount_amount,subtotal_after_item_discount,taxable_amount,tax_amount,grand_total,status,payment_mode,payment_method,paid_amount,customer_name_snapshot,table_number_snapshot,notes_snapshot,updated_at,created_at',
                 'paymentSessions:id,order_id,gateway_name,provider_reference,status,paid_at',
@@ -124,7 +127,7 @@ class OrderHistoryService
         $search = trim((string) ($filters['search'] ?? ''));
         if ($search !== '') {
             $query->where(function ($subQuery) use ($search) {
-                $needle = '%' . $search . '%';
+                $needle = '%'.$search.'%';
                 $tableParts = array_map('trim', explode('-', $search, 2));
                 $areaCodeSearch = $tableParts[0] ?? '';
                 $localTableSearch = $tableParts[1] ?? '';
@@ -138,8 +141,8 @@ class OrderHistoryService
                         if ($areaCodeSearch !== '' && $localTableSearch !== '') {
                             $tableQuery->orWhere(function ($displayNumberQuery) use ($areaCodeSearch, $localTableSearch) {
                                 $displayNumberQuery
-                                    ->where('table_number', 'like', '%' . $localTableSearch . '%')
-                                    ->whereHas('area', fn ($areaQuery) => $areaQuery->where('code', 'like', '%' . $areaCodeSearch . '%'));
+                                    ->where('table_number', 'like', '%'.$localTableSearch.'%')
+                                    ->whereHas('area', fn ($areaQuery) => $areaQuery->where('code', 'like', '%'.$areaCodeSearch.'%'));
                             });
                         }
                     })
@@ -180,8 +183,8 @@ class OrderHistoryService
         if ($paymentStatus !== '' && $paymentStatus !== 'all') {
             $paymentMap = match ($paymentStatus) {
                 'paid' => ['paid', 'paid'],
-                'partially_paid', 'partial' => ['partial', 'partially_paid'],
-                'pending', 'unpaid' => ['pending', 'unpaid'],
+                'partially_paid', 'partial' => ['partially_paid', 'partially_paid'],
+                'pending', 'unpaid' => ['unpaid', 'unpaid'],
                 'refunded' => ['refunded', 'cancelled'],
                 default => null,
             };
@@ -240,12 +243,12 @@ class OrderHistoryService
                 $city = trim((string) ($branch->city ?? ''));
 
                 if ($label === '') {
-                    $label = 'Branch #' . $branch->id;
+                    $label = 'Branch #'.$branch->id;
                 }
 
                 return [
                     'id' => (int) $branch->id,
-                    'label' => $city !== '' ? ($label . ' · ' . $city) : $label,
+                    'label' => $city !== '' ? ($label.' · '.$city) : $label,
                 ];
             })
             ->values()
@@ -305,6 +308,7 @@ class OrderHistoryService
     {
         if ($orderType === 'takeaway') {
             $query->where('order_type', 'takeaway');
+
             return;
         }
 
@@ -360,13 +364,13 @@ class OrderHistoryService
         $currentPendingOrders = (clone $currentOrders)
             ->where(function ($query) {
                 $query->where('status', 'running')
-                    ->orWhere('payment_status', 'pending');
+                    ->orWhereIn('payment_status', ['unpaid', 'pending']);
             })
             ->count();
         $previousPendingOrders = (clone $previousOrders)
             ->where(function ($query) {
                 $query->where('status', 'running')
-                    ->orWhere('payment_status', 'pending');
+                    ->orWhereIn('payment_status', ['unpaid', 'pending']);
             })
             ->count();
 
@@ -451,7 +455,7 @@ class OrderHistoryService
         $prefix = $change > 0 ? '+' : '';
 
         return [
-            'label' => $prefix . number_format($change, 1) . '% vs ' . $periodLabel,
+            'label' => $prefix.number_format($change, 1).'% vs '.$periodLabel,
             'class' => $direction === 'down'
                 ? 'text-red-400'
                 : ($direction === 'flat' ? 'text-yellow-400' : 'text-green-400'),
@@ -469,7 +473,7 @@ class OrderHistoryService
 
         $needsSpace = preg_match('/[A-Za-z]/', $symbol) === 1;
 
-        return $symbol . ($needsSpace ? ' ' : '') . $formattedAmount;
+        return $symbol.($needsSpace ? ' ' : '').$formattedAmount;
     }
 
     private function buildEmptySelectedOrder(string $currencySymbol): array
@@ -493,6 +497,9 @@ class OrderHistoryService
             'payment_status_class' => 'border-amber-500/20 bg-amber-500/10 text-amber-400',
             'amount_paid' => $emptyMoney,
             'paid_at' => '—',
+            'table_release_status' => 'Not Released',
+            'table_released_at' => '—',
+            'table_released_by' => '—',
             'transaction_id' => '—',
             'note' => 'No order selected.',
             'timeline' => [],

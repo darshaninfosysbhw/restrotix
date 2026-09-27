@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', () => {
         amountPaid: document.getElementById('orderDrawerAmountPaid'),
         paidAt: document.getElementById('orderDrawerPaidAt'),
         transactionId: document.getElementById('orderDrawerTransactionId'),
+        tableReleaseStatus: document.getElementById('orderDrawerTableReleaseStatus'),
+        tableReleasedAt: document.getElementById('orderDrawerTableReleasedAt'),
+        tableReleasedBy: document.getElementById('orderDrawerTableReleasedBy'),
         note: document.getElementById('orderDrawerNote'),
     };
 
@@ -224,6 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
         setText(drawerFields.amountPaid, order.amount_paid);
         setText(drawerFields.paidAt, order.paid_at);
         setText(drawerFields.transactionId, order.transaction_id);
+        setText(drawerFields.tableReleaseStatus, order.table_release_status);
+        setText(drawerFields.tableReleasedAt, order.table_released_at);
+        setText(drawerFields.tableReleasedBy, order.table_released_by);
         setText(drawerFields.note, order.note);
 
         renderTimeline(order.timeline);

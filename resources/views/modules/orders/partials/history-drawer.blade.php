@@ -127,6 +127,18 @@
                             <i class="fas fa-copy text-xs text-gray-500"></i>
                         </span>
                     </div>
+                    <div class="flex items-center justify-between text-gray-400">
+                        <span>Table Status</span>
+                        <span id="orderDrawerTableReleaseStatus" class="font-semibold text-white">{{ $selectedOrder['table_release_status'] ?? 'Not Released' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-gray-400">
+                        <span>Table Released At</span>
+                        <span id="orderDrawerTableReleasedAt" class="text-white">{{ $selectedOrder['table_released_at'] ?? 'â€”' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between text-gray-400">
+                        <span>Released By</span>
+                        <span id="orderDrawerTableReleasedBy" class="text-white">{{ $selectedOrder['table_released_by'] ?? 'â€”' }}</span>
+                    </div>
                 </div>
             </div>
 

@@ -9,6 +9,7 @@ use App\Models\OrderItem;
 use App\Services\KitchenPickupAlertService;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,8 +27,7 @@ class KdsController extends Controller
 
         $statusFilter = (string) $request->query('status', 'all');
 
-        $baseQuery = Order::where('branch_id', $branchId)
-            ->where('status', 'running')
+        $baseQuery = $this->activeKdsOrdersQuery($branchId)
             ->with(['table.area', 'items.orderItemAddons.masterAddon']);
 
         $orders = $baseQuery->orderBy('created_at', 'asc')->get();
@@ -98,6 +98,7 @@ class KdsController extends Controller
                 app(KitchenPickupAlertService::class)->syncBatch($order, (int) ($item->kot_number ?? 0));
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => (int) $order->id,
+                    'table_id' => (int) ($order->table_id ?? 0),
                     'table_number' => (string) ($order->table_number ?? ''),
                     'table_display_number' => $this->displayTableNumber($order),
                     'branch_id' => (int) ($order->branch_id ?? 0),
@@ -178,6 +179,7 @@ class KdsController extends Controller
         }
         broadcast(new KitchenStatusUpdated([
             'order_id' => (int) $order->id,
+            'table_id' => (int) ($order->table_id ?? 0),
             'table_number' => (string) ($order->table_number ?? ''),
             'table_display_number' => $this->displayTableNumber($order),
             'branch_id' => (int) ($order->branch_id ?? 0),
@@ -199,8 +201,7 @@ class KdsController extends Controller
         $kitchenBroadcasts = [];
 
         DB::transaction(function () use ($branchId, &$kitchenBroadcasts) {
-            $orders = Order::where('branch_id', $branchId)
-                ->where('status', 'running')
+            $orders = $this->activeKdsOrdersQuery($branchId)
                 ->where('kitchen_status', 'preparing')
                 ->get();
 
@@ -219,6 +220,7 @@ class KdsController extends Controller
                 }
                 $kitchenBroadcasts[] = [
                     'order_id' => (int) $order->id,
+                    'table_id' => (int) ($order->table_id ?? 0),
                     'table_number' => (string) ($order->table_number ?? ''),
                     'table_display_number' => $this->displayTableNumber($order),
                     'branch_id' => (int) ($order->branch_id ?? 0),
@@ -428,8 +430,7 @@ class KdsController extends Controller
             ];
         }
 
-        $orders = Order::where('branch_id', $branchId)
-            ->where('status', 'running')
+        $orders = $this->activeKdsOrdersQuery($branchId)
             ->with(['items.orderItemAddons.masterAddon'])
             ->orderBy('created_at', 'asc')
             ->get();
@@ -461,6 +462,30 @@ class KdsController extends Controller
                     return $this->mapBatchForCard($order, (int) $kotNumber, $items->values());
                 });
         })->filter(fn ($card) => ! empty($card))->values();
+    }
+
+    private function activeKdsOrdersQuery(int $branchId): Builder
+    {
+        return Order::query()
+            ->where('branch_id', $branchId)
+            ->where(function (Builder $query) {
+                $query->where(function (Builder $dineIn) {
+                    $dineIn->where('order_type', 'dine_in')
+                        ->whereHas('table', fn (Builder $table) => $table->where('status', 'occupied'))
+                        ->whereHas('items', function (Builder $items) {
+                            $items->whereNotIn('status', ['served', 'rejected']);
+                        })
+                        ->whereNotExists(function ($newerOrder) {
+                            $newerOrder->selectRaw('1')
+                                ->from('orders as newer_orders')
+                                ->whereColumn('newer_orders.table_id', 'orders.table_id')
+                                ->whereColumn('newer_orders.id', '>', 'orders.id');
+                        });
+                })->orWhere(function (Builder $nonDineIn) {
+                    $nonDineIn->where('order_type', '!=', 'dine_in')
+                        ->where('status', 'running');
+                });
+            });
     }
 
     private function mapBatchForCard(Order $order, int $kotNumber, Collection $items): array

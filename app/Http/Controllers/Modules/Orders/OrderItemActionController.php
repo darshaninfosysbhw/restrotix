@@ -62,6 +62,7 @@ class OrderItemActionController extends Controller
 
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => $order->id,
+                    'table_id' => (int) ($order->table_id ?? 0),
                     'table_number' => (string) $order->table_number,
                     'table_display_number' => $order->table?->display_number ?? $order->table_number,
                     'branch_id' => (int) $order->branch_id,
@@ -141,6 +142,7 @@ class OrderItemActionController extends Controller
 
                 broadcast(new KitchenStatusUpdated([
                     'order_id' => (int) $order->id,
+                    'table_id' => (int) ($order->table_id ?? 0),
                     'table_number' => (string) ($order->table_number ?? ''),
                     'table_display_number' => $order->table?->display_number ?? $order->table_number,
                     'branch_id' => (int) ($order->branch_id ?? 0),

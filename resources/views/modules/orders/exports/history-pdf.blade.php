@@ -277,15 +277,18 @@
         <table class="orders">
             <thead>
                 <tr>
-                    <th style="width: 10%;">Order #</th>
-                    <th style="width: 8%;">Table</th>
-                    <th style="width: 18%;">Customer / Guest</th>
-                    <th style="width: 12%;">Source</th>
-                    <th class="center" style="width: 6%;">Items</th>
-                    <th class="right" style="width: 10%;">Amount</th>
-                    <th style="width: 11%;">Status</th>
-                    <th style="width: 10%;">Paid</th>
-                    <th style="width: 15%;">Time</th>
+                    <th style="width: 8%;">Order #</th>
+                    <th style="width: 6%;">Table</th>
+                    <th style="width: 12%;">Customer / Guest</th>
+                    <th style="width: 8%;">Source</th>
+                    <th class="center" style="width: 5%;">Items</th>
+                    <th class="right" style="width: 8%;">Amount</th>
+                    <th style="width: 8%;">Status</th>
+                    <th style="width: 7%;">Paid</th>
+                    <th style="width: 8%;">Table Release</th>
+                    <th style="width: 12%;">Released At</th>
+                    <th style="width: 8%;">Released By</th>
+                    <th style="width: 10%;">Order Time</th>
                 </tr>
             </thead>
             <tbody>
@@ -321,11 +324,14 @@
                         <td class="right">{{ $row['amount'] ?? '—' }}</td>
                         <td><span class="badge {{ $statusClass }}">{{ $row['status'] ?? '—' }}</span></td>
                         <td><span class="badge {{ $paidClass }}">{{ $row['paid'] ?? '—' }}</span></td>
+                        <td>{{ $row['table_release_status'] ?? 'Not Released' }}</td>
+                        <td>{{ $row['table_released_at'] ?? '—' }}</td>
+                        <td>{{ $row['table_released_by'] ?? '—' }}</td>
                         <td>{{ $row['time'] ?? '—' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="9" class="center" style="padding: 18px 10px; color: #64748b;">
+                        <td colspan="12" class="center" style="padding: 18px 10px; color: #64748b;">
                             No orders found for the selected filters.
                         </td>
                     </tr>
@@ -333,7 +339,7 @@
             </tbody>
         </table>
 
-        <div class="footnote">Generated from RestoChainERP order history export.</div>
+        <div class="footnote">Generated from Restrotix order history export.</div>
     </div>
 </body>
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Admin\Billing;
 
+use App\Events\TableTransferRequestUpdated;
+use App\Events\KitchenStatusUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderInvoice;
@@ -10,10 +12,9 @@ use App\Models\OrderItemAddon;
 use App\Models\OrderPayment;
 use App\Models\Table;
 use App\Models\TableServiceRequest;
-use App\Events\TableTransferRequestUpdated;
-use App\Support\InvoiceNumberGenerator;
 use App\Services\Admin\Billing\BillingDraftService;
 use App\Services\PublicMenu\TableAccessSessionService;
+use App\Support\InvoiceNumberGenerator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,6 +38,7 @@ class BillingCheckoutController extends Controller
             'qr_token' => 'nullable|string|max:255',
             'payment_mode' => 'required|in:paid,unpaid,partial',
             'payment_method' => 'nullable|string|max:50',
+            'release_table' => 'required|boolean',
             'item_count' => 'nullable|integer|min:0',
             'total_qty' => 'nullable|integer|min:0',
             'subtotal_before_discount' => 'required|numeric|min:0',
@@ -83,6 +85,7 @@ class BillingCheckoutController extends Controller
         $tableNumber = trim((string) $validated['table_number']);
         $paymentMode = strtolower((string) $validated['payment_mode']);
         $paymentMethod = trim(strtolower((string) ($validated['payment_method'] ?? '')));
+        $releaseTable = $request->boolean('release_table');
         $allowedPaymentMethods = ['cash', 'card', 'fonepay_dynamic', 'static_qr', 'nepal_pay', 'bank_transfer'];
 
         if ($paymentMode === 'paid' && $paymentMethod === '') {
@@ -92,7 +95,7 @@ class BillingCheckoutController extends Controller
             ], 422);
         }
 
-        if ($paymentMethod !== '' && !in_array($paymentMethod, $allowedPaymentMethods, true)) {
+        if ($paymentMethod !== '' && ! in_array($paymentMethod, $allowedPaymentMethods, true)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Unsupported payment method.',
@@ -114,7 +117,7 @@ class BillingCheckoutController extends Controller
             ->latest('id')
             ->first();
 
-        if (!$order) {
+        if (! $order) {
             return response()->json([
                 'success' => false,
                 'message' => 'Running order not found for this table.',
@@ -122,8 +125,8 @@ class BillingCheckoutController extends Controller
         }
 
         $itemsPayload = collect($validated['items'])
-            ->map(fn(array $item) => $this->normalizeBillingItem($item))
-            ->filter(fn(array $item) => $item['id'] > 0)
+            ->map(fn (array $item) => $this->normalizeBillingItem($item))
+            ->filter(fn (array $item) => $item['id'] > 0)
             ->values();
 
         if ($itemsPayload->isEmpty()) {
@@ -211,6 +214,7 @@ class BillingCheckoutController extends Controller
             $paymentMode,
             $paymentMethod,
             $paymentStatus,
+            $releaseTable,
             $user,
             $table
         ) {
@@ -220,7 +224,7 @@ class BillingCheckoutController extends Controller
                 'order_id' => (int) $order->id,
             ]);
 
-            if (!$invoice->exists) {
+            if (! $invoice->exists) {
                 $invoice->invoice_number = $this->generateInvoiceNumber($order);
             }
 
@@ -260,7 +264,7 @@ class BillingCheckoutController extends Controller
                     ->whereKey($itemData['id'])
                     ->first();
 
-                if (!$orderItem) {
+                if (! $orderItem) {
                     continue;
                 }
 
@@ -272,7 +276,7 @@ class BillingCheckoutController extends Controller
                 $orderItem->save();
 
                 $addonsPayload = collect($itemData['addons'] ?? [])
-                    ->filter(fn($addon) => is_array($addon))
+                    ->filter(fn ($addon) => is_array($addon))
                     ->values();
 
                 if ($addonsPayload->isNotEmpty()) {
@@ -291,14 +295,14 @@ class BillingCheckoutController extends Controller
                             return $addonMenuItemId > 0 && (int) $addon->menu_item_addon_id === $addonMenuItemId;
                         });
 
-                        if (!$orderItemAddon && $addonMenuItemId > 0) {
+                        if (! $orderItemAddon && $addonMenuItemId > 0) {
                             $orderItemAddon = OrderItemAddon::query()
                                 ->where('order_item_id', $orderItem->id)
                                 ->where('menu_item_addon_id', $addonMenuItemId)
                                 ->first();
                         }
 
-                        if (!$orderItemAddon && $addonRowId > 0) {
+                        if (! $orderItemAddon && $addonRowId > 0) {
                             $orderItemAddon = OrderItemAddon::query()
                                 ->whereKey($addonRowId)
                                 ->where('order_item_id', $orderItem->id)
@@ -321,8 +325,10 @@ class BillingCheckoutController extends Controller
                 'tax_amount' => $taxAmount,
                 'grand_total' => $grandTotal,
                 'paid_amount' => $paidAmount,
-                'payment_status' => $paymentStatus === 'paid' ? 'paid' : ($paymentStatus === 'partially_paid' ? 'partial' : 'pending'),
+                'payment_status' => $paymentStatus,
                 'status' => 'completed',
+                'table_released_at' => $releaseTable && $order->table_id ? now() : null,
+                'table_released_by' => $releaseTable && $order->table_id ? (int) $user->id : null,
             ]);
 
             if ($order->table_id) {
@@ -357,18 +363,21 @@ class BillingCheckoutController extends Controller
                 Table::query()
                     ->whereKey($order->table_id)
                     ->update([
-                        'status' => 'available',
+                        'status' => $releaseTable ? 'available' : 'occupied',
                         'is_calling_waiter' => false,
                         'is_bill_requested' => false,
                     ]);
 
-                $releasedTable = $table instanceof Table
+                $settledTable = $table instanceof Table
                     ? $table
                     : Table::query()->with(['branch', 'area'])->find($order->table_id);
 
-                if ($releasedTable instanceof Table) {
-                    $this->tableAccessSessionService->releaseTable($releasedTable, 2);
-                    $this->billingDraftService->clearForTable($releasedTable);
+                if ($settledTable instanceof Table) {
+                    if ($releaseTable) {
+                        $this->tableAccessSessionService->releaseTable($settledTable, 2);
+                    }
+
+                    $this->billingDraftService->clearForTable($settledTable);
                 }
             }
 
@@ -376,7 +385,7 @@ class BillingCheckoutController extends Controller
             if ($paidAmount > 0) {
                 $transactionRef = trim((string) ($validated['transaction_ref'] ?? ''));
                 if ($transactionRef === '') {
-                    $transactionRef = 'POS-' . $invoice->invoice_number;
+                    $transactionRef = 'POS-'.$invoice->invoice_number;
                 }
 
                 $paymentRecord = OrderPayment::query()->updateOrCreate(
@@ -406,10 +415,23 @@ class BillingCheckoutController extends Controller
                 'invoice' => $invoice->fresh(),
                 'payment' => $paymentRecord ? $paymentRecord->fresh() : null,
                 'order' => $order->fresh(['items', 'invoice']),
+                'table_released' => $releaseTable && (bool) $order->table_id,
             ];
         });
 
         $table = $table ?? ($result['order']->table_id ? Table::query()->with('area')->find($result['order']->table_id) : null);
+        if ($table instanceof Table) {
+            broadcast(new KitchenStatusUpdated([
+                'order_id' => (int) $result['order']->id,
+                'table_id' => (int) $table->id,
+                'table_number' => (string) $table->table_number,
+                'table_display_number' => (string) $table->display_number,
+                'table_status' => $result['table_released'] ? 'available' : 'occupied',
+                'payment_status' => (string) $result['order']->payment_status,
+                'branch_id' => (int) $table->branch_id,
+                'event_type' => $result['table_released'] ? 'table_freed' : 'payment_settled',
+            ]))->toOthers();
+        }
         $printUrl = $table?->qr_token
             ? route('public.order.status.pdf', ['qr_token' => $table->qr_token, 'print' => 1, 'exclude_rejected' => 1], false)
             : null;
@@ -422,6 +444,10 @@ class BillingCheckoutController extends Controller
                 'invoice_number' => (string) $result['invoice']->invoice_number,
                 'order_id' => (int) $result['order']->id,
                 'payment_status' => (string) $result['invoice']->status,
+                'table_released' => (bool) $result['table_released'],
+                'table_status' => $result['order']->table_id
+                    ? ($result['table_released'] ? 'available' : 'occupied')
+                    : null,
                 'print_url' => $printUrl,
             ],
         ]);
@@ -464,28 +490,28 @@ class BillingCheckoutController extends Controller
         ]);
 
         $table = null;
-        if (!empty($validated['table_id'])) {
+        if (! empty($validated['table_id'])) {
             $table = Table::query()
                 ->with(['branch.tenant', 'area'])
                 ->where('tenant_id', (int) $user->tenant_id)
-                ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
+                ->when($user->role === 'waiter' && $user->branch_id, fn ($query) => $query->where('branch_id', $user->branch_id))
                 ->find((int) $validated['table_id']);
         }
 
-        if (!$table && !empty($validated['qr_token'])) {
+        if (! $table && ! empty($validated['qr_token'])) {
             $table = Table::query()
                 ->with(['branch.tenant', 'area'])
                 ->where('tenant_id', (int) $user->tenant_id)
-                ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
+                ->when($user->role === 'waiter' && $user->branch_id, fn ($query) => $query->where('branch_id', $user->branch_id))
                 ->where('qr_token', (string) $validated['qr_token'])
                 ->first();
         }
 
-        if (!$table) {
+        if (! $table) {
             $table = Table::query()
                 ->with(['branch.tenant', 'area'])
                 ->where('tenant_id', (int) $user->tenant_id)
-                ->when($user->role === 'waiter' && $user->branch_id, fn($query) => $query->where('branch_id', $user->branch_id))
+                ->when($user->role === 'waiter' && $user->branch_id, fn ($query) => $query->where('branch_id', $user->branch_id))
                 ->where('table_number', (string) $validated['table_number'])
                 ->first();
         }
@@ -493,8 +519,8 @@ class BillingCheckoutController extends Controller
         abort_unless($table, 404, 'Table not found.');
 
         $itemsPayload = collect(json_decode((string) $validated['items_json'], true) ?: [])
-            ->map(fn(array $item) => $this->normalizeBillingItem($item))
-            ->filter(fn(array $item) => $item['name'] !== '')
+            ->map(fn (array $item) => $this->normalizeBillingItem($item))
+            ->filter(fn (array $item) => $item['name'] !== '')
             ->values();
 
         if ($itemsPayload->isEmpty()) {
@@ -616,11 +642,11 @@ class BillingCheckoutController extends Controller
         $pdf = Pdf::loadView('core.pdf.estimate-summary', [
             'summary' => $summary,
             'orderItems' => $displayItems,
-        ])->setPaper($this->thermalReceiptPaper((int) collect($displayItems)->sum(fn(array $item) => 1 + count($item['addons'] ?? []))), 'portrait')->setOption('defaultFont', 'DejaVu Sans');
+        ])->setPaper($this->thermalReceiptPaper((int) collect($displayItems)->sum(fn (array $item) => 1 + count($item['addons'] ?? []))), 'portrait')->setOption('defaultFont', 'DejaVu Sans');
 
         $safeTableNumber = preg_replace('/[^A-Za-z0-9_-]+/', '-', (string) ($table?->display_number ?? $validated['table_number'] ?? 'table'));
 
-        $fileName = 'estimate-invoice-' . $safeTableNumber . '.pdf';
+        $fileName = 'estimate-invoice-'.$safeTableNumber.'.pdf';
 
         return $outputMode === 'print'
             ? $pdf->stream($fileName)
@@ -669,9 +695,9 @@ class BillingCheckoutController extends Controller
 
         $addonSource = $item['addons'] ?? $item['order_item_addons'] ?? $item['orderItemAddons'] ?? [];
         $addons = collect($addonSource)
-            ->filter(fn($addon) => is_array($addon))
-            ->map(fn(array $addon) => $this->normalizeBillingAddon($addon))
-            ->filter(fn(array $addon) => trim((string) ($addon['name'] ?? '')) !== '')
+            ->filter(fn ($addon) => is_array($addon))
+            ->map(fn (array $addon) => $this->normalizeBillingAddon($addon))
+            ->filter(fn (array $addon) => trim((string) ($addon['name'] ?? '')) !== '')
             ->values();
 
         $addonTotal = $isRejected ? 0.0 : (float) $addons->sum(function (array $addon) {
@@ -738,9 +764,10 @@ class BillingCheckoutController extends Controller
             $normalizedAddon = $this->normalizeBillingAddon((array) $addon);
             $signature = $this->billingAddonDisplaySignature($normalizedAddon);
 
-            if (!isset($addonMap[$signature])) {
+            if (! isset($addonMap[$signature])) {
                 $groupedAddons[] = $normalizedAddon;
                 $addonMap[$signature] = count($groupedAddons) - 1;
+
                 continue;
             }
 
@@ -767,7 +794,7 @@ class BillingCheckoutController extends Controller
         $isRejected = (bool) ($item['is_rejected'] ?? false) ? '1' : '0';
         $rejectionReason = $this->normalizeBillingGroupKey($item['rejection_reason'] ?? '');
         $addonSignatures = array_map(
-            fn(array $addon) => $this->billingAddonDisplaySignature($addon),
+            fn (array $addon) => $this->billingAddonDisplaySignature($addon),
             $item['addons'] ?? []
         );
         sort($addonSignatures);
@@ -791,9 +818,10 @@ class BillingCheckoutController extends Controller
             $normalizedItem = $this->normalizeBillingItem((array) $item);
             $signature = $this->billingItemDisplaySignature($normalizedItem);
 
-            if (!isset($itemMap[$signature])) {
+            if (! isset($itemMap[$signature])) {
                 $groupedItems[] = $normalizedItem;
                 $itemMap[$signature] = count($groupedItems) - 1;
+
                 continue;
             }
 
@@ -871,7 +899,7 @@ class BillingCheckoutController extends Controller
             $ten = intdiv($n, 10);
             $one = $n % 10;
 
-            return trim($tens[$ten] . ($one ? ' ' . ($ones[$one] ?? '') : ''));
+            return trim($tens[$ten].($one ? ' '.($ones[$one] ?? '') : ''));
         };
 
         $words = [];
@@ -909,14 +937,14 @@ class BillingCheckoutController extends Controller
         $rupeeWords = $this->numberToWords($rupees);
 
         if ($rupees === 0 && $paise === 0) {
-            return 'Zero ' . $currencyLabel . ' Only';
+            return 'Zero '.$currencyLabel.' Only';
         }
 
         if ($paise > 0) {
-            return trim($rupeeWords . ' ' . $currencyLabel . ' and ' . $this->numberToWords($paise) . ' ' . $minorLabel . ' Only');
+            return trim($rupeeWords.' '.$currencyLabel.' and '.$this->numberToWords($paise).' '.$minorLabel.' Only');
         }
 
-        return trim($rupeeWords . ' ' . $currencyLabel . ' Only');
+        return trim($rupeeWords.' '.$currencyLabel.' Only');
     }
 
     private function resolveBillingTaxContext(?Table $table, array $fallback = []): array

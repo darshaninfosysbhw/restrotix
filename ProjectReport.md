@@ -1,11 +1,11 @@
-# RestoChainERP Project Report
+# Restrotix Project Report
 
 **Date:** March 24, 2026
 
 ---
 
 ## 1. Project Overview
-RestoChainERP is a multi-branch restaurant management platform built with Laravel, providing robust modules for super admin, tenant management, currencies, payment gateways, subscriptions, and more. The system is designed for scalability, security, and ease of use for both super admins and restaurant owners.
+Restrotix is a multi-branch restaurant management platform built with Laravel, providing robust modules for super admin, tenant management, currencies, payment gateways, subscriptions, and more. The system is designed for scalability, security, and ease of use for both super admins and restaurant owners.
 
 ## 2. Technology Stack
 - **Backend:** Laravel (PHP)

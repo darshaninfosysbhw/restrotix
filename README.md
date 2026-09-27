@@ -1,4 +1,4 @@
-# RestoChain ERP 🚀
+# Restrotix 🚀
 
 ### Project Overview
 This project provides a comprehensive solution for restaurant management, allowing owners to manage their entire system through a single, unified platform.

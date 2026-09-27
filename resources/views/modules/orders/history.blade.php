@@ -142,7 +142,7 @@
                                 class="h-11 rounded-lg border border-gray-700 bg-gray-900 px-4 text-sm text-gray-200 focus:outline-none focus:ring-1 focus:ring-orange-500">
                                 <option value="all" @selected(($filterState['payment_status'] ?? 'all') === 'all')>All Payment Status</option>
                                 <option value="paid" @selected(($filterState['payment_status'] ?? 'all') === 'paid')>Paid</option>
-                                <option value="pending" @selected(($filterState['payment_status'] ?? 'all') === 'pending')>Pending</option>
+                                <option value="unpaid" @selected(in_array(($filterState['payment_status'] ?? 'all'), ['unpaid', 'pending'], true))>Unpaid</option>
                                 <option value="partially_paid" @selected(($filterState['payment_status'] ?? 'all') === 'partially_paid')>Partially Paid</option>
                                 <option value="refunded" @selected(($filterState['payment_status'] ?? 'all') === 'refunded')>Refunded</option>
                             </select>
