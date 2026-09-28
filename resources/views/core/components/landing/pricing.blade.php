@@ -1,28 +1,21 @@
 <!-- Pricing Section -->
 @props(['plans'])
 
-<section id="pricing" class="relative overflow-hidden bg-[#fbfcfb] py-16 sm:py-20">
+<section id="pricing" class="relative overflow-hidden bg-[#fbfcfb] py-6 sm:py-8">
     <div class="pointer-events-none absolute -left-20 top-8 h-52 w-52 rounded-full bg-orange-100/60 blur-3xl"></div>
     <div class="pointer-events-none absolute -right-20 bottom-8 h-56 w-56 rounded-full bg-emerald-100/60 blur-3xl"></div>
 
     <div class="container relative mx-auto px-4 sm:px-6">
-        <div class="mx-auto mb-9 max-w-3xl text-center">
-            <p class="mb-2 text-[11px] font-extrabold uppercase tracking-[0.2em] text-[#a52a28]">Plans for Every Restaurant</p>
-            <h2 class="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+        <div class="mx-auto mb-6 text-center">
+            <h2 class="whitespace-nowrap text-[clamp(0.55rem,3vw,1.5rem)] font-black tracking-tight text-slate-900">
+                <span class="text-[#00000]">Plans for Every Restaurant</span>
+                <span class="mx-[0.35em] text-slate-400">|</span>
                 <span class="text-[#e43d20]">Simple &amp; Transparent</span><span class="text-emerald-700"> Pricing</span>
             </h2>
-            <p class="mx-auto mt-3 max-w-xl text-sm text-slate-600 sm:text-base">Flexible plans built for restaurants of every size, from a single outlet to a growing multi-branch brand.</p>
         </div>
 
-        <div class="pricing-toggle-wrap mb-10 mt-14 flex justify-center sm:mt-16">
+        <div class="pricing-toggle-wrap mb-7 flex justify-center">
             <div class="pricing-toggle relative flex rounded-full border border-slate-200 bg-white p-1 shadow-md">
-                <div class="pricing-toggle-callout absolute -top-14 right-1 z-20 -rotate-3 whitespace-nowrap text-center text-sm font-extrabold italic leading-tight text-emerald-600 drop-shadow-[0_1px_1px_rgba(255,255,255,0.9)] sm:text-base">
-                    Save 20%<br>Here!
-                    <svg class="absolute -bottom-12 -right-10 h-20 w-16 overflow-visible" viewBox="0 0 64 80" fill="none" aria-hidden="true">
-                        <path d="M28 4C50 10 57 30 49 50C45 61 38 67 27 70" stroke="#059669" stroke-width="3" stroke-linecap="butt" />
-                        <path d="M35 61L25 71L39 74" stroke="#059669" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                    </svg>
-                </div>
                 <div id="toggle-slider" class="absolute bottom-1 left-1 top-1 w-1/2 rounded-full bg-[#a52a28] shadow-sm transition-transform duration-300"></div>
                 <button id="monthly-btn" type="button" class="relative z-10 w-24 rounded-full py-2 text-center text-sm font-bold text-white transition sm:w-28">Monthly</button>
                 <button id="yearly-btn" type="button" class="relative z-10 w-24 rounded-full py-2 text-center text-sm font-bold text-slate-700 transition sm:w-28">Yearly</button>
@@ -50,10 +43,13 @@
                             ? 'fa-code-branch'
                             : 'fa-store');
                     $iconClasses = 'bg-[#a52a28]/10 text-[#a52a28]';
+                    $cardBackground = $loop->odd
+                        ? 'linear-gradient(180deg, #fff7f6 0%, #fffafa 24%, #ffffff 58%, #fff8f7 100%)'
+                        : 'linear-gradient(180deg, #fffaf3 0%, #fffdf8 24%, #ffffff 58%, #fffaf3 100%)';
                 @endphp
 
                 <article data-pricing-card
-                    style="background: linear-gradient(180deg, rgba(165,42,40,0.065) 0%, rgba(165,42,40,0.025) 18%, #ffffff 36%, #ffffff 72%, rgba(165,42,40,0.04) 100%);"
+                    style="background: {{ $cardBackground }};"
                     class="pricing-card group relative flex h-full flex-col overflow-visible rounded-2xl border px-5 pb-6 pt-5 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:px-6 {{ $isPopular ? 'border-2 border-[#f05a28] shadow-[0_18px_45px_-22px_rgba(240,90,40,0.55)]' : 'border-slate-200 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.35)]' }}">
                     @if ($isPopular)
                         <span class="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-[#f05a28] px-5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white shadow-md">Most Popular</span>
@@ -103,7 +99,9 @@
             @endforeach
         </div>
 
-        <div class="mt-9 text-center text-sm text-slate-500">
+        <x-core::landing.pricing-benefits />
+
+        <div class="mt-6 text-center text-sm text-slate-500">
             <p><i class="fas fa-circle-check mr-1.5 text-emerald-500"></i>All plans include a 14-day free trial. No credit card required.</p>
             <a href="#enquiry" class="mt-4 inline-flex items-center font-bold text-[#a52a28] transition hover:text-[#851817]">Compare All Features <i class="fas fa-arrow-right ml-2 text-xs"></i></a>
         </div>
@@ -115,10 +113,6 @@
     #pricing #monthly-btn[aria-pressed="false"], #pricing #yearly-btn[aria-pressed="false"] { color: #334155 !important; }
 
     @media (max-width: 639px) {
-        #pricing .pricing-toggle-wrap {
-            margin-top: 4.5rem;
-        }
-
         #pricing .pricing-toggle {
             width: min(100%, 19rem);
         }
@@ -126,16 +120,6 @@
         #pricing .pricing-toggle > button {
             flex: 1 1 50%;
             width: auto;
-        }
-
-        #pricing .pricing-toggle-callout {
-            right: 0.75rem;
-            font-size: 0.78rem;
-        }
-
-        #pricing .pricing-toggle-callout svg {
-            right: -1.25rem;
-            width: 3.25rem;
         }
 
         #pricing [data-plan-price] {
