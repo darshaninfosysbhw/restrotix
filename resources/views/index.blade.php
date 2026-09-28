@@ -9,6 +9,9 @@
     <!-- Pricing Section -->
     <x-core::landing.pricing :plans="$plans" />
 
+    <!-- Testimonials Section -->
+    <x-core::landing.testimonials />
+
     <!-- Enquiry Form Section -->
     <x-core::landing.enquiry-form />
 

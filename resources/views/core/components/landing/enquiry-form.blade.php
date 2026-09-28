@@ -1,89 +1,81 @@
- <!-- Enquiry Form Section -->
- <section id="enquiry" class="py-16 sm:py-20 bg-white border-t border-gray-200">
-     <div class="container mx-auto px-4 sm:px-6">
-         <div class="max-w-6xl mx-auto bg-gray-50 border border-gray-200 rounded-2xl p-6 sm:p-8 lg:p-10">
-             <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 items-stretch">
-                 <div class="h-full flex flex-col">
-                     <h2 class="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">Need Support or Have an Enquiry?</h2>
-                     <p class="text-gray-600 text-sm sm:text-base mb-6">
-                         Share your requirement with us. Our support and onboarding team will connect with you quickly.
-                     </p>
+<!-- Enquiry Form Section -->
+<section id="enquiry" class="relative overflow-hidden border-t border-orange-100 bg-[#fffdf9] py-10 sm:py-12">
+    <div class="pointer-events-none absolute -left-12 bottom-0 h-44 w-44 rounded-full bg-emerald-100/60 blur-2xl"></div>
+    <div class="pointer-events-none absolute -right-12 top-0 h-48 w-48 rounded-full bg-orange-100/70 blur-2xl"></div>
 
-                     <div class="space-y-3 mb-6">
-                         <div class="flex items-center gap-3 text-sm sm:text-base text-gray-700">
-                             <i class="fas fa-headset text-orange-500"></i>
-                             <span>Dedicated implementation support</span>
-                         </div>
-                         <div class="flex items-center gap-3 text-sm sm:text-base text-gray-700">
-                             <i class="fas fa-clock text-orange-500"></i>
-                             <span>Fast response from our technical team</span>
-                         </div>
-                         <div class="flex items-center gap-3 text-sm sm:text-base text-gray-700">
-                             <i class="fas fa-shield-alt text-orange-500"></i>
-                             <span>Secure and reliable assistance</span>
-                         </div>
-                     </div>
+    <div class="container relative mx-auto px-4 sm:px-6">
+        <div class="mx-auto max-w-7xl overflow-hidden rounded-2xl border border-orange-200 bg-gradient-to-br from-white via-[#fffaf6] to-[#fff4eb] p-4 shadow-[0_18px_45px_-28px_rgba(165,42,40,0.35)] sm:p-6">
+            <div class="grid items-stretch gap-5 lg:grid-cols-[1.05fr_1.35fr_0.8fr]">
+                <div class="relative min-h-[310px] overflow-hidden rounded-xl px-2 pt-2 sm:min-h-[330px] sm:px-4">
+                    <span class="inline-flex rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-emerald-700">Get in touch</span>
+                    <h2 class="mt-3 text-3xl font-black leading-[1.05] text-slate-900 sm:text-4xl">Have an <span class="text-[#f04422]">Enquiry?</span></h2>
+                    <p class="mt-2 max-w-sm text-sm leading-5 text-slate-600">Tell us what you need, and our friendly team will get back to you shortly.</p>
 
-                     <div
-                         class="relative w-[280px] h-[280px] sm:w-[340px] sm:h-[340px] mt-auto mx-auto lg:mx-0 flex items-end justify-center">
-                         <div class="absolute inset-0 rounded-full border border-orange-200"></div>
-                         <div class="absolute inset-4 rounded-full bg-orange-100"></div>
-                         <img src="{{ asset('images/support.png') }}" alt="Support Enquiry"
-                             class="relative z-10 w-full h-full object-contain object-bottom p-3">
-                     </div>
-                 </div>
+                    <span class="absolute right-16 top-[132px] z-20 flex h-11 w-16 items-center justify-center rounded-xl bg-emerald-600 shadow-md sm:right-20" aria-hidden="true">
+                        <span class="flex items-center gap-1">
+                            <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                            <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                            <span class="h-1.5 w-1.5 rounded-full bg-white"></span>
+                        </span>
+                        <span class="absolute -bottom-2 left-3 h-4 w-4 rotate-45 rounded-sm bg-emerald-600"></span>
+                    </span>
+                    <span class="absolute right-2 top-[112px] z-20 -rotate-12 text-4xl text-[#ff6a24] drop-shadow-sm sm:right-4" aria-hidden="true">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </span>
+                    <span class="absolute right-9 top-[155px] z-10 h-14 w-14 rounded-full border-b-2 border-r-2 border-dashed border-emerald-500/80 sm:right-12" aria-hidden="true"></span>
 
-                 <form class="space-y-5 bg-white border border-gray-200 rounded-xl p-5 sm:p-6 h-full flex flex-col">
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                         <div>
-                             <label for="enquiry-name" class="block text-sm font-medium text-gray-700 mb-2">Full
-                                 Name</label>
-                             <input id="enquiry-name" type="text"
-                                 class="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                                 placeholder="Enter your name">
-                         </div>
-                         <div>
-                             <label for="enquiry-phone" class="block text-sm font-medium text-gray-700 mb-2">Phone
-                                 Number</label>
-                             <input id="enquiry-phone" type="tel"
-                                 class="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                                 placeholder="Enter your phone number">
-                         </div>
-                     </div>
+                    <div class="absolute bottom-0 left-0 right-0 flex h-[190px] items-end justify-center sm:h-[215px]">
+                        <div class="absolute bottom-3 left-6 h-24 w-24 rounded-full bg-emerald-100/80"></div>
+                        <div class="absolute bottom-8 right-5 h-20 w-20 rounded-full bg-orange-100"></div>
+                        <img src="{{ asset('images/enquiry-support-girl.png') }}" alt="Restrotix customer support representative" class="relative z-10 h-[110%] w-full object-contain object-bottom" loading="lazy">
+                    </div>
+                </div>
 
-                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-                         <div>
-                             <label for="enquiry-email"
-                                 class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                             <input id="enquiry-email" type="email"
-                                 class="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                                 placeholder="Enter your email">
-                         </div>
-                         <div>
-                             <label for="enquiry-subject"
-                                 class="block text-sm font-medium text-gray-700 mb-2">Subject</label>
-                             <input id="enquiry-subject" type="text"
-                                 class="w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                                 placeholder="Enter enquiry subject">
-                         </div>
-                     </div>
+                <form class="flex h-full flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+                    <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <div>
+                            <label for="enquiry-name" class="mb-1 block text-[11px] font-bold text-slate-700">Full Name <span class="text-red-500">*</span></label>
+                            <input id="enquiry-name" name="name" type="text" required placeholder="Your full name" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#f05a28] focus:ring-2 focus:ring-orange-100">
+                        </div>
+                        <div>
+                            <label for="enquiry-phone" class="mb-1 block text-[11px] font-bold text-slate-700">Phone Number <span class="text-red-500">*</span></label>
+                            <input id="enquiry-phone" name="phone" type="tel" required placeholder="+977 98XXXXXXXX" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#f05a28] focus:ring-2 focus:ring-orange-100">
+                        </div>
+                        <div>
+                            <label for="enquiry-restaurant" class="mb-1 block text-[11px] font-bold text-slate-700">Restaurant Name <span class="text-red-500">*</span></label>
+                            <input id="enquiry-restaurant" name="restaurant" type="text" required placeholder="Your restaurant name" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#f05a28] focus:ring-2 focus:ring-orange-100">
+                        </div>
+                        <div>
+                            <label for="enquiry-email" class="mb-1 block text-[11px] font-bold text-slate-700">Email Address <span class="text-red-500">*</span></label>
+                            <input id="enquiry-email" name="email" type="email" required placeholder="you@example.com" class="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#f05a28] focus:ring-2 focus:ring-orange-100">
+                        </div>
+                    </div>
 
-                     <div class="flex-1">
-                         <label for="enquiry-message"
-                             class="block text-sm font-medium text-gray-700 mb-2">Message</label>
-                         <textarea id="enquiry-message" rows="6"
-                             class="w-full min-h-[180px] rounded-lg border border-gray-300 px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
-                             placeholder="Write your requirement..."></textarea>
-                     </div>
+                    <div class="mt-3 flex-1">
+                        <label for="enquiry-message" class="mb-1 block text-[11px] font-bold text-slate-700">Message <span class="text-red-500">*</span></label>
+                        <textarea id="enquiry-message" name="message" rows="4" required placeholder="Tell us about your requirements..." class="min-h-[95px] w-full resize-none rounded-lg border border-slate-200 px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#f05a28] focus:ring-2 focus:ring-orange-100"></textarea>
+                    </div>
 
-                     <div class="pt-2">
-                         <button type="submit"
-                             class="gradient-orange text-white font-semibold px-8 py-3 rounded-lg shadow-md hover:shadow-lg transition">
-                             Submit Enquiry
-                         </button>
-                     </div>
-                 </form>
-             </div>
-         </div>
-     </div>
- </section>
+                    <button type="submit" class="mt-3 inline-flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-[#ff641f] to-[#ef321d] px-5 py-3 text-sm font-extrabold text-white shadow-md shadow-orange-200 transition hover:-translate-y-0.5 hover:shadow-lg">
+                        Send Enquiry <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
+                    </button>
+                </form>
+
+                <aside class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1" aria-label="Contact information">
+                    <a href="tel:+9779800000000" class="group flex items-center gap-3 rounded-xl border border-orange-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6a24] to-[#f04422] text-lg text-white shadow-md"><i class="fa-solid fa-phone"></i></span>
+                        <span class="min-w-0"><strong class="block text-sm text-slate-900">Call Us</strong><span class="block break-words text-xs font-bold text-slate-700">+977-9800000000</span><small class="mt-1 block text-[10px] text-slate-500">Sun - Fri, 9:00 AM - 6:00 PM</small></span>
+                    </a>
+                    <a href="mailto:info@restrotix.com" class="group flex items-center gap-3 rounded-xl border border-orange-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6a24] to-[#f04422] text-lg text-white shadow-md"><i class="fa-solid fa-envelope"></i></span>
+                        <span class="min-w-0"><strong class="block text-sm text-slate-900">Email Us</strong><span class="block break-all text-xs font-bold text-slate-700">info@restrotix.com</span><small class="mt-1 block text-[10px] text-slate-500">We reply within 24 hours</small></span>
+                    </a>
+                    <div class="flex items-center gap-3 rounded-xl border border-orange-100 bg-white p-4 shadow-sm">
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6a24] to-[#f04422] text-lg text-white shadow-md"><i class="fa-solid fa-location-dot"></i></span>
+                        <span class="min-w-0"><strong class="block text-sm text-slate-900">Visit Our Office</strong><span class="block text-xs font-bold text-slate-700">Kathmandu, Nepal</span><small class="mt-1 block text-[10px] text-slate-500">Meet our team in person</small></span>
+                    </div>
+                </aside>
+            </div>
+        </div>
+    </div>
+</section>

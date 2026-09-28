@@ -58,8 +58,8 @@
 
 <a href="https://wa.me/9779802892772" target="_blank" rel="noopener noreferrer"
     aria-label="Chat with Restrotix on WhatsApp"
-    class="group fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_10px_30px_rgba(37,211,102,0.4)] transition duration-200 hover:-translate-y-1 hover:bg-[#1fbd5a] hover:shadow-[0_14px_35px_rgba(37,211,102,0.5)] sm:bottom-7 sm:right-7 sm:h-16 sm:w-16">
-    <i class="fab fa-whatsapp text-3xl sm:text-4xl" aria-hidden="true"></i>
+    class="group fixed bottom-4 right-4 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-[#25D366] text-white shadow-[0_8px_24px_rgba(37,211,102,0.35)] transition duration-200 hover:-translate-y-1 hover:bg-[#1fbd5a] hover:shadow-[0_12px_28px_rgba(37,211,102,0.45)] sm:bottom-5 sm:right-5 sm:h-12 sm:w-12">
+    <i class="fab fa-whatsapp text-2xl sm:text-[28px]" aria-hidden="true"></i>
     <span
         class="pointer-events-none absolute right-full mr-3 hidden whitespace-nowrap rounded-lg bg-slate-900 px-3 py-2 text-xs font-semibold text-white opacity-0 shadow-lg transition group-hover:opacity-100 sm:block">
         Chat on WhatsApp
