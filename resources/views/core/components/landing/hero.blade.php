@@ -38,8 +38,8 @@
                 Now <span class="text-[#a52a28]">Smarter!</span>
             </h1>
 
-            <p class="mt-5 max-w-md text-sm font-medium leading-5 text-slate-600 sm:text-base sm:leading-6">
-                Orders, tables, menu, billing, inventory, staff, and multi-branch management — all in one simple and reliable platform.
+            <p class="mt-5 max-w-lg text-sm font-semibold leading-6 tracking-[0.01em] text-slate-700 sm:text-[17px] sm:leading-7">
+                Centralize Orders, Tables, Menus, Billing, Inventory, Staff, and Every Branch in One Powerful, Reliable Platform.
             </p>
 
             <div class="mt-7 flex flex-col gap-3 sm:flex-row">
