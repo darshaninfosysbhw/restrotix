@@ -54,9 +54,16 @@
             <div class="min-w-0">
                 <h3 class="text-sm font-extrabold">Contact Us</h3>
                 <div class="mt-3 space-y-3 text-sm text-slate-300">
-                    <a href="tel:+9779800000000" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-phone mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i><span class="min-w-0 break-words">+977-9800000000</span></a>
-                    <a href="mailto:info@restrotix.com" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-envelope mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i><span class="min-w-0 break-all">info@restrotix.com</span></a>
-                    <p class="flex items-start gap-3"><i class="fa-solid fa-location-dot mt-1 w-4 text-[#f05a28]" aria-hidden="true"></i><span>Kathmandu, Nepal</span></p>
+                    <a href="tel:+9779851033146" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-phone mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i><span class="min-w-0 break-words">+977-9851033146</span></a>
+                    <a href="tel:+9779802892772" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-phone mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i><span class="min-w-0 break-words">+977-9802892772</span></a>
+                    <a href="mailto:support@restrotix.com" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-envelope mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i><span class="min-w-0 break-all">support@restrotix.com</span></a>
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid fa-location-dot mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i>
+                        <span class="space-y-1">
+                            <span class="block"><strong class="text-white">Head Office:</strong> Ward No. 10, Thapagaun, Kathmandu</span>
+                            <span class="block"><strong class="text-white">Branch:</strong> Bhairahawa, Rupandehi, Nepal</span>
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>

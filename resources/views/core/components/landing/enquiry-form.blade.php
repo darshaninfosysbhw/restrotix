@@ -62,17 +62,26 @@
                 </form>
 
                 <aside class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1" aria-label="Contact information">
-                    <a href="tel:+9779800000000" class="group flex items-center gap-3 rounded-xl border border-orange-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                    <div class="group flex items-center gap-3 rounded-xl border border-orange-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6a24] to-[#f04422] text-lg text-white shadow-md"><i class="fa-solid fa-phone"></i></span>
-                        <span class="min-w-0"><strong class="block text-sm text-slate-900">Call Us</strong><span class="block break-words text-xs font-bold text-slate-700">+977-9800000000</span><small class="mt-1 block text-[10px] text-slate-500">Sun - Fri, 9:00 AM - 6:00 PM</small></span>
-                    </a>
-                    <a href="mailto:info@restrotix.com" class="group flex items-center gap-3 rounded-xl border border-orange-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+                        <span class="min-w-0">
+                            <strong class="block text-sm text-slate-900">Call Us</strong>
+                            <a href="tel:+9779851033146" class="block break-words text-xs font-bold text-slate-700 hover:text-[#f04422]">+977-9851033146</a>
+                            <a href="tel:+9779802892772" class="block break-words text-xs font-bold text-slate-700 hover:text-[#f04422]">+977-9802892772</a>
+                            <small class="mt-1 block text-[10px] text-slate-500">Sun - Fri, 9:00 AM - 6:00 PM</small>
+                        </span>
+                    </div>
+                    <a href="mailto:support@restrotix.com" class="group flex items-center gap-3 rounded-xl border border-orange-100 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
                         <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6a24] to-[#f04422] text-lg text-white shadow-md"><i class="fa-solid fa-envelope"></i></span>
-                        <span class="min-w-0"><strong class="block text-sm text-slate-900">Email Us</strong><span class="block break-all text-xs font-bold text-slate-700">info@restrotix.com</span><small class="mt-1 block text-[10px] text-slate-500">We reply within 24 hours</small></span>
+                        <span class="min-w-0"><strong class="block text-sm text-slate-900">Email Us</strong><span class="block break-all text-xs font-bold text-slate-700">support@restrotix.com</span><small class="mt-1 block text-[10px] text-slate-500">We reply within 24 hours</small></span>
                     </a>
                     <div class="flex items-center gap-3 rounded-xl border border-orange-100 bg-white p-4 shadow-sm">
                         <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#ff6a24] to-[#f04422] text-lg text-white shadow-md"><i class="fa-solid fa-location-dot"></i></span>
-                        <span class="min-w-0"><strong class="block text-sm text-slate-900">Visit Our Office</strong><span class="block text-xs font-bold text-slate-700">Kathmandu, Nepal</span><small class="mt-1 block text-[10px] text-slate-500">Meet our team in person</small></span>
+                        <span class="min-w-0">
+                            <strong class="block text-sm text-slate-900">Visit Our Offices</strong>
+                            <span class="block text-[10px] font-bold leading-4 text-slate-700">Ward No. 10, Thapagaun, Kathmandu</span>
+                            <span class="block text-[10px] font-bold leading-4 text-slate-700">Bhairahawa, Rupandehi</span>
+                        </span>
                     </div>
                 </aside>
             </div>
