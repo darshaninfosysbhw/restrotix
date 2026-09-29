@@ -5,7 +5,7 @@
         </p>
     </div>
 
-    <div class="bg-orange-50/50 border-2 border-dashed border-orange-200 rounded-2xl p-6 space-y-4">
+    <div class="bg-[#DC0812]/[0.03] border-2 border-dashed border-[#DC0812]/20 rounded-2xl p-6 space-y-4">
         <div class="flex justify-between items-center">
             <span class="text-gray-600 font-medium text-sm">Selected Plan:</span>
             <span class="font-bold text-gray-900" x-text="plan"></span>
@@ -24,19 +24,19 @@
                 {{ now()->addDays(14)->format('d M, Y') }}
             </span>
         </div>
-        <hr class="border-orange-100">
+        <hr class="border-[#DC0812]/10">
         <div class="flex justify-between items-center">
             <span class="text-gray-800 font-bold text-lg">Payable Today:</span>
-            <span class="font-black text-2xl text-orange-600" x-text="symbol + ' ' + price"></span>
+            <span class="font-black text-2xl text-[#DC0812]" x-text="symbol + ' ' + price"></span>
             <span class="text-gray-500 text-sm ml-2" x-text="billingCycle === 'yearly' ? '/ year' : '/ month'"></span>
         </div>
     </div>
 
     <div class="flex items-start gap-3 px-2">
-        <input type="checkbox" id="terms" class="mt-1 w-4 h-4 accent-orange-600 cursor-pointer" x-model="agreed">
+        <input type="checkbox" id="terms" class="mt-1 w-4 h-4 accent-[#DC0812] cursor-pointer" x-model="agreed">
         <label for="terms" class="text-xs text-gray-500 leading-relaxed cursor-pointer">
-            I agree to the <a href="{{ route('policy.terms') }}" class="text-orange-600 underline">Terms of Use</a>
-            and <a href="{{ route('policy.privacy') }}" class="text-orange-600 underline">Privacy Policy</a>.
+            I agree to the <a href="{{ route('policy.terms') }}" class="text-[#DC0812] underline">Terms of Use</a>
+            and <a href="{{ route('policy.privacy') }}" class="text-[#DC0812] underline">Privacy Policy</a>.
             No credit card required for trial. Enjoy full access!
         </label>
     </div>
@@ -44,8 +44,8 @@
     <div class="flex gap-4 pt-4">
         <button @click="step = 2" class="flex-1 text-gray-500 font-bold py-3">Back</button>
         <button @click="submitForm()" :disabled="!agreed || loading || !otpVerified"
-            :class="(!agreed || loading || !otpVerified) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-700'"
-            class="flex-[2] bg-orange-600 text-white py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2">
+            :class="(!agreed || loading || !otpVerified) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#B8070F]'"
+            class="flex-[2] bg-[#DC0812] text-white py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2">
             <span x-show="!loading">Launch My Restaurant 🚀</span>
             <span x-show="loading" class="flex items-center gap-2">
                 <i class="fas fa-spinner fa-spin"></i> Processing...

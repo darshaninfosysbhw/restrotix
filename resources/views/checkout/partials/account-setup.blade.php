@@ -30,7 +30,7 @@
                 <button
                     type="button" @click="sendOtp()" :disabled="otpSending || otpResendCooldown > 0 || !formData.email"
                     :class="(otpSending || otpResendCooldown > 0 || !formData.email) ? 'opacity-60 cursor-not-allowed' : ''"
-                    class="bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 sm:py-0 rounded-lg font-bold text-xs uppercase shadow-md transition-all active:scale-95 whitespace-nowrap w-full sm:w-auto">
+                    class="bg-[#DC0812] hover:bg-[#B8070F] text-white px-8 py-3 sm:py-0 rounded-lg font-bold text-xs uppercase shadow-md transition-all active:scale-95 whitespace-nowrap w-full sm:w-auto">
                     <span x-show="!otpSending && otpResendCooldown === 0">Send OTP</span>
                     <span x-show="!otpSending && otpResendCooldown > 0">
                         Resend in <span x-text="formatOtpCountdown(otpResendCooldown)"></span>
@@ -39,7 +39,7 @@
                 </button>
             </div>
             <div class="text-xs font-medium mt-1" x-show="otpRequested || otpVerified"
-                :class="otpVerified ? 'text-green-600' : 'text-orange-600'">
+                :class="otpVerified ? 'text-green-600' : 'text-[#DC0812]'">
                 <span x-show="otpVerified">Email verified successfully.</span>
                 <span x-show="!otpVerified">OTP sent to <span x-text="otpEmail"></span></span>
             </div>
@@ -71,7 +71,7 @@
             <p x-show="otpVerified" class="text-xs font-medium text-green-600">
                 OTP verified. You can continue to the next step.
             </p>
-            <p x-show="!otpVerified && otpRequested" class="text-xs font-medium text-orange-600">
+            <p x-show="!otpVerified && otpRequested" class="text-xs font-medium text-[#DC0812]">
                 Please verify the OTP to continue.
             </p>
         </div>
@@ -85,7 +85,7 @@
 
     <button type="button" @click="continueToBusinessDetails()" :disabled="otpVerifying"
         :class="otpVerifying ? 'opacity-60 cursor-not-allowed' : ''"
-        class="w-full bg-[#ff743c] hover:bg-[#e65a2b] text-white font-bold py-3 rounded-lg transition-all shadow-xl shadow-orange-100 mt-2 flex items-center justify-center gap-3 group">
+        class="w-full bg-[#DC0812] hover:bg-[#B8070F] text-white font-bold py-3 rounded-lg transition-all shadow-xl shadow-[#DC0812]/20 mt-2 flex items-center justify-center gap-3 group">
         <span x-show="!otpVerifying">Continue to Business Details</span>
         <span x-show="otpVerifying" class="flex items-center gap-2">
             <i class="fas fa-spinner fa-spin"></i> Verifying...

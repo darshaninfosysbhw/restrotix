@@ -97,7 +97,7 @@
             });
             if(isValid) step = 3;
         "
-            class="flex-[2] bg-orange-600 text-white py-3 rounded-lg font-bold shadow-lg hover:bg-orange-700 transition">
+            class="flex-[2] bg-[#DC0812] text-white py-3 rounded-lg font-bold shadow-lg hover:bg-[#B8070F] transition">
             Continue to Payment
         </button>
     </div>

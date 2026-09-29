@@ -21,13 +21,13 @@
         }
 
         .input-box:focus {
-            border-color: #ea580c;
-            box-shadow: 0 0 0 4px rgba(234, 88, 12, 0.1);
+            border-color: #DC0812;
+            box-shadow: 0 0 0 4px rgba(220, 8, 18, 0.1);
         }
     </style>
 </head>
 
-<body class="bg-gradient-to-br from-orange-100 via-orange-200 to-orange-300 min-h-screen flex flex-col font-sans"
+<body class="bg-gradient-to-br from-[#fff5f5] via-[#fee9e9] to-[#fdd7d9] min-h-screen flex flex-col font-sans"
     x-data="{
         // 1. Step aur Form Data LocalStorage se (Refresh safe)
         step: localStorage.getItem('resto_step') ? parseInt(localStorage.getItem('resto_step')) : 1,

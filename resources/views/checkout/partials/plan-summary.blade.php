@@ -1,10 +1,10 @@
 <div class="w-full md:w-[400px] lg:w-[450px] space-y-6">
     <div class="p-10 text-white relative overflow-hidden">
-        <div class="absolute -top-10 -left-20 w-48 h-48 bg-orange-600/20 blur-[80px] rounded-full"></div>
-        <div class="absolute -bottom-10 -right-20 w-48 h-48 bg-orange-600/20 blur-[80px] rounded-full"></div>
+        <div class="absolute -top-10 -left-20 w-48 h-48 bg-[#DC0812]/20 blur-[80px] rounded-full"></div>
+        <div class="absolute -bottom-10 -right-20 w-48 h-48 bg-[#DC0812]/20 blur-[80px] rounded-full"></div>
 
         <div class="mb-10">
-            <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-orange-500 mb-1 block">Premium Plan</span>
+            <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#DC0812] mb-1 block">Premium Plan</span>
             <h3 class="text-2xl font-extrabold text-black" x-text="plan"></h3>
             <p class="text-gray-400 mt-1 text-sm">{{ $planDetails->marketing_summary }}</p>
         </div>
@@ -30,9 +30,9 @@
 
                     <div class="flex items-center gap-4 group">
                         <div
-                            class="w-8 h-8 rounded-full bg-orange-600/10 flex items-center justify-center {{ $isAvailable ? 'group-hover:bg-orange-600' : 'opacity-50' }} transition-colors">
+                            class="w-8 h-8 rounded-full bg-[#DC0812]/10 flex items-center justify-center {{ $isAvailable ? 'group-hover:bg-[#DC0812]' : 'opacity-50' }} transition-colors">
                             <i
-                                class="fas {{ $isAvailable ? 'fa-check text-orange-500 group-hover:text-white' : 'fa-times text-gray-400' }} text-[10px]"></i>
+                                class="fas {{ $isAvailable ? 'fa-check text-[#DC0812] group-hover:text-white' : 'fa-times text-gray-400' }} text-[10px]"></i>
                         </div>
                         <span class="text-sm font-medium text-gray-500 {{ !$isAvailable ? 'opacity-50' : '' }}">
                             {!! $isBold ? '<strong>' . e($featureName) . '</strong>' : e($featureName) !!}
@@ -56,10 +56,10 @@
 
     <div class="flex justify-center gap-8 px-4 opacity-70">
         <div class="flex items-center gap-2 text-xs font-bold text-gray-700">
-            <i class="fas fa-shield-check text-orange-600"></i> SSL SECURE
+            <i class="fas fa-shield-check text-[#DC0812]"></i> SSL SECURE
         </div>
         <div class="flex items-center gap-2 text-xs font-bold text-gray-700">
-            <i class="fas fa-clock text-orange-600"></i> CANCEL ANYTIME
+            <i class="fas fa-clock text-[#DC0812]"></i> CANCEL ANYTIME
         </div>
     </div>
 </div>
