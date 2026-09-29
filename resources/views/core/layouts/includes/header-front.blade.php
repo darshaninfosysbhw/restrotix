@@ -8,7 +8,7 @@
 
             <div class="flex items-center gap-2 sm:gap-3">
                 <a href="{{ route('login') }}"
-                    class="hidden rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-[#a52a28] hover:text-[#a52a28] sm:px-5 sm:py-2.5 md:inline-flex">
+                    class="hidden rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm transition hover:border-[#DC0812] hover:text-[#DC0812] sm:px-5 sm:py-2.5 md:inline-flex">
                     Login
                 </a>
                 <a href="{{ url('/') }}#pricing"
@@ -16,7 +16,7 @@
                     Get Started
                 </a>
                 <a href="{{ url('/') }}#enquiry"
-                    class="hidden rounded-lg border border-[#a52a28] bg-white px-4 py-2 text-sm font-semibold text-[#a52a28] transition hover:bg-[#a52a28] hover:text-white sm:px-6 sm:py-2.5 md:inline-flex">
+                    class="hidden rounded-lg border border-[#DC0812] bg-white px-4 py-2 text-sm font-semibold text-[#DC0812] transition hover:bg-[#DC0812] hover:text-white sm:px-6 sm:py-2.5 md:inline-flex">
                     Become Supplier
                 </a>
 
@@ -41,7 +41,7 @@
 
         <div class="flex flex-col gap-3">
             <a href="{{ route('login') }}"
-                class="rounded-lg border border-gray-200 px-4 py-2.5 text-center font-semibold text-gray-700 transition hover:border-[#a52a28] hover:text-[#a52a28]">
+                class="rounded-lg border border-gray-200 px-4 py-2.5 text-center font-semibold text-gray-700 transition hover:border-[#DC0812] hover:text-[#DC0812]">
                 Login
             </a>
             <a href="{{ url('/') }}#pricing"
@@ -49,7 +49,7 @@
                 Get Started
             </a>
             <a href="{{ url('/') }}#enquiry"
-                class="rounded-lg border border-[#a52a28] px-4 py-2.5 text-center font-semibold text-[#a52a28] transition hover:bg-[#a52a28] hover:text-white">
+                class="rounded-lg border border-[#DC0812] px-4 py-2.5 text-center font-semibold text-[#DC0812] transition hover:bg-[#DC0812] hover:text-white">
                 Become Supplier
             </a>
         </div>

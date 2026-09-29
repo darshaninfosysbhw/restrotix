@@ -1,7 +1,7 @@
 <section id="testimonials" class="relative overflow-hidden bg-gradient-to-r from-[#fffaf7] via-white to-[#f7fffb] py-7 sm:py-9">
     <div class="container mx-auto px-4 sm:px-6">
         <header class="mb-5 text-center">
-            <p class="text-[9px] font-black uppercase tracking-[0.22em] text-[#e43d20]">What Our Customers Say</p>
+            <p class="text-[9px] font-black uppercase tracking-[0.22em] text-[#DC0812]">What Our Customers Say</p>
             <h2 class="mt-1.5 text-lg font-black text-slate-900 sm:text-xl">Trusted by restaurant owners across Nepal</h2>
         </header>
 
@@ -16,7 +16,7 @@
         @endphp
 
         <div id="testimonial-carousel" class="relative mx-auto max-w-7xl px-4">
-            <button type="button" data-testimonial-prev aria-label="Previous testimonial" class="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-[#a52a28] shadow-md transition hover:bg-[#a52a28] hover:text-white">
+            <button type="button" data-testimonial-prev aria-label="Previous testimonial" class="absolute left-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-[#DC0812] shadow-md transition hover:bg-[#DC0812] hover:text-white">
                 <i class="fa-solid fa-chevron-left text-[10px]"></i>
             </button>
 
@@ -28,7 +28,7 @@
                                 class="h-12 w-12 shrink-0 rounded-full object-cover ring-2 ring-white shadow-md">
                             <div class="min-w-0 flex-1">
                                 <div class="flex items-start gap-2">
-                                    <i class="fa-solid fa-quote-left mt-0.5 text-sm text-[#f05a28]/35"></i>
+                                    <i class="fa-solid fa-quote-left mt-0.5 text-sm text-[#DC0812]/35"></i>
                                     <p class="text-xs leading-5 text-slate-600 sm:text-[13px]">{{ $testimonial['quote'] }}</p>
                                 </div>
                                 <div class="mt-3 flex items-end justify-between gap-3 border-t border-slate-100 pt-3">
@@ -48,7 +48,7 @@
                 @endforeach
             </div>
 
-            <button type="button" data-testimonial-next aria-label="Next testimonial" class="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-[#a52a28] shadow-md transition hover:bg-[#a52a28] hover:text-white">
+            <button type="button" data-testimonial-next aria-label="Next testimonial" class="absolute right-0 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-[#DC0812] shadow-md transition hover:bg-[#DC0812] hover:text-white">
                 <i class="fa-solid fa-chevron-right text-[10px]"></i>
             </button>
         </div>

@@ -16,7 +16,7 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-3 lg:justify-center">
-            <a href="{{ url('/') }}#pricing" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-gradient-to-r from-[#f05a28] to-[#e43d20] px-6 text-sm font-extrabold text-white shadow-lg shadow-orange-950/30 transition hover:-translate-y-0.5 hover:brightness-110">
+            <a href="{{ url('/') }}#pricing" class="inline-flex min-h-11 items-center justify-center rounded-lg bg-gradient-to-r from-[#DC0812] to-[#B8070F] px-6 text-sm font-extrabold text-white shadow-lg shadow-red-950/30 transition hover:-translate-y-0.5 hover:brightness-110">
                 Start Free Trial <i class="fa-solid fa-arrow-right ml-2 text-xs"></i>
             </a>
             <a href="{{ url('/') }}#enquiry" class="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/70 bg-black/25 px-6 text-sm font-extrabold text-white backdrop-blur-sm transition hover:-translate-y-0.5 hover:bg-white hover:text-slate-900">

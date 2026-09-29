@@ -8,18 +8,18 @@
                 </p>
             </div>
             <div class="max-w-6xl mx-auto relative">
-                <div class="hidden md:block absolute top-10 left-0 right-0 h-0.5 bg-orange-200"></div>
+                <div class="hidden md:block absolute top-10 left-0 right-0 h-0.5 bg-[#DC0812]/20"></div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
                     <div class="relative">
                         <div
-                            class="hidden md:flex absolute top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-2 border-orange-500 text-orange-500 items-center justify-center font-bold z-10">
+                            class="hidden md:flex absolute top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-2 border-[#DC0812] text-[#DC0812] items-center justify-center font-bold z-10">
                             1
                         </div>
                         <div
                             class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-7 pt-8 md:pt-16 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
                             <div
-                                class="w-11 h-11 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center mb-4">
+                                class="w-11 h-11 rounded-xl bg-[#DC0812]/10 text-[#DC0812] flex items-center justify-center mb-4">
                                 <i class="fas fa-user-plus"></i>
                             </div>
                             <h3 class="text-xl font-semibold text-gray-900 mb-2">Setup Your Account</h3>
@@ -30,13 +30,13 @@
 
                     <div class="relative">
                         <div
-                            class="hidden md:flex absolute top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-2 border-orange-500 text-orange-500 items-center justify-center font-bold z-10">
+                            class="hidden md:flex absolute top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-2 border-[#DC0812] text-[#DC0812] items-center justify-center font-bold z-10">
                             2
                         </div>
                         <div
                             class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-7 pt-8 md:pt-16 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
                             <div
-                                class="w-11 h-11 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center mb-4">
+                                class="w-11 h-11 rounded-xl bg-[#DC0812]/10 text-[#DC0812] flex items-center justify-center mb-4">
                                 <i class="fas fa-sliders-h"></i>
                             </div>
                             <h3 class="text-xl font-semibold text-gray-900 mb-2">Configure Branch Operations</h3>
@@ -47,13 +47,13 @@
 
                     <div class="relative">
                         <div
-                            class="hidden md:flex absolute top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-2 border-orange-500 text-orange-500 items-center justify-center font-bold z-10">
+                            class="hidden md:flex absolute top-5 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full bg-white border-2 border-[#DC0812] text-[#DC0812] items-center justify-center font-bold z-10">
                             3
                         </div>
                         <div
                             class="bg-white rounded-2xl border border-gray-200 p-6 sm:p-7 pt-8 md:pt-16 transition duration-300 hover:-translate-y-1 hover:shadow-lg">
                             <div
-                                class="w-11 h-11 rounded-xl bg-orange-100 text-orange-500 flex items-center justify-center mb-4">
+                                class="w-11 h-11 rounded-xl bg-[#DC0812]/10 text-[#DC0812] flex items-center justify-center mb-4">
                                 <i class="fas fa-chart-pie"></i>
                             </div>
                             <h3 class="text-xl font-semibold text-gray-900 mb-2">Monitor and Scale</h3>

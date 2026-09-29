@@ -1,5 +1,5 @@
 <!-- Footer -->
-<footer class="border-t-4 border-[#a52a28] bg-[#071d2d] text-white">
+<footer class="border-t-4 border-[#DC0812] bg-[#071d2d] text-white">
     <div class="container mx-auto px-4 py-8 sm:px-6 sm:py-9 lg:py-10">
         <div class="grid grid-cols-2 gap-x-5 gap-y-8 md:grid-cols-4 md:gap-x-7 lg:grid-cols-[1.55fr_0.8fr_0.8fr_0.95fr_1.35fr] lg:gap-8">
             <div class="col-span-2 border-b border-white/10 pb-7 md:col-span-4 lg:col-span-1 lg:border-b-0 lg:pb-0">
@@ -24,41 +24,41 @@
             <div class="min-w-0">
                 <h3 class="text-sm font-extrabold">Product</h3>
                 <nav class="mt-3 flex flex-col gap-2 text-sm text-slate-300" aria-label="Product links">
-                    <a href="{{ url('/') }}#features" class="transition hover:text-[#f05a28]">Features</a>
-                    <a href="{{ url('/') }}#pricing" class="transition hover:text-[#f05a28]">Pricing</a>
-                    <a href="{{ url('/') }}#solutions" class="transition hover:text-[#f05a28]">Solutions</a>
-                    <a href="{{ url('/') }}#enquiry" class="transition hover:text-[#f05a28]">Integrations</a>
+                    <a href="{{ url('/') }}#features" class="transition hover:text-[#DC0812]">Features</a>
+                    <a href="{{ url('/') }}#pricing" class="transition hover:text-[#DC0812]">Pricing</a>
+                    <a href="{{ url('/') }}#solutions" class="transition hover:text-[#DC0812]">Solutions</a>
+                    <a href="{{ url('/') }}#enquiry" class="transition hover:text-[#DC0812]">Integrations</a>
                 </nav>
             </div>
 
             <div class="min-w-0">
                 <h3 class="text-sm font-extrabold">Company</h3>
                 <nav class="mt-3 flex flex-col gap-2 text-sm text-slate-300" aria-label="Company links">
-                    <a href="{{ url('/') }}#about" class="transition hover:text-[#f05a28]">About Us</a>
-                    <a href="#" class="transition hover:text-[#f05a28]">Blog</a>
-                    <a href="#" class="transition hover:text-[#f05a28]">Careers</a>
-                    <a href="{{ url('/') }}#enquiry" class="transition hover:text-[#f05a28]">Contact</a>
+                    <a href="{{ url('/') }}#about" class="transition hover:text-[#DC0812]">About Us</a>
+                    <a href="#" class="transition hover:text-[#DC0812]">Blog</a>
+                    <a href="#" class="transition hover:text-[#DC0812]">Careers</a>
+                    <a href="{{ url('/') }}#enquiry" class="transition hover:text-[#DC0812]">Contact</a>
                 </nav>
             </div>
 
             <div class="min-w-0">
                 <h3 class="text-sm font-extrabold">Support</h3>
                 <nav class="mt-3 flex flex-col gap-2 text-sm text-slate-300" aria-label="Support links">
-                    <a href="{{ url('/') }}#enquiry" class="transition hover:text-[#f05a28]">Help Center</a>
-                    <a href="#" class="transition hover:text-[#f05a28]">Documentation</a>
-                    <a href="#" class="transition hover:text-[#f05a28]">Video Tutorials</a>
-                    <a href="#" class="transition hover:text-[#f05a28]">System Status</a>
+                    <a href="{{ url('/') }}#enquiry" class="transition hover:text-[#DC0812]">Help Center</a>
+                    <a href="#" class="transition hover:text-[#DC0812]">Documentation</a>
+                    <a href="#" class="transition hover:text-[#DC0812]">Video Tutorials</a>
+                    <a href="#" class="transition hover:text-[#DC0812]">System Status</a>
                 </nav>
             </div>
 
             <div class="min-w-0">
                 <h3 class="text-sm font-extrabold">Contact Us</h3>
                 <div class="mt-3 space-y-3 text-sm text-slate-300">
-                    <a href="tel:+9779851033146" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-phone mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i><span class="min-w-0 break-words">+977-9851033146</span></a>
-                    <a href="tel:+9779802892772" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-phone mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i><span class="min-w-0 break-words">+977-9802892772</span></a>
-                    <a href="mailto:support@restrotix.com" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-envelope mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i><span class="min-w-0 break-all">support@restrotix.com</span></a>
+                    <a href="tel:+9779851033146" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-phone mt-1 w-4 shrink-0 text-[#DC0812]" aria-hidden="true"></i><span class="min-w-0 break-words">+977-9851033146</span></a>
+                    <a href="tel:+9779802892772" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-phone mt-1 w-4 shrink-0 text-[#DC0812]" aria-hidden="true"></i><span class="min-w-0 break-words">+977-9802892772</span></a>
+                    <a href="mailto:support@restrotix.com" class="flex items-start gap-2 transition hover:text-white sm:gap-3"><i class="fa-solid fa-envelope mt-1 w-4 shrink-0 text-[#DC0812]" aria-hidden="true"></i><span class="min-w-0 break-all">support@restrotix.com</span></a>
                     <div class="flex items-start gap-3">
-                        <i class="fa-solid fa-location-dot mt-1 w-4 shrink-0 text-[#f05a28]" aria-hidden="true"></i>
+                        <i class="fa-solid fa-location-dot mt-1 w-4 shrink-0 text-[#DC0812]" aria-hidden="true"></i>
                         <span class="space-y-1">
                             <span class="block"><strong class="text-white">Head Office:</strong> Ward No. 10, Thapagaun, Kathmandu</span>
                             <span class="block"><strong class="text-white">Branch:</strong> Bhairahawa, Rupandehi, Nepal</span>

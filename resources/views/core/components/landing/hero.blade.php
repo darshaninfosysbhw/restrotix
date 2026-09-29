@@ -26,8 +26,8 @@
 
     <div class="hero-shell container relative mx-auto px-4 pb-6 pt-8 sm:px-6 lg:min-h-[690px] lg:pb-32 lg:pt-0">
         <div class="hero-copy max-w-xl lg:w-[43%] lg:pt-32">
-            <div class="mb-5 inline-flex items-center rounded-full border border-[#a52a28]/25 bg-[#a52a28]/5 px-3 py-1.5 text-xs font-semibold text-[#851817]">
-                <span class="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#a52a28] text-[10px] text-white">
+            <div class="mb-5 inline-flex items-center rounded-full border border-[#DC0812]/25 bg-[#DC0812]/5 px-3 py-1.5 text-xs font-semibold text-[#B8070F]">
+                <span class="mr-2 flex h-5 w-5 items-center justify-center rounded-full bg-[#DC0812] text-[10px] text-white">
                     <i class="fas fa-utensils"></i>
                 </span>
                 All the tools your restaurant needs in one powerful system
@@ -35,7 +35,7 @@
 
             <h1 class="hero-title text-[42px] font-black leading-[0.98] tracking-[-0.04em] text-slate-950 sm:text-5xl lg:text-[64px]">
                 Your Restaurant.<br>
-                Now <span class="text-[#a52a28]">Smarter!</span>
+                Now <span class="text-[#DC0812]">Smarter!</span>
             </h1>
 
             <p class="mt-5 max-w-lg text-sm font-semibold leading-6 tracking-[0.01em] text-slate-700 sm:text-[17px] sm:leading-7">
@@ -44,7 +44,7 @@
 
             <div class="mt-7 flex flex-col gap-3 sm:flex-row">
                 <a href="#pricing"
-                    class="inline-flex items-center justify-center rounded-lg bg-[#a52a28] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#a52a28]/20 transition hover:-translate-y-0.5 hover:bg-[#851817] hover:shadow-xl">
+                    class="inline-flex items-center justify-center rounded-lg bg-[#DC0812] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-[#DC0812]/20 transition hover:-translate-y-0.5 hover:bg-[#B8070F] hover:shadow-xl">
                     Start Free Trial <i class="fas fa-arrow-right ml-2"></i>
                 </a>
                 <button
@@ -86,7 +86,7 @@
             <div class="grid grid-cols-2 divide-x divide-y divide-slate-100 sm:grid-cols-4 lg:grid-cols-8 lg:divide-y-0">
                 @foreach ($heroFeatures as [$icon, $title, $subtitle, $color])
                     <div class="hero-feature px-2 py-4 text-center sm:px-3">
-                        <span class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full text-white {{ $color === 'orange' ? 'bg-[#a52a28]' : 'bg-emerald-500' }}">
+                        <span class="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full text-white {{ $color === 'orange' ? 'bg-[#DC0812]' : 'bg-emerald-500' }}">
                             <i class="fas {{ $icon }} text-sm"></i>
                         </span>
                         <p class="text-[11px] font-extrabold leading-tight text-slate-800">{{ $title }}</p>

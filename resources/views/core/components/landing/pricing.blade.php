@@ -2,7 +2,7 @@
 @props(['plans'])
 
 <section id="pricing" class="relative overflow-hidden bg-[#fbfcfb] py-6 sm:py-8">
-    <div class="pointer-events-none absolute -left-20 top-8 h-52 w-52 rounded-full bg-orange-100/60 blur-3xl"></div>
+    <div class="pointer-events-none absolute -left-20 top-8 h-52 w-52 rounded-full bg-[#DC0812]/10 blur-3xl"></div>
     <div class="pointer-events-none absolute -right-20 bottom-8 h-56 w-56 rounded-full bg-emerald-100/60 blur-3xl"></div>
 
     <div class="container relative mx-auto px-4 sm:px-6">
@@ -10,13 +10,13 @@
             <h2 class="whitespace-nowrap text-[clamp(0.55rem,3vw,1.5rem)] font-black tracking-tight text-slate-900">
                 <span class="text-[#00000]">Plans for Every Restaurant</span>
                 <span class="mx-[0.35em] text-slate-400">|</span>
-                <span class="text-[#e43d20]">Simple &amp; Transparent</span><span class="text-emerald-700"> Pricing</span>
+                <span class="text-[#DC0812]">Simple &amp; Transparent</span><span class="text-emerald-700"> Pricing</span>
             </h2>
         </div>
 
         <div class="pricing-toggle-wrap mb-7 flex justify-center">
             <div class="pricing-toggle relative flex rounded-full border border-slate-200 bg-white p-1 shadow-md">
-                <div id="toggle-slider" class="absolute bottom-1 left-1 top-1 w-1/2 rounded-full bg-[#a52a28] shadow-sm transition-transform duration-300"></div>
+                <div id="toggle-slider" class="absolute bottom-1 left-1 top-1 w-1/2 rounded-full bg-[#DC0812] shadow-sm transition-transform duration-300"></div>
                 <button id="monthly-btn" type="button" class="relative z-10 w-24 rounded-full py-2 text-center text-sm font-bold text-white transition sm:w-28">Monthly</button>
                 <button id="yearly-btn" type="button" class="relative z-10 w-24 rounded-full py-2 text-center text-sm font-bold text-slate-700 transition sm:w-28">Yearly</button>
             </div>
@@ -42,7 +42,7 @@
                         : (str_contains($planKey, 'multi') || str_contains($planKey, 'branch')
                             ? 'fa-code-branch'
                             : 'fa-store');
-                    $iconClasses = 'bg-[#a52a28]/10 text-[#a52a28]';
+                    $iconClasses = 'bg-[#DC0812]/10 text-[#DC0812]';
                     $cardBackground = $loop->odd
                         ? 'linear-gradient(180deg, #fff7f6 0%, #fffafa 24%, #ffffff 58%, #fff8f7 100%)'
                         : 'linear-gradient(180deg, #fffaf3 0%, #fffdf8 24%, #ffffff 58%, #fffaf3 100%)';
@@ -50,9 +50,9 @@
 
                 <article data-pricing-card
                     style="background: {{ $cardBackground }};"
-                    class="pricing-card group relative flex h-full flex-col overflow-visible rounded-2xl border px-5 pb-6 pt-5 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:px-6 {{ $isPopular ? 'border-2 border-[#f05a28] shadow-[0_18px_45px_-22px_rgba(240,90,40,0.55)]' : 'border-slate-200 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.35)]' }}">
+                    class="pricing-card group relative flex h-full flex-col overflow-visible rounded-2xl border px-5 pb-6 pt-5 transition duration-300 hover:-translate-y-1 hover:shadow-xl sm:px-6 {{ $isPopular ? 'border-2 border-[#DC0812] shadow-[0_18px_45px_-22px_rgba(220,8,18,0.45)]' : 'border-slate-200 shadow-[0_14px_35px_-25px_rgba(15,23,42,0.35)]' }}">
                     @if ($isPopular)
-                        <span class="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-[#f05a28] px-5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white shadow-md">Most Popular</span>
+                        <span class="absolute -top-4 left-1/2 -translate-x-1/2 rounded-full bg-[#DC0812] px-5 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.16em] text-white shadow-md">Most Popular</span>
                     @endif
 
                     <div class="flex items-start gap-3">
@@ -73,7 +73,7 @@
 
                     <a href="{{ $isEnterprise ? '#enquiry' : route('checkout', ['plan' => $plan->slug, 'billing_cycle' => 'monthly']) }}"
                         @if (!$isEnterprise) data-checkout-link="1" data-checkout-base-url="{{ route('checkout', ['plan' => $plan->slug]) }}" @endif
-                        class="mt-4 inline-flex w-full items-center justify-center rounded-lg border-2 px-4 py-2.5 text-sm font-bold transition {{ $isPopular ? 'border-[#a52a28] bg-[#a52a28] text-white shadow-md hover:bg-[#851817] hover:shadow-lg' : 'border-[#a52a28] text-[#a52a28] hover:bg-[#a52a28] hover:text-white' }}">
+                        class="mt-4 inline-flex w-full items-center justify-center rounded-lg border-2 px-4 py-2.5 text-sm font-bold transition {{ $isPopular ? 'border-[#DC0812] bg-[#DC0812] text-white shadow-md hover:bg-[#B8070F] hover:shadow-lg' : 'border-[#DC0812] text-[#DC0812] hover:bg-[#DC0812] hover:text-white' }}">
                         {{ $isEnterprise ? 'Contact Sales' : 'Start Free Trial' }}
                         @if ($isPopular)<i class="fas fa-arrow-right ml-2 text-xs"></i>@endif
                     </a>
@@ -93,7 +93,7 @@
                     </div>
 
                     <span class="pointer-events-none absolute bottom-0 right-0 h-14 w-20 overflow-hidden rounded-br-2xl" aria-hidden="true">
-                        <span class="absolute -bottom-10 -right-8 h-24 w-24 rounded-full bg-[#a52a28]/[0.07]"></span>
+                        <span class="absolute -bottom-10 -right-8 h-24 w-24 rounded-full bg-[#DC0812]/[0.07]"></span>
                     </span>
                 </article>
             @endforeach
@@ -103,7 +103,7 @@
 
         <div class="mt-6 text-center text-sm text-slate-500">
             <p><i class="fas fa-circle-check mr-1.5 text-emerald-500"></i>All plans include a 14-day free trial. No credit card required.</p>
-            <a href="#enquiry" class="mt-4 inline-flex items-center font-bold text-[#a52a28] transition hover:text-[#851817]">Compare All Features <i class="fas fa-arrow-right ml-2 text-xs"></i></a>
+            <a href="#enquiry" class="mt-4 inline-flex items-center font-bold text-[#DC0812] transition hover:text-[#B8070F]">Compare All Features <i class="fas fa-arrow-right ml-2 text-xs"></i></a>
         </div>
     </div>
 </section>
