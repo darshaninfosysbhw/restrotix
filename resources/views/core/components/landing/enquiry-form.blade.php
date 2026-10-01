@@ -27,7 +27,7 @@
                     <div class="absolute bottom-0 left-0 right-0 flex h-[190px] items-end justify-center sm:h-[215px]">
                         <div class="absolute bottom-3 left-6 h-24 w-24 rounded-full bg-emerald-100/80"></div>
                         <div class="absolute bottom-8 right-5 h-20 w-20 rounded-full bg-[#DC0812]/10"></div>
-                        <img src="{{ asset('images/enquiry-support-girl-red.png') }}" alt="Restrotix customer support representative" class="relative z-10 h-[110%] w-full object-contain object-bottom" loading="lazy">
+                        <img src="{{ asset('images/enquiry-girl.png') }}" alt="Restrotix customer support representative" class="relative z-10 h-[110%] w-full object-contain object-bottom" loading="lazy">
                     </div>
                 </div>
 

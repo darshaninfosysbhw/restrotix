@@ -153,7 +153,7 @@
         </section>
 
         <div class="login-character pointer-events-none absolute bottom-0 z-10 flex items-end justify-center" aria-hidden="true">
-            <img src="{{ asset('images/login-boy-counter-v2.png') }}?v={{ filemtime(public_path('images/login-boy-counter-v2.png')) }}" alt="" class="max-h-full w-full object-contain object-bottom drop-shadow-2xl">
+            <img src="{{ asset('images/login-boy.png') }}?v={{ filemtime(public_path('images/login-boy.png')) }}" alt="" class="max-h-full w-full object-contain object-bottom drop-shadow-2xl">
         </div>
 
         <section class="login-card lg:absolute lg:right-[4.2%] lg:top-1/2 lg:z-30 lg:-translate-y-1/2 rounded-[14px] border border-white/80 bg-white/95 shadow-[0_24px_60px_-28px_rgba(72,37,15,0.42)] backdrop-blur-xl">
