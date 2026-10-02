@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\Billing\BillingDraftController;
 // ---Auth CONTROLLERS LINKS---
 use App\Http\Controllers\Admin\Branch\BranchController;
 use App\Http\Controllers\Admin\Branch\BranchPaymentGatewayController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 // ---Super Admin CONTROLLERS LINKS---
 use App\Http\Controllers\Admin\BranchSwitchController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -50,6 +51,20 @@ use Illuminate\Support\Facades\Route;
 // --- AUTH ROUTES ---
 Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login')->middleware('guest');
 Route::post('/login', [LoginController::class, 'login']);
+
+Route::middleware('guest')->group(function () {
+
+    Route::get('/forgot-password', [ForgotPasswordController::class, 'showForgotForm'])
+        ->name('password.forgot');
+    Route::post('/forgot-password/send-otp', [ForgotPasswordController::class, 'sendOtp'])
+        ->name('password.send-otp');
+    Route::post('/forgot-password/verify-otp', [ForgotPasswordController::class, 'verifyOtp'])
+    ->name('password.verify-otp');                                      
+    Route::post('/reset-password', [ForgotPasswordController::class, 'resetPassword'])
+    ->name('password.reset');
+                                                                                                                                                                                                
+});
+
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 // --- PUBLIC ROUTES ---

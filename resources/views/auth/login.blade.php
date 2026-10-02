@@ -189,7 +189,7 @@
                         <input type="checkbox" name="remember" class="h-5 w-5 rounded border-slate-300 text-[#DC0812] focus:ring-[#DC0812]/30" @checked(old('remember'))>
                         <span>Remember me</span>
                     </label>
-                    <a href="#" class="font-semibold text-[#DC0812] hover:text-[#B8070F] underline underline-offset-4">Forgot password?</a>
+                    <a href="{{ route('password.forgot') }}" class="font-semibold text-[#DC0812] hover:text-[#B8070F] underline underline-offset-4">Forgot password?</a>
                 </div>
 
                 <button type="submit" class="inline-flex w-full items-center justify-center rounded-lg bg-[#DC0812] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#DC0812]/25 transition hover:-translate-y-0.5 hover:bg-[#B8070F] hover:shadow-xl active:scale-[0.99]">
