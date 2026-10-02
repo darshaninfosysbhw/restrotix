@@ -120,7 +120,6 @@
                         type="text"
                         name="otp"
                         inputmode="numeric"
-                        maxlength="6"
                         autocomplete="one-time-code"
                         placeholder="Enter 6-digit OTP"
                         class="w-full rounded-lg border border-slate-200 bg-[#edf3fc]
