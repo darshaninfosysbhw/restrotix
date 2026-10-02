@@ -28,7 +28,8 @@ class PlanController extends Controller
         $plans = Plan::query()
             ->withCount('tenants')
             ->with(['prices.currency', 'services'])
-            ->latest()
+            ->orderBy('sort_order')
+            ->orderBy('id')
             ->get();
         $featureServices = $this->featureServices();
 
@@ -71,12 +72,14 @@ class PlanController extends Controller
             DB::transaction(function () use ($request, $validator, $activeCurrencyIds, $featureSlugs) {
                 $payload = $validator->validated();
                 $selectedFeatureSlugs = $this->selectedFeatureSlugs($payload['features'] ?? [], $featureSlugs);
-
+                $nextSortOrder = (Plan::max('sort_order') ?? 0) + 1;
                 $plan = Plan::create([
                     'name' => $payload['name'],
                     'slug' => $this->buildUniqueSlug($payload['name']),
+                    'plan_type' => $payload['plan_type'],
                     'summary' => trim((string) ($payload['summary'] ?? '')) ?: null,
                     'max_branches' => $payload['max_branches'],
+                    'sort_order' => $nextSortOrder,
                     'trial_days' => $payload['trial_days'] ?? 0,
                     'features' => $this->normalizeFeatures($selectedFeatureSlugs, $featureSlugs),
                     'is_active' => $payload['status'] === 'Active',
@@ -139,6 +142,7 @@ class PlanController extends Controller
                 $plan->update([
                     'name' => $payload['name'],
                     'slug' => $this->buildUniqueSlug($payload['name'], $plan->id),
+                    'plan_type' => $payload['plan_type'],
                     'summary' => trim((string) ($payload['summary'] ?? '')) ?: null,
                     'max_branches' => $payload['max_branches'],
                     'trial_days' => $payload['trial_days'] ?? 0,
@@ -210,6 +214,14 @@ class PlanController extends Controller
     {
         $rules = [
             'name' => ['required', 'string', 'max:255', Rule::unique('plans', 'name')->ignore($plan?->id)],
+            'plan_type' => [
+                       'required',
+                       Rule::in([
+                       Plan::TYPE_STANDARD,
+                       Plan::TYPE_ENTERPRISE,
+                    ]),
+                ],
+
             'summary' => 'nullable|string|max:255',
             'trial_days' => 'required|integer|min:0',
             'max_branches' => 'required|integer|min:1',
@@ -303,5 +315,56 @@ class PlanController extends Controller
         }
 
         return $slug;
+    }
+
+    // public function reorder(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'plans' => ['required', 'array', 'min:1'],
+    //         'plans.*' => ['required', 'integer', 'exists:plans,id'],
+    //     ]);
+
+    //     DB::transaction(function () use ($validated) {
+    //         foreach ($validated['plans'] as $index => $planId) {
+    //             Plan::where('id', $planId)->update([
+    //                 'sort_order' => $index + 1,
+    //             ]);
+    //         }
+    //     });
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Plan order updated successfully.',
+    //     ]);
+    // }
+
+
+    public function reorder(Request $request)
+    {
+        $validated = $request->validate([
+            'plans' => ['required', 'array', 'min:1'],
+            'plans.*' => ['required', 'integer', 'exists:plans,id'],
+        ]);
+
+        try {
+             DB::transaction(function () use ($validated) {
+                foreach ($validated['plans'] as $index => $planId) {
+                    Plan::where('id', $planId)->update([
+                        'sort_order' => $index + 1,
+                    ]);
+                }
+            });
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Plan order updated successfully.',
+            ]);
+
+        } catch (\Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to update plan order. Please try again.',
+            ], 500);
+        }
     }
 }

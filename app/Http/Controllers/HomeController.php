@@ -9,15 +9,15 @@ class HomeController extends Controller
 {
     public function index()
     {
-        $currencyId = session('currency_id', 1);
-
-        $plans = Plan::with(['services', 'prices.currency'])
+        $plans = Plan::query()
+            ->with([
+                'services',
+                'prices.currency',
+            ])
             ->where('is_active', true)
-            ->get()
-            ->sortBy(function ($plan) use ($currencyId) {
-                $priceRecord = $plan->prices->firstWhere('currency_id', $currencyId) ?? $plan->prices->first();
-                return $priceRecord ? (float) $priceRecord->monthly_price : 0;
-            });
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get();
 
         return view('index', compact('plans'));
     }

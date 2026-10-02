@@ -1,4 +1,24 @@
 @extends('core.layouts.superadmin')
+<style>
+#planTableBody .plan-sort-ghost {
+    opacity: 0.30;
+    background: rgba(219, 9, 19, 0.08);
+}
+
+#planTableBody .plan-sort-chosen {
+    background: rgba(219, 9, 19, 0.12);
+    box-shadow: inset 3px 0 0 #DB0913;
+}
+
+#planTableBody .plan-sort-drag {
+    background: #181717;
+    box-shadow: 0 8px 24px rgba(219, 9, 19, 0.22);
+}
+
+.plan-is-sorting {
+    user-select: none;
+}
+</style>
 
 @section('content')
     @php
@@ -63,8 +83,9 @@
                 <table class="w-full text-sm">
                     <thead class="text-xs text-slate-400 border-b border-white/10 uppercase tracking-wide">
                         <tr>
-                            <th class="text-left py-3 pr-4 font-medium">#</th>
+                            <th class="w-20 text-left py-3 pr-4 font-medium">Order</th>
                             <th class="text-left py-3 px-4 font-medium">Plan Name</th>
+                            <th class="text-left py-3 px-4 font-medium">Plan Type</th>
                             <th class="text-left py-3 px-4 font-medium">Price</th>
                             <th class="text-left py-3 px-4 font-medium">Limits</th>
                             <th class="text-left py-3 px-4 font-medium">Subscribers</th>
@@ -78,8 +99,23 @@
                                 $yearly = $plan['default_yearly_price'];
                                 $code = $plan['default_currency_code'];
                             @endphp
-                            <tr class="plan-row hover:bg-white/5 transition">
-                                <td class="py-3 pr-4 text-slate-300">{{ $index + 1 }}</td>
+                            <tr class="plan-row hover:bg-white/5 transition" data-plan-id="{{ $plan['id'] }}">
+                                <td class="py-3 pr-4">
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            class="plan-drag-handle inline-flex h-8 w-8 cursor-grab items-center justify-center rounded-md text-slate-500 transition  hover:text-[#DB0913] active:cursor-grabbing"
+                                            title="Drag to reorder"
+                                            aria-label="Drag to reorder plan"
+                                        >
+                                            <i class="fas fa-grip-vertical"></i>
+                                        </button>
+
+                                        <span class="plan-position text-sm text-slate-400">
+                                            {{ $index + 1 }}
+                                        </span>
+                                    </div>
+                                </td>
                                 <td class="py-3 px-4">
                                     <div class="space-y-1">
                                         <div class="flex flex-wrap items-center gap-2">
@@ -99,6 +135,21 @@
                                         </div>
                                         <p class="text-xs text-slate-500">{{ $plan['slug'] ?? '—' }}</p>
                                     </div>
+                                </td>
+                                <td class="py-3 px-4">
+                                    @if (($plan['plan_type'] ?? 'standard') === 'enterprise')
+                                        <span
+                                            class="px-2 py-0.5 rounded-full text-[10px]
+                                                   bg-yellow-500/10 text-yellow-400 border border-yellow-500/40">
+                                            Enterprise
+                                        </span>
+                                    @else
+                                        <span
+                                            class="px-2 py-0.5 rounded-full text-[10px]
+                                                   bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                                            Standard
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="py-3 px-4 text-slate-300">
                                     @if ($monthly !== null && $yearly !== null && $code)
@@ -128,6 +179,7 @@
                                         $actionData = [
                                             'id' => $plan['id'] ?? '',
                                             'name' => $plan['name'] ?? '',
+                                            'plan-type' => $plan['plan_type'] ?? 'standard',
                                             'summary' => $plan['summary'] ?? '',
                                             'max-branches' => $plan['max_branches'] ?? 1,
                                             'trial-days' => $plan['trial_days'] ?? 0,
@@ -153,7 +205,7 @@
                             </tr>
                         @empty
                             <tr id="planNoResultRow">
-                                <td colspan="6" class="py-6 text-center text-sm text-slate-400">No plans found.</td>
+                                <td colspan="7" class="py-6 text-center text-sm text-slate-400">No plans found.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -197,6 +249,26 @@
                                         placeholder="e.g. Starter, Professional, Unlimited"
                                         class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-orange-500">
                                     <p id="planSlugPreview" class="text-[11px] text-slate-500 mt-1">Slug preview: -</p>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-slate-400 mb-1.5">
+                                        Plan Type
+                                    </label>
+
+                                    <select
+                                        id="planType"
+                                        name="plan_type"
+                                        required
+                                        class="sa-form-input w-full bg-[#0f172a] border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-orange-500"
+                                         >
+                                            <option value="standard">Standard</option>
+                                            <option value="enterprise">Enterprise</option>
+                                    </select>
+
+                                    <p class="text-[11px] text-slate-500 mt-1">
+                                        Standard plans use checkout. Enterprise plans use the Contact Sales flow.
+                                    </p>
                                 </div>
 
                                 <div>
@@ -392,8 +464,11 @@
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
     <script>
+       
         (() => {
+            const tableBody = document.getElementById('planTableBody');
             const parseJson = (raw) => {
                 try {
                     return raw ? JSON.parse(raw) : {};
@@ -414,6 +489,8 @@
                 const primaryYearlyInput = document.querySelector('[data-plan-price-primary="1"][data-price-yearly]');
 
                 const fallbackPrice = defaultCurrencyId && prices[defaultCurrencyId] ? prices[defaultCurrencyId] : Object.values(prices)[0] || {};
+
+                
 
                 if (primaryMonthlyInput) {
                     primaryMonthlyInput.value = defaultMonthlyPrice || fallbackPrice.monthly || '';
@@ -447,6 +524,110 @@
 
                 requestAnimationFrame(() => applyPlanPrices(button));
             });
+
+            const updatePositionNumbers = () => {
+                tableBody.querySelectorAll('.plan-row').forEach((row, index) => {
+                    const position = row.querySelector('.plan-position');
+
+                    if (position) {
+                        position.textContent = index + 1;
+                    }
+                });
+            };
+
+            const showPlanToast = (message, type = 'success') => {
+                const toast = document.createElement('div');
+
+                toast.className = `
+                    fixed top-5 right-5 z-[9999]
+                    px-4 py-3 rounded-lg
+                    text-sm font-medium text-white
+                    shadow-lg
+                 ${type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`;
+
+                toast.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <i class="fas ${
+                         type === 'success'
+                             ? 'fa-circle-check'
+                             : 'fa-circle-exclamation'
+                     }"></i>
+
+                        <span>${message}</span>
+                    </div>`;
+
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                 toast.remove();
+                }, 3000);
+         };
+
+            if (tableBody && window.Sortable) {
+                new Sortable(tableBody, {
+                    animation: 180,
+                    handle: '.plan-drag-handle',
+
+                    ghostClass: 'plan-sort-ghost',
+                    chosenClass: 'plan-sort-chosen',
+                    dragClass: 'plan-sort-drag',
+
+                    onStart() {
+                        document.body.classList.add('plan-is-sorting');
+                    },
+
+                    onEnd: async function () {
+                        document.body.classList.remove('plan-is-sorting');
+
+                        updatePositionNumbers();
+
+                        const planIds = Array.from(
+                            tableBody.querySelectorAll('.plan-row')
+                        ).map((row) => row.dataset.planId);
+
+                        try {
+                            const response = await fetch(
+                                "{{ route('superadmin.plans.reorder') }}",
+                                {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json',
+                                    },
+                                    body: JSON.stringify({
+                                        plans: planIds,
+                                    }),
+                                }
+                            );
+
+                            const data = await response.json();
+
+                            if (!response.ok) {
+                                throw new Error(
+                                    data.message || 'Something went wrong.'
+                                );
+                            }
+
+                            window.showToast({
+                               type: 'success',
+                               message: data.message,
+                               duration: 5000
+                            });
+                            
+                        } catch (error) {
+                            console.error(error);
+
+                            window.showToast({
+                                type: 'error',
+                                message: error.message,
+                                duration: 5000
+                            });
+                        }             
+                    },
+                });
+            }
+        
         })();
     </script>
 @endsection

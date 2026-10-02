@@ -24,6 +24,7 @@
 
     const nameInput = document.getElementById('planName');
     const summaryInput = document.getElementById('planSummary');
+    const planTypeInput = document.getElementById('planType');
     const maxBranchesInput = document.getElementById('planMaxBranches');
     const trialDaysInput = document.getElementById('planTrialDays');
     const statusInput = document.getElementById('planStatus');
@@ -121,6 +122,7 @@
         modalSubmit.textContent = 'Save Plan';
 
         if (statusInput) statusInput.value = 'Active';
+        if (planTypeInput) planTypeInput.value = 'standard';
         if (maxBranchesInput) maxBranchesInput.value = '1';
         if (trialDaysInput) trialDaysInput.value = '14';
         if (summaryInput) summaryInput.value = '';
@@ -149,6 +151,7 @@
 
         if (nameInput) nameInput.value = data.name || '';
         if (summaryInput) summaryInput.value = data.summary || '';
+        if (planTypeInput) planTypeInput.value = data.planType || 'standard';
         if (maxBranchesInput) maxBranchesInput.value = data.maxBranches || '1';
         if (trialDaysInput) trialDaysInput.value = data.trialDays || '0';
         if (statusInput) statusInput.value = data.status || 'Active';

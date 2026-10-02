@@ -7,6 +7,9 @@ use Illuminate\Support\Str;
 
 class Plan extends Model
 {
+    public const TYPE_STANDARD = 'standard';
+    public const TYPE_ENTERPRISE = 'enterprise';
+
     public const FEATURE_LABELS = [
         'inventory_management' => 'Inventory Management',
         'ai_analytics' => 'AI Analytics',
@@ -19,6 +22,8 @@ class Plan extends Model
     protected $fillable = [
         'name',
         'slug',
+        'sort_order',       
+        'plan_type',                                                                                                                                                                                                                        
         'summary',
         'max_branches',
         'features',
@@ -29,12 +34,13 @@ class Plan extends Model
     ];
 
     protected $casts = [
+        'sort_order' => 'integer',
         'max_branches' => 'integer',
         'trial_days' => 'integer',
         'is_active' => 'boolean',
         'is_recommended' => 'boolean',
         'allow_identity_masking' => 'boolean',
-        'features' => 'array',
+        'features' => 'array',                                                                                  
     ];
 
     public function services()
@@ -57,6 +63,11 @@ class Plan extends Model
         return $this->prices()->where('currency_id', $currencyId)->first();
     }
 
+    public function isEnterprise(): bool
+    {
+        return $this->plan_type === self::TYPE_ENTERPRISE;
+    }
+
     public function getBranchLimitLabelAttribute(): string
     {
         $branchCount = (int) ($this->max_branches ?? 0);
@@ -77,6 +88,10 @@ class Plan extends Model
         $customSummary = trim((string) ($this->summary ?? ''));
         if ($customSummary !== '') {
             return $customSummary;
+        }
+
+           if ($this->isEnterprise()) {
+            return 'White-label options';
         }
 
         return match ((string) ($this->slug ?? '')) {

@@ -40,6 +40,8 @@ class PlanResource extends JsonResource
             'id' => (int) $this->id,
             'name' => $this->name,
             'slug' => $this->slug,
+            'sort_order' => (int) ($this->sort_order ?? 0),
+            'plan_type' => (string) ($this->plan_type ?? \App\Models\Plan::TYPE_STANDARD),
             'summary' => (string) ($this->summary ?? ''),
             'marketing_summary' => (string) $this->marketing_summary,
             'max_branches' => (int) $this->max_branches,

@@ -26,8 +26,8 @@
             @foreach ($plans as $plan)
                 @php
                     $features = $plan->getDisplayFeatures();
-                    $isPopular = $plan->slug === 'plus';
-                    $isEnterprise = $plan->slug === 'enterprise';
+                    $isPopular = (bool) $plan->is_recommended;
+                    $isEnterprise = $plan->isEnterprise();
                     $currencyId = session('currency_id');
                     $priceData = $currencyId ? $plan->prices->firstWhere('currency_id', $currencyId) : null;
                     $priceData = $priceData ?? $plan->prices->first();

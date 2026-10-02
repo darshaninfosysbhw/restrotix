@@ -210,6 +210,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/plans', [PlanController::class, 'index'])->name('superadmin.plans.index');
         Route::post('/plans', [PlanController::class, 'store'])->name('superadmin.plans.store');
+        Route::post('/plans/reorder', [PlanController::class, 'reorder'])->name('superadmin.plans.reorder');
         Route::put('/plans/{plan}', [PlanController::class, 'update'])->name('superadmin.plans.update');
         Route::delete('/plans/{plan}', [PlanController::class, 'destroy'])->name('superadmin.plans.destroy');
 
