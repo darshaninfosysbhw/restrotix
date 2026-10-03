@@ -7,6 +7,7 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Restrotix - Restaurant Software</title>
+    @include('core.layouts.includes.favicon')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
 </head>
